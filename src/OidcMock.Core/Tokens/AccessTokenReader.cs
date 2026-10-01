@@ -20,7 +20,7 @@ public sealed class AccessTokenReader(ISigningKeyProvider signingKeyProvider, Ti
 
     private static readonly JsonWebTokenHandler Handler = new();
 
-    public Result<AccessTokenClaims> Read(string accessToken, string issuer, IEnumerable<string> audiences)
+    public Result<AccessTokenClaims> Read(string accessToken, string issuer, IEnumerable<string>? audiences)
     {
         if (string.IsNullOrEmpty(accessToken))
         {
@@ -47,13 +47,16 @@ public sealed class AccessTokenReader(ISigningKeyProvider signingKeyProvider, Ti
     private TokenValidationParameters BuildParameters(
         SigningKey signingKey,
         string issuer,
-        IEnumerable<string> audiences) =>
+        IEnumerable<string>? audiences) =>
         new()
         {
             IssuerSigningKeys = [ToValidationKey(signingKey.Key, signingKey.KeyId)],
             ValidAlgorithms = [TokenHeaderValues.SignatureAlgorithm],
             ValidIssuer = issuer,
-            ValidAudiences = [.. audiences],
+            ValidAudiences = audiences is null ? null : [.. audiences],
+            // Sin lista de audiencias hay que desactivar la comprobacion: la libreria falla si
+            // ValidateAudience queda activo sin audiencia esperada configurada.
+            ValidateAudience = audiences is not null,
             ClockSkew = TimeSpan.Zero,
             LifetimeValidator = (notBefore, expires, _, _) => IsWithinLifetime(notBefore, expires)
         };

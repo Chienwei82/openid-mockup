@@ -7,12 +7,15 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddJsonStores(ResolveStoreOptions(builder));
 builder.Services.AddOidcMock(ResolveOidcMockOptions(builder));
+builder.Services.AddOidcMockProtocol();
 
 var app = builder.Build();
 
 app.Services.GetRequiredService<IConfigurationValidator>().Validate();
 
 app.MapDiscoveryEndpoints();
+app.MapAuthorizationEndpoints();
+app.MapTokenEndpoints();
 
 app.Run();
 

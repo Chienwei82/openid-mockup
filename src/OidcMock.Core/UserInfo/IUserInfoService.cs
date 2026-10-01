@@ -11,7 +11,7 @@ public interface IUserInfoService
     Result<IReadOnlyDictionary<string, System.Text.Json.JsonElement>> Describe(
         string accessToken,
         string issuer,
-        IEnumerable<string> audiences);
+        IEnumerable<string>? audiences);
 }
 
 /// <summary>

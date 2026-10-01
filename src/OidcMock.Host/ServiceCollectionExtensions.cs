@@ -1,9 +1,17 @@
 using Microsoft.Extensions.DependencyInjection;
+using OidcMock.Core.Authorization;
+using OidcMock.Core.Claims;
 using OidcMock.Core.Clients;
+using OidcMock.Core.Codes;
 using OidcMock.Core.Configuration;
 using OidcMock.Core.Crypto;
 using OidcMock.Core.Discovery;
+using OidcMock.Core.Grants;
+using OidcMock.Core.Introspection;
+using OidcMock.Core.Revocation;
 using OidcMock.Core.Scopes;
+using OidcMock.Core.Tokens;
+using OidcMock.Core.UserInfo;
 using OidcMock.Core.Users;
 using OidcMock.Host.Crypto;
 using OidcMock.Host.Stores;
@@ -53,6 +61,37 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<DiscoveryDocumentBuilder>();
         services.AddSingleton<ISigningKeyProvider>(provider =>
             new PemSigningKeyProvider(provider.GetRequiredService<JsonStoreOptions>().ConfigDirectory));
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registra los casos de uso del mock: emision de tokens, autorizacion, token endpoint y los
+    /// endpoints que consumen tokens. Los stores en memoria son singleton porque el estado de los
+    /// codigos y los refresh tokens debe sobrevivir entre peticiones del mismo proceso.
+    /// </summary>
+    public static IServiceCollection AddOidcMockProtocol(this IServiceCollection services)
+    {
+        services.AddSingleton<ICodeStore, InMemoryCodeStore>();
+        services.AddSingleton<IRefreshTokenStore, InMemoryRefreshTokenStore>();
+        services.AddSingleton<ITokenFactory, JsonWebTokenFactory>();
+        services.AddSingleton<IAccessTokenReader, AccessTokenReader>();
+        services.AddSingleton<IClaimsProjector, ScopesClaimsProjector>();
+        services.AddSingleton<IAuthorizationRequestValidator, AuthorizationRequestValidator>();
+        services.AddSingleton<IAuthorizationService, AuthorizationService>();
+        services.AddSingleton<GrantHandlerRegistry>();
+        services.AddSingleton<ITokenEndpointService, TokenEndpointService>();
+        services.AddSingleton<IUserInfoClaimsSource, ProjectedUserInfoClaimsSource>();
+        services.AddSingleton<IUserInfoService, UserInfoService>();
+        services.AddSingleton<IIntrospectionService, IntrospectionService>();
+        services.AddSingleton<ITokenRevocationService, TokenRevocationService>();
+
+        // Cada grant es una estrategia y la DI la resuelve por su constructor. Agregar un grant nuevo
+        // es registrar una linea mas, sin tocar el dispatcher del token endpoint.
+        services.AddSingleton<IGrantHandler, AuthorizationCodeGrantHandler>();
+        services.AddSingleton<IGrantHandler, RefreshTokenGrantHandler>();
+        services.AddSingleton<IGrantHandler, ClientCredentialsGrantHandler>();
+        services.AddSingleton<IGrantHandler, PasswordGrantHandler>();
 
         return services;
     }

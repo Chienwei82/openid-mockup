@@ -33,7 +33,8 @@ public sealed class AuthorizationService(ICodeStore codeStore, IUserStore userSt
             authorization.State,
             authorization.CodeChallenge,
             authorization.CodeChallengeMethod,
-            authorization.Client.TokenLifetimes.AuthorizationCode));
+            authorization.Client.TokenLifetimes.AuthorizationCode,
+            authorization.RedirectUri));
 
         return Result<AuthorizationGranted>.Ok(new AuthorizationGranted(code));
     }

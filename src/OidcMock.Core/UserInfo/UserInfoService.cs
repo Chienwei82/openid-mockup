@@ -18,7 +18,7 @@ public sealed class UserInfoService(
     public Result<IReadOnlyDictionary<string, JsonElement>> Describe(
         string accessToken,
         string issuer,
-        IEnumerable<string> audiences)
+        IEnumerable<string>? audiences)
     {
         var token = accessTokenReader.Read(accessToken, issuer, audiences);
         if (token.Failed)

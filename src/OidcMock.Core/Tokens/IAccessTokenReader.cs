@@ -14,9 +14,11 @@ public sealed record AccessTokenClaims(
     DateTimeOffset ExpiresAt);
 
 /// <summary>
-/// Lee y valida un access token emitido por el mock.
+/// Lee y valida un access token emitido por el mock. Si <c>audiences</c> es null o vacio no se
+/// comprueba la audiencia: es lo que necesita /connect/userinfo, donde la audiencia es el propio
+/// client_id del token y todavia no se conoce. La firma y el issuer se validan siempre.
 /// </summary>
 public interface IAccessTokenReader
 {
-    Result<AccessTokenClaims> Read(string accessToken, string issuer, IEnumerable<string> audiences);
+    Result<AccessTokenClaims> Read(string accessToken, string issuer, IEnumerable<string>? audiences);
 }

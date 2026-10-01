@@ -9,7 +9,7 @@ namespace OidcMock.IntegrationTests.Composition;
 public sealed class HostStartupTests
 {
     private const string DiscoveryPath = "/personafisica/.well-known/openid-configuration";
-    private const string UnknownPath = "/personafisica/connect/token";
+    private const string UnknownPath = "/personafisica/connect/ruta-que-no-existe";
 
     [Fact]
     public async Task ArrancaConLaConfiguracionDeEjemploDelRepositorio()
