@@ -111,6 +111,20 @@ public sealed class JsonClientStoreTests
     }
 
     [Fact]
+    public void ReutilizaElDominioCacheadoEnConsultasSuccessivas()
+    {
+        using var directory = new TempConfigDirectory();
+        directory.WriteClientsFile(ClientsJson(SampleClientId, brandColor: "#111111"));
+        var store = new JsonClientStore(directory.Path, reloadOnChange: true);
+
+        var firstRead = store.List();
+        var secondRead = store.List();
+
+        Assert.Same(firstRead, secondRead);
+        Assert.Same(store.Find(SampleClientId), store.Find(SampleClientId));
+    }
+
+    [Fact]
     public void SirveLaCacheSiElArchivoDesapareceYLaRecargaEstaDesactivada()
     {
         using var directory = new TempConfigDirectory();
