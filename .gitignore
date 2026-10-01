@@ -6,3 +6,6 @@ obj/
 *.suo
 artifacts/
 TestResults/
+
+# Contexto local de trabajo entre sesiones; no se versiona.
+memory-bank/
