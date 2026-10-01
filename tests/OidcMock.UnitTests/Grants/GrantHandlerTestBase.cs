@@ -26,6 +26,14 @@ public abstract class GrantHandlerTestBase
 
     private readonly RSA _signingKey = RSA.Create(SigningKeySizes.KeySizeInBits);
 
+    /// <summary>Misma clave con la que firma Tokens, para poder leer y validar lo emitido.</summary>
+    protected RSA SigningKey => _signingKey;
+
+    /// <summary>Proveedor de la clave de firma, para montar lectores de token en las pruebas.</summary>
+    protected ISigningKeyProvider SigningKeyProvider => _signingKeyProvider;
+
+    private readonly ISigningKeyProvider _signingKeyProvider;
+
     protected GrantHandlerTestBase()
     {
         Clock = new FakeTimeProvider(Now);
@@ -33,8 +41,9 @@ public abstract class GrantHandlerTestBase
         RefreshTokens = new InMemoryRefreshTokenStore(Clock);
         UserStore = new InMemoryUserStore(SampleUser());
         Validator = new TokenTestValidator(_signingKey);
+        _signingKeyProvider = new TestSigningKeyProvider(new SigningKey(_signingKey));
         Tokens = new JsonWebTokenFactory(
-            new TestSigningKeyProvider(new SigningKey(_signingKey)),
+            _signingKeyProvider,
             new Core.Claims.ScopesClaimsProjector(ScopeStoreFixture.Create()),
             Clock);
     }
