@@ -7,6 +7,7 @@ public sealed class JsonClientStoreTests
 {
     private const string SampleClientId = "web-app-spa";
     private const string UnknownClientId = "no-existe";
+    private const string ClientsFileName = "clients.json";
 
     [Fact]
     public void CargaElClienteConfiguradoConTodosSusDatos()
@@ -105,6 +106,20 @@ public sealed class JsonClientStoreTests
         Assert.Equal("#111111", store.Find(SampleClientId)!.Branding.PrimaryColor);
 
         directory.WriteClientsFile(ClientsJson(SampleClientId, brandColor: "#222222"));
+
+        Assert.Equal("#111111", store.Find(SampleClientId)!.Branding.PrimaryColor);
+    }
+
+    [Fact]
+    public void SirveLaCacheSiElArchivoDesapareceYLaRecargaEstaDesactivada()
+    {
+        using var directory = new TempConfigDirectory();
+        directory.WriteClientsFile(ClientsJson(SampleClientId, brandColor: "#111111"));
+        var store = new JsonClientStore(directory.Path, reloadOnChange: false);
+
+        Assert.Equal("#111111", store.Find(SampleClientId)!.Branding.PrimaryColor);
+
+        File.Delete(directory.FilePath(ClientsFileName));
 
         Assert.Equal("#111111", store.Find(SampleClientId)!.Branding.PrimaryColor);
     }
