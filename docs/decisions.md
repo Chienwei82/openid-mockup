@@ -1,5 +1,50 @@
 # Decisiones de diseño
 
+## Prompt 2 — Discovery, JWKS y clave de firma
+
+### Opciones del mock
+- `OidcMockOptions` (en `Core`, sin ASP.NET) lleva `PathBase` (por defecto `/personafisica`) e
+  `Issuer`. El enlace con `IConfiguration` queda en el Host (`OidcMock:PathBase`, `OidcMock:Issuer`),
+  para no meter `Microsoft.Extensions.Configuration` en el dominio.
+- `EndpointUri` centraliza la normalización: el `PathBase` queda con una sola barra inicial y sin
+  barra final, y el `issuer` **con barra final**, igual que el servidor real. Así ninguna URL se
+  concatena a mano en los endpoints.
+- **Issuer por defecto = el host de la petición + PathBase.** Es lo más simple que hace que el mock
+  sirva un discovery coherente en `localhost`, en cualquier puerto y detrás de cualquier proxy, sin
+  configuración previa. Configurado (`OidcMock:Issuer`), gana sobre el deducido y solo se le añade
+  la barra final.
+
+### Discovery: anunciar solo lo implementado
+- El documento se modela como `DiscoveryDocument` (record con `[JsonPropertyName]`) y lo arma
+  `DiscoveryDocumentBuilder` a partir del `IScopeStore`: `scopes_supported` con los nombres de
+  `scopes.json` y `claims_supported` con la unión de sus claims (distinta y en orden de aparición).
+- Se **omiten** a propósito los campos del discovery real que el mock todavía no implementa:
+  `request_object_signing_alg_values_supported`, `dpop_signing_alg_values_supported`,
+  `userinfo_signing_alg_values_supported`, `introspection_signing_alg_values_supported`,
+  `request_parameter_supported`, los cuatro `*_logout_supported` y `ClientCertificate` en los
+  métodos de autenticación de cliente. Se agregarán en su etapa correspondiente. La regla de oro:
+  **el discovery no puede anunciar capacidades inexistentes**, porque una app que las lea fallaría
+  más tarde y en un punto más difícil de depurar.
+- El test de *forma* (`ReferenceDiscoveryDocument`) fija el JSON del servidor real en el proyecto de
+  pruebas y exige que las claves del mock sean un **subconjunto** de él: si mañana el BCCR renombra
+  un campo, el test falla en lugar de dejar al cliente descubriéndolo en runtime.
+
+### Clave de firma
+- `ISigningKeyProvider` (Core) + `PemSigningKeyProvider` (Host) sobre `config/signing-key.pem`
+  (PKCS#8). Si el archivo no existe genera una RSA 2048 y la persiste; por eso los tokens siguen
+  validando tras reiniciar.
+- `kid` = base64url(SHA-256(SubjectPublicKeyInfo)): depende solo de la clave pública, así que es
+  estable entre reinicios y cambia si la clave cambia. Verificado además contra un host real
+  arrancado dos veces.
+- `signing-key.pem` está en `.gitignore`: es material generado en el primer arranque, no fuente.
+- `JsonWebKeySetBuilder` es `static` (el analizador lo marca con CA1822 y no tiene estado de instancia);
+  el `kid` se calcula en cada request a partir de la clave, lo cual es barato y evita estado cacheado.
+
+### Nota sobre el arranque
+- `app.MapDiscoveryEndpoints()` se registra **después** de `IConfigurationValidator.Validate()`, que
+  sigue lanzando `ConfigurationException` antes de `app.Run()`: la configuración rota se detecta
+  aunque el PathBase apunte a rutas que sí existen.
+
 ## Prompt 1 — Scaffolding y capa de datos (JSON stores)
 
 ### Estructura y paquetes
