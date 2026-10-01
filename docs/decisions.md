@@ -1,5 +1,60 @@
 # Decisiones de diseño
 
+## Prompt 3 — Emisión de tokens (id_token y access_token)
+
+### Dependencia añadida
+- `Microsoft.Extensions.TimeProvider.Testing` **10.1.0** (solo tests) para `FakeTimeProvider`, que el
+  enunciado pedía explícitamente. Es el paquete oficial de Microsoft que trae el reloj falso; no
+  introducimos ningún otro. La versión 10.0.12 no existe en nuget.org, de ahí el 10.1.0.
+  Producción sigue con solo el framework + `Microsoft.IdentityModel.JsonWebTokens`.
+
+### Firma de los tokens
+- `ITokenFactory` (`Core/Tokens`) devuelve **strings** ya firmados: el Host los copia tal cual a la
+  respuesta, y el token es un valor opaco para el endpoint. `CreateIdToken(IdTokenRequest)` y
+  `CreateAccessToken(AccessTokenRequest)` reciben records con los datos de la peticion.
+- `JsonWebTokenFactory` usa `JsonWebTokenHandler.CreateToken` (**no** `System.IdentityModel.Tokens.Jwt`),
+  tal como pedía el enunciado. `kid` sale de `RsaSecurityKey.KeyId`, que es el mismo `kid` que
+  publica el JWKS, así que el token y el JWKS no pueden desincronizarse.
+- `typ` se fija con `SecurityTokenDescriptor.TokenType`: `JWT` en el `id_token` y `at+jwt` en el
+  `access_token`. Hay que **fijarlo explícitamente**: si no, ambos salen con `JWT`.
+- `aud` del `id_token` es el `client_id` (string). En esta versión de la librería
+  (`SecurityTokenDescriptor.Audience` es `string`, no colección) el `aud` múltiple se emite poniendo
+  el claim a mano: string con una audiencia, array con varias. Es exactamente lo que hacen AAD y el
+  servidor real, así que no se pierde compatibilidad.
+- Los claims de usuario viajan como `JsonElement`, que la librería serializa preservando el tipo
+  JSON (bool, número, array), en lugar de convertirlos a string.
+
+### `nbf` obligatorio
+- `SecurityTokenDescriptor` **rellena `nbf` con el reloj del sistema si no se indica**, aunque
+  `IssuedAt` sí venga del `TimeProvider`. Con un reloj falso eso produce tokens "válidos en el
+  futuro" y los tests de expiración mienten. Por eso el factory fija `NotBefore` explícitamente.
+- `iat`, `nbf` y `exp` se calculan de **un solo** `GetUtcNow()` por token. Llamar al reloj tres
+  veces puede dar tres instantes distintos y un `exp` incoherente con `iat`.
+
+### `ClaimsProjector` (Strategy)
+- `IClaimsProjector` + `ScopesClaimsProjector`: la decisión de qué claims salen sale de la **tabla de
+  `scopes.json`** (`ScopeDefinition.Claims`), no de condicionales. Los claims declarados que el
+  usuario no tiene se omiten; los no declarados nunca se emiten.
+- La resolución del valor se delega en una cadena de `IUserClaimSource` (Strategy):
+  `SubjectClaimSource` (para `sub`, que vive en `User.Subject` y no en su diccionario) y
+  `UserDictionaryClaimSource` (el resto). Añadir un claim derivado no obliga a tocar el proyector.
+- Un scope desconocido no aporta claims; un scope sin claims (`offline_access`) no filtra datos.
+
+### `at_hash` / `c_hash`
+- `TokenHash` calcula base64url de la **mitad izquierda** del SHA-256 del valor (OIDC Core 3.1.3.6).
+  Como el mock firma con RS256, el hash es SHA-256 y la mitad son 16 bytes. Se calculan a partir del
+  token/código ya emitido y solo se incluyen si existen.
+
+### Verificación de los tests
+- `TokenTestValidator` valida cada token emitido con el **mismo `JsonWebTokenHandler`** contra el
+  JWKS que construye `JsonWebKeySetBuilder` desde la clave del mock. Validar contra la misma clave
+  en memoria no probaría nada: el punto es comprobar el camino completo que recorre un cliente real.
+- La vida útil se comprueba con un `LifetimeValidator` alimentado por `FakeTimeProvider`, porque
+  `TokenValidationParameters` no recibe un reloj: sin él, el "reloj" del proceso decide qué es
+  un token expirado.
+- La expiración se afirma por el **código `IDX10230`** (`Lifetime validation failed`) y no por la
+  palabra "expired", que no aparece en el mensaje real de la librería.
+
 ## Prompt 2 — Discovery, JWKS y clave de firma
 
 ### Opciones del mock
