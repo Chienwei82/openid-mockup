@@ -1,3 +1,5 @@
+namespace OidcMock.UnitTests.Tokens;
+
 public enum JwtTokenSegment
 {
     Header,

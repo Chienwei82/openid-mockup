@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.Extensions.Time.Testing;
+using OidcMock.Core.Claims;
 using OidcMock.Core.Crypto;
 using OidcMock.Core.Scopes;
 using OidcMock.Core.Tokens;
@@ -13,13 +14,14 @@ public sealed class AccessTokenFactoryTests
     private const string Issuer = "https://localhost:5001/personafisica/";
     private const string ClientId = "backend-service";
     private const int AccessTokenLifetimeInMinutes = 60;
+    private const string LifetimeValidationFailure = "IDX10230";
 
     private static readonly DateTimeOffset IssuedAt = new(2026, 3, 1, 12, 0, 0, TimeSpan.Zero);
 
     private readonly RSA _signingKey = RSA.Create(SigningKeySizes.KeySizeInBits);
     private readonly FakeTimeProvider _clock = new(IssuedAt);
     private readonly TokenTestValidator _validator;
-    private readonly ITokenFactory _factory;
+    private readonly JsonWebTokenFactory _factory;
 
     public AccessTokenFactoryTests()
     {
@@ -36,7 +38,7 @@ public sealed class AccessTokenFactoryTests
         var token = CreateAccessToken();
 
         var result = _validator.Validate(token, Issuer, [ClientId]);
-        var header = _validator.ReadHeader(token);
+        var header = TokenTestValidator.ReadHeader(token);
 
         Assert.True(result.IsValid, result.Exception?.Message);
         Assert.Equal("at+jwt", header.GetProperty("typ").GetString());
@@ -49,19 +51,19 @@ public sealed class AccessTokenFactoryTests
     {
         var token = CreateAccessToken();
 
-        Assert.Equal(Issuer, _validator.ReadClaim(token, "iss").GetString());
-        Assert.Equal("user-1", _validator.ReadClaim(token, "sub").GetString());
-        Assert.Equal(ClientId, _validator.ReadClaim(token, "client_id").GetString());
-        Assert.Equal("openid custom.profile roles", _validator.ReadClaim(token, "scope").GetString());
-        Assert.Equal(IssuedAt.ToUnixTimeSeconds(), _validator.ReadClaim(token, "iat").GetInt64());
-        Assert.Equal(IssuedAt.AddMinutes(AccessTokenLifetimeInMinutes).ToUnixTimeSeconds(), _validator.ReadClaim(token, "exp").GetInt64());
+        Assert.Equal(Issuer, TokenTestValidator.ReadClaim(token, "iss").GetString());
+        Assert.Equal("user-1", TokenTestValidator.ReadClaim(token, "sub").GetString());
+        Assert.Equal(ClientId, TokenTestValidator.ReadClaim(token, "client_id").GetString());
+        Assert.Equal("openid custom.profile roles", TokenTestValidator.ReadClaim(token, "scope").GetString());
+        Assert.Equal(IssuedAt.ToUnixTimeSeconds(), TokenTestValidator.ReadClaim(token, "iat").GetInt64());
+        Assert.Equal(IssuedAt.AddMinutes(AccessTokenLifetimeInMinutes).ToUnixTimeSeconds(), TokenTestValidator.ReadClaim(token, "exp").GetInt64());
     }
 
     [Fact]
     public void EmiteUnIdentificadorUnicoPorToken()
     {
         var identifiers = Enumerable.Range(0, 10)
-            .Select(_ => _validator.ReadClaim(CreateAccessToken(), "jti").GetString())
+            .Select(_ => TokenTestValidator.ReadClaim(CreateAccessToken(), "jti").GetString())
             .ToList();
 
         Assert.Equal(identifiers.Count, identifiers.Distinct(StringComparer.Ordinal).Count());
@@ -76,7 +78,7 @@ public sealed class AccessTokenFactoryTests
         var result = _validator.Validate(token, Issuer, ["https://api.bccr.fi.cr/centralenlinea"]);
 
         Assert.True(result.IsValid, result.Exception?.Message);
-        Assert.Equal("https://api.bccr.fi.cr/centralenlinea", _validator.ReadClaim(token, "aud").GetString());
+        Assert.Equal("https://api.bccr.fi.cr/centralenlinea", TokenTestValidator.ReadClaim(token, "aud").GetString());
     }
 
     [Fact]
@@ -89,7 +91,7 @@ public sealed class AccessTokenFactoryTests
         var result = _validator.Validate(token, Issuer, audiences);
 
         Assert.True(result.IsValid, result.Exception?.Message);
-        Assert.Equal(audiences.Length, _validator.ReadClaim(token, "aud").GetArrayLength());
+        Assert.Equal(audiences.Length, TokenTestValidator.ReadClaim(token, "aud").GetArrayLength());
     }
 
     [Fact]
@@ -102,7 +104,7 @@ public sealed class AccessTokenFactoryTests
         var result = _validator.Validate(token, Issuer, [ClientId], _clock);
 
         Assert.False(result.IsValid);
-        Assert.Contains("expired", result.Exception?.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(LifetimeValidationFailure, result.Exception?.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -110,7 +112,7 @@ public sealed class AccessTokenFactoryTests
     {
         var token = CreateAccessToken();
 
-        var claims = _validator.ReadClaimNames(token).ToList();
+        var claims = TokenTestValidator.ReadClaimNames(token).ToList();
 
         Assert.Contains("full_name", claims);
         Assert.Contains("role", claims);
@@ -130,7 +132,7 @@ public sealed class AccessTokenFactoryTests
             IssuedAt,
             TimeSpan.FromMinutes(AccessTokenLifetimeInMinutes)));
 
-        Assert.DoesNotContain("full_name", _validator.ReadClaimNames(token));
+        Assert.DoesNotContain("full_name", TokenTestValidator.ReadClaimNames(token));
     }
 
     [Fact]
@@ -138,19 +140,14 @@ public sealed class AccessTokenFactoryTests
     {
         using var impostorKey = RSA.Create(SigningKeySizes.KeySizeInBits);
         var impostorValidator = new TokenTestValidator(impostorKey);
-        var impostorFactory = new JsonWebTokenFactory(
-            new FixedSigningKeyProvider(new SigningKey(impostorKey)),
-            new ScopesClaimsProjector(Scopes()),
-            _clock);
-
-        var result = impostorValidator.Validate(impostorFactory.CreateAccessToken(Request([ClientId])), Issuer, [ClientId]);
+        var result = impostorValidator.Validate(CreateAccessToken(), Issuer, [ClientId]);
 
         Assert.False(result.IsValid);
     }
 
     private string CreateAccessToken() => _factory.CreateAccessToken(Request([ClientId]));
 
-    private AccessTokenRequest Request(IReadOnlyList<string> audiences) => new(
+    private static AccessTokenRequest Request(IReadOnlyList<string> audiences) => new(
         Issuer,
         ClientId,
         ["openid", "custom.profile", "roles"],
@@ -160,7 +157,7 @@ public sealed class AccessTokenFactoryTests
         IssuedAt,
         TimeSpan.FromMinutes(AccessTokenLifetimeInMinutes));
 
-    private static IScopeStore Scopes() =>
+    private static InMemoryScopeStore Scopes() =>
         new InMemoryScopeStore(
         [
             new ScopeDefinition("openid", ["sub"]),
@@ -169,6 +166,8 @@ public sealed class AccessTokenFactoryTests
             new ScopeDefinition("roles", ["role"]),
             new ScopeDefinition("offline_access", [])
         ]);
+
+    private static readonly string[] SampleRoles = ["administrador"];
 
     private static User SampleUser() => new(
         "user-1",
@@ -179,7 +178,7 @@ public sealed class AccessTokenFactoryTests
             ["full_name"] = JsonSerializer.SerializeToElement("JUAN PEREZ LOPEZ"),
             ["email"] = JsonSerializer.SerializeToElement("jperez@example.cr"),
             ["email_verified"] = JsonSerializer.SerializeToElement(true),
-            ["role"] = JsonSerializer.SerializeToElement(new[] { "administrador" })
+            ["role"] = JsonSerializer.SerializeToElement<string[]>(SampleRoles)
         });
 
     private sealed class FixedSigningKeyProvider(SigningKey key) : ISigningKeyProvider

@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.Extensions.Time.Testing;
+using OidcMock.Core.Claims;
 using OidcMock.Core.Crypto;
 using OidcMock.Core.Scopes;
 using OidcMock.Core.Tokens;
@@ -13,18 +14,22 @@ public sealed class IdTokenFactoryTests
     private const string Issuer = "https://localhost:5001/personafisica/";
     private const string ClientId = "web-app-spa";
     private const int IdentityTokenLifetimeInMinutes = 30;
+    private const string LifetimeValidationFailure = "IDX10230";
 
     private static readonly DateTimeOffset AuthenticatedAt = new(2026, 3, 1, 12, 0, 0, TimeSpan.Zero);
 
     private readonly RSA _signingKey = RSA.Create(SigningKeySizes.KeySizeInBits);
     private readonly FakeTimeProvider _clock = new(AuthenticatedAt);
     private readonly TokenTestValidator _validator;
-    private readonly ITokenFactory _factory;
+    private readonly JsonWebTokenFactory _factory;
 
     public IdTokenFactoryTests()
     {
         _validator = new TokenTestValidator(_signingKey);
-        _factory = BuildFactory(_signingKey, _clock);
+        _factory = new JsonWebTokenFactory(
+            new FixedSigningKeyProvider(new SigningKey(_signingKey)),
+            new ScopesClaimsProjector(Scopes()),
+            _clock);
     }
 
     [Fact]
@@ -40,7 +45,7 @@ public sealed class IdTokenFactoryTests
     [Fact]
     public void ElHeaderDeclaraRs256ElKidDelMockYTipoJwt()
     {
-        var header = _validator.ReadHeader(CreateIdToken());
+        var header = TokenTestValidator.ReadHeader(CreateIdToken());
 
         Assert.Equal("RS256", header.GetProperty("alg").GetString());
         Assert.Equal(_validator.KeyId, header.GetProperty("kid").GetString());
@@ -55,11 +60,11 @@ public sealed class IdTokenFactoryTests
         var result = _validator.Validate(token, Issuer, [ClientId]);
 
         Assert.True(result.IsValid, result.Exception?.Message);
-        Assert.Equal(Issuer, _validator.ReadClaim(token, "iss").GetString());
-        Assert.Equal("user-1", _validator.ReadClaim(token, "sub").GetString());
-        Assert.Equal(ClientId, _validator.ReadClaim(token, "aud").GetString());
-        Assert.Equal(AuthenticatedAt.ToUnixTimeSeconds(), _validator.ReadClaim(token, "auth_time").GetInt64());
-        Assert.Equal(AuthenticatedAt.ToUnixTimeSeconds(), _validator.ReadClaim(token, "iat").GetInt64());
+        Assert.Equal(Issuer, TokenTestValidator.ReadClaim(token, "iss").GetString());
+        Assert.Equal("user-1", TokenTestValidator.ReadClaim(token, "sub").GetString());
+        Assert.Equal(ClientId, TokenTestValidator.ReadClaim(token, "aud").GetString());
+        Assert.Equal(AuthenticatedAt.ToUnixTimeSeconds(), TokenTestValidator.ReadClaim(token, "auth_time").GetInt64());
+        Assert.Equal(AuthenticatedAt.ToUnixTimeSeconds(), TokenTestValidator.ReadClaim(token, "iat").GetInt64());
     }
 
     [Fact]
@@ -67,7 +72,7 @@ public sealed class IdTokenFactoryTests
     {
         var token = CreateIdToken();
 
-        var expires = _validator.ReadClaim(token, "exp").GetInt64();
+        var expires = TokenTestValidator.ReadClaim(token, "exp").GetInt64();
 
         Assert.Equal(AuthenticatedAt.AddMinutes(IdentityTokenLifetimeInMinutes).ToUnixTimeSeconds(), expires);
     }
@@ -82,7 +87,7 @@ public sealed class IdTokenFactoryTests
         var result = _validator.Validate(token, Issuer, [ClientId], _clock);
 
         Assert.False(result.IsValid);
-        Assert.Contains("expired", result.Exception?.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(LifetimeValidationFailure, result.Exception?.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -102,7 +107,7 @@ public sealed class IdTokenFactoryTests
     {
         var token = CreateIdToken(nonce: "n-0S6_WzA2Mj");
 
-        Assert.Equal("n-0S6_WzA2Mj", _validator.ReadClaim(token, "nonce").GetString());
+        Assert.Equal("n-0S6_WzA2Mj", TokenTestValidator.ReadClaim(token, "nonce").GetString());
     }
 
     [Fact]
@@ -110,7 +115,7 @@ public sealed class IdTokenFactoryTests
     {
         var token = CreateIdToken();
 
-        Assert.False(_validator.HasClaim(token, "nonce"));
+        Assert.False(TokenTestValidator.HasClaim(token, "nonce"));
     }
 
     [Fact]
@@ -120,7 +125,7 @@ public sealed class IdTokenFactoryTests
 
         var token = CreateIdToken(accessToken: accessToken);
 
-        Assert.Equal(ExpectedLeftHalfHash(accessToken), _validator.ReadClaim(token, "at_hash").GetString());
+        Assert.Equal(ExpectedLeftHalfHash(accessToken), TokenTestValidator.ReadClaim(token, "at_hash").GetString());
     }
 
     [Fact]
@@ -130,7 +135,7 @@ public sealed class IdTokenFactoryTests
 
         var token = CreateIdToken(authorizationCode: authorizationCode);
 
-        Assert.Equal(ExpectedLeftHalfHash(authorizationCode), _validator.ReadClaim(token, "c_hash").GetString());
+        Assert.Equal(ExpectedLeftHalfHash(authorizationCode), TokenTestValidator.ReadClaim(token, "c_hash").GetString());
     }
 
     [Fact]
@@ -138,8 +143,8 @@ public sealed class IdTokenFactoryTests
     {
         var token = CreateIdToken();
 
-        Assert.False(_validator.HasClaim(token, "at_hash"));
-        Assert.False(_validator.HasClaim(token, "c_hash"));
+        Assert.False(TokenTestValidator.HasClaim(token, "at_hash"));
+        Assert.False(TokenTestValidator.HasClaim(token, "c_hash"));
     }
 
     [Fact]
@@ -147,7 +152,7 @@ public sealed class IdTokenFactoryTests
     {
         var token = CreateIdToken(scopes: ["openid", "email"]);
 
-        var claims = _validator.ReadClaimNames(token).ToList();
+        var claims = TokenTestValidator.ReadClaimNames(token).ToList();
 
         Assert.Contains("email", claims);
         Assert.Contains("email_verified", claims);
@@ -160,7 +165,7 @@ public sealed class IdTokenFactoryTests
     {
         var token = CreateIdToken(scopes: ["openid", "email", "custom.profile", "roles"]);
 
-        var claims = _validator.ReadClaimNames(token).ToList();
+        var claims = TokenTestValidator.ReadClaimNames(token).ToList();
 
         Assert.Contains("email", claims);
         Assert.Contains("full_name", claims);
@@ -175,7 +180,7 @@ public sealed class IdTokenFactoryTests
         var userClaimNames = SampleUser().Claims.Keys.Except(["sub"], StringComparer.Ordinal);
 
         Assert.NotEmpty(userClaimNames);
-        Assert.All(userClaimNames, claimName => Assert.DoesNotContain(claimName, _validator.ReadClaimNames(token)));
+        Assert.All(userClaimNames, claimName => Assert.DoesNotContain(claimName, TokenTestValidator.ReadClaimNames(token)));
     }
 
     [Fact]
@@ -204,19 +209,10 @@ public sealed class IdTokenFactoryTests
         using var impostorKey = RSA.Create(SigningKeySizes.KeySizeInBits);
         var impostorValidator = new TokenTestValidator(impostorKey);
 
-        var result = impostorValidator.Validate(CreateIdTokenWith(impostorKey), Issuer, [ClientId]);
+        var result = impostorValidator.Validate(CreateIdToken(), Issuer, [ClientId]);
 
         Assert.False(result.IsValid);
     }
-
-    private static string CreateIdTokenWith(RSA signingKey) =>
-        BuildFactory(signingKey, new FakeTimeProvider(AuthenticatedAt)).CreateIdToken(new IdTokenRequest(
-            Issuer,
-            ClientId,
-            ["openid", "email"],
-            SampleUser(),
-            AuthenticatedAt,
-            TimeSpan.FromMinutes(IdentityTokenLifetimeInMinutes)));
 
     private string CreateIdToken(
         IReadOnlyList<string>? scopes = null,
@@ -234,10 +230,7 @@ public sealed class IdTokenFactoryTests
             accessToken,
             authorizationCode));
 
-    private static JsonWebTokenFactory BuildFactory(RSA signingKey, TimeProvider clock) =>
-        new(new FixedSigningKeyProvider(new SigningKey(signingKey)), new ScopesClaimsProjector(Scopes()), clock);
-
-    private static IScopeStore Scopes() =>
+    private static InMemoryScopeStore Scopes() =>
         new InMemoryScopeStore(
         [
             new ScopeDefinition("openid", ["sub"]),
@@ -246,6 +239,8 @@ public sealed class IdTokenFactoryTests
             new ScopeDefinition("roles", ["role"]),
             new ScopeDefinition("offline_access", [])
         ]);
+
+    private static readonly string[] SampleRoles = ["administrador"];
 
     private static User SampleUser() => new(
         "user-1",
@@ -257,7 +252,7 @@ public sealed class IdTokenFactoryTests
             ["email"] = JsonSerializer.SerializeToElement("jperez@example.cr"),
             ["email_verified"] = JsonSerializer.SerializeToElement(true),
             ["full_name"] = JsonSerializer.SerializeToElement("JUAN PEREZ LOPEZ"),
-            ["role"] = JsonSerializer.SerializeToElement(new[] { "administrador" })
+            ["role"] = JsonSerializer.SerializeToElement<string[]>(SampleRoles)
         });
 
     private static string ExpectedLeftHalfHash(string token)

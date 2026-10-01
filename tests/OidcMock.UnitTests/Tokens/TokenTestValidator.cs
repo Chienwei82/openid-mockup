@@ -33,9 +33,9 @@ public sealed class TokenTestValidator
         TimeProvider? timeProvider = null) =>
         Handler.ValidateTokenAsync(token, BuildParameters(expectedIssuer, expectedAudiences, timeProvider)).GetAwaiter().GetResult();
 
-    public JsonElement ReadPayload(string token) => ReadSegment(token, JwtTokenSegment.Payload);
+    public static JsonElement ReadPayload(string token) => ReadSegment(token, JwtTokenSegment.Payload);
 
-    public JsonElement ReadHeader(string token) => ReadSegment(token, JwtTokenSegment.Header);
+    public static JsonElement ReadHeader(string token) => ReadSegment(token, JwtTokenSegment.Header);
 
     public async Task<TokenValidationResult> ValidateAsync(
         string token,
@@ -44,7 +44,7 @@ public sealed class TokenTestValidator
         TimeProvider? timeProvider = null) =>
         await Handler.ValidateTokenAsync(token, BuildParameters(expectedIssuer, expectedAudiences, timeProvider));
 
-    public JsonElement ReadClaim(string token, string claimName)
+    public static JsonElement ReadClaim(string token, string claimName)
     {
         var payload = ReadPayload(token);
 
@@ -53,9 +53,9 @@ public sealed class TokenTestValidator
             : throw new KeyNotFoundException($"El token no contiene el claim '{claimName}'.");
     }
 
-    public bool HasClaim(string token, string claimName) => ReadPayload(token).TryGetProperty(claimName, out _);
+    public static bool HasClaim(string token, string claimName) => ReadPayload(token).TryGetProperty(claimName, out _);
 
-    public IEnumerable<string> ReadClaimNames(string token) =>
+    public static IEnumerable<string> ReadClaimNames(string token) =>
         ReadPayload(token).EnumerateObject().Select(property => property.Name);
 
     private TokenValidationParameters BuildParameters(
@@ -92,19 +92,23 @@ public sealed class TokenTestValidator
     }
 
     private static Microsoft.IdentityModel.Tokens.JsonWebKeySet ToValidationKeySet(
-        OidcMock.Core.Discovery.JsonWebKeySet published) =>
-        new()
+        OidcMock.Core.Discovery.JsonWebKeySet published)
+    {
+        var validationKeySet = new Microsoft.IdentityModel.Tokens.JsonWebKeySet();
+
+        foreach (var key in published.Keys)
         {
-            Keys = published.Keys
-                .Select(key => new Microsoft.IdentityModel.Tokens.JsonWebKey
-                {
-                    Kty = key.KeyType,
-                    Use = key.Use,
-                    Kid = key.KeyId,
-                    Alg = key.Algorithm,
-                    N = key.Modulus,
-                    E = key.Exponent
-                })
-                .ToList()
-        };
+            validationKeySet.Keys.Add(new Microsoft.IdentityModel.Tokens.JsonWebKey
+            {
+                Kty = key.KeyType,
+                Use = key.Use,
+                Kid = key.KeyId,
+                Alg = key.Algorithm,
+                N = key.Modulus,
+                E = key.Exponent
+            });
+        }
+
+        return validationKeySet;
+    }
 }

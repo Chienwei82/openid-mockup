@@ -1,6 +1,7 @@
 using System.Text.Json;
 using OidcMock.Core.Claims;
 using OidcMock.Core.Scopes;
+using OidcMock.UnitTests.Tokens;
 using OidcMock.Core.Users;
 
 namespace OidcMock.UnitTests.Claims;
@@ -12,6 +13,7 @@ public sealed class ScopesClaimsProjectorTests
         new ScopeDefinition("openid", ["sub"]),
         new ScopeDefinition("email", ["email", "email_verified"]),
         new ScopeDefinition("custom.profile", ["full_name", "nombre"]),
+        new ScopeDefinition("KYC", ["documentofva"]),
         new ScopeDefinition("roles", ["role"]),
         new ScopeDefinition("offline_access", [])
     ]));
@@ -21,7 +23,7 @@ public sealed class ScopesClaimsProjectorTests
     {
         var projected = _projector.Project(SampleUser(), ["openid", "email"]);
 
-        Assert.Equal(["email", "email_verified"], projected.Keys);
+        Assert.Equal(["sub", "email", "email_verified"], projected.Keys);
     }
 
     [Fact]
@@ -61,15 +63,15 @@ public sealed class ScopesClaimsProjectorTests
     {
         var projected = _projector.Project(SampleUser(), ["openid"]);
 
-        Assert.Equal(JsonSerializer.SerializeToElement("user-1"), projected["sub"]);
+        Assert.Equal("user-1", projected["sub"].GetString());
     }
 
     [Fact]
     public void OmiteLosClaimsDeclaradosQueElUsuarioNoTiene()
     {
-        var projected = _projector.Project(SampleUser(), ["openid", "email"]);
+        var projected = _projector.Project(SampleUser(), ["openid", "KYC"]);
 
-        Assert.DoesNotContain("email", projected.Keys);
+        Assert.Equal(["sub"], projected.Keys);
     }
 
     [Fact]
@@ -86,7 +88,7 @@ public sealed class ScopesClaimsProjectorTests
     {
         var projected = _projector.Project(SampleUser(), ["custom.profile", "nombre"]);
 
-        Assert.Single(projected.Keys.Where(key => string.Equals(key, "nombre", StringComparison.Ordinal)));
+        Assert.Single(projected.Keys, key => string.Equals(key, "nombre", StringComparison.Ordinal));
     }
 
     private static User SampleUser() => new(
@@ -99,7 +101,7 @@ public sealed class ScopesClaimsProjectorTests
             ["email_verified"] = JsonSerializer.SerializeToElement(true),
             ["full_name"] = JsonSerializer.SerializeToElement("JUAN PEREZ LOPEZ"),
             ["nombre"] = JsonSerializer.SerializeToElement("Juan"),
-            ["role"] = JsonSerializer.SerializeToElement(new[] { "administrador" }),
+            ["role"] = JsonSerializer.SerializeToElement<string[]>(["administrador"]),
             ["no_declarado"] = JsonSerializer.SerializeToElement("no debe salir")
         });
 }
