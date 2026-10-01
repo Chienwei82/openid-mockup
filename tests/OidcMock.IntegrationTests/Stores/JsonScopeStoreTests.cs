@@ -62,6 +62,31 @@ public sealed class JsonScopeStoreTests
         Assert.Equal(["email_verified", "email"], store.Find("email")!.Claims);
     }
 
+    [Fact]
+    public void LanzaUnErrorClaroSiFaltaElArchivoDeConfiguracion()
+    {
+        using var directory = new TempConfigDirectory();
+
+        var store = new JsonScopeStore(directory.Path);
+
+        var exception = Assert.Throws<ConfigurationException>(() => store.Find(SampleScope));
+        Assert.Contains("scopes.json", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MantieneLaCacheCuandoReloadEstaDesactivado()
+    {
+        using var directory = new TempConfigDirectory();
+        directory.WriteScopesFile(ScopesJson(SampleScope, "email"));
+        var store = new JsonScopeStore(directory.Path, reloadOnChange: false);
+
+        Assert.Equal(["email"], store.Find(SampleScope)!.Claims);
+
+        directory.WriteScopesFile(ScopesJson(SampleScope, "email_verified"));
+
+        Assert.Equal(["email"], store.Find(SampleScope)!.Claims);
+    }
+
     private static string ScopesJson(string name, params string[] claims) => $$"""
     {
       "scopes": [

@@ -10,6 +10,16 @@ public static class HostConfigDirectory
     private const string ConfigDirectoryName = "config";
     private const string RepositoryRelativePath = "../..";
 
+    /// <summary>
+    /// Clave de configuracion que permite forzar el directorio de configuracion (pruebas, despliegues).
+    /// </summary>
+    public const string ConfigDirectorySettingName = "OidcMock:ConfigDirectory";
+
+    /// <summary>
+    /// Clave de configuracion que permite desactivar la recarga en caliente.
+    /// </summary>
+    public const string ReloadOnChangeSettingName = "OidcMock:ReloadOnChange";
+
     public static string Resolve(IHostEnvironment environment)
     {
         ArgumentNullException.ThrowIfNull(environment);

@@ -100,6 +100,31 @@ public sealed class JsonUserStoreTests
         Assert.Equal("NuevoPassword1!", store.FindByUserName(SampleUserName)!.Password);
     }
 
+    [Fact]
+    public void LanzaUnErrorClaroSiFaltaElArchivoDeConfiguracion()
+    {
+        using var directory = new TempConfigDirectory();
+
+        var store = new JsonUserStore(directory.Path);
+
+        var exception = Assert.Throws<ConfigurationException>(() => store.FindByUserName(SampleUserName));
+        Assert.Contains("users.json", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MantieneLaCacheCuandoReloadEstaDesactivado()
+    {
+        using var directory = new TempConfigDirectory();
+        directory.WriteUsersFile(UsersJson("jperez", "Passw0rd!"));
+        var store = new JsonUserStore(directory.Path, reloadOnChange: false);
+
+        Assert.Equal("Passw0rd!", store.FindByUserName(SampleUserName)!.Password);
+
+        directory.WriteUsersFile(UsersJson("jperez", "NuevoPassword1!"));
+
+        Assert.Equal("Passw0rd!", store.FindByUserName(SampleUserName)!.Password);
+    }
+
     private static string UsersJson(string userName, string password) => $$"""
     {
       "users": [
