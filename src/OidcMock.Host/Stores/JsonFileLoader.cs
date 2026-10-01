@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using OidcMock.Core.Configuration;
 
@@ -15,8 +16,7 @@ internal sealed class JsonFileLoader<TFile, TDomain> where TFile : class
     private readonly Func<TFile, TDomain> _toDomain;
     private readonly Lock _gate = new();
 
-    private TDomain? _cached;
-    private FileStamp _cachedStamp;
+    private CacheEntry? _cached;
 
     public JsonFileLoader(
         string configDirectory,
@@ -38,38 +38,36 @@ internal sealed class JsonFileLoader<TFile, TDomain> where TFile : class
     {
         lock (_gate)
         {
-            if (_cached is not null && !_reloadOnChange)
+            if (_cached is { } entry && !_reloadOnChange)
             {
-                return _cached;
+                return entry.Domain;
             }
 
-            var currentStamp = ReadStamp();
+            var currentContent = ReadContent();
 
-            if (_cached is not null && currentStamp == _cachedStamp)
+            if (_cached is { } cached && currentContent.AsSpan().SequenceEqual(cached.Content))
             {
-                return _cached;
+                return cached.Domain;
             }
 
-            _cached = _toDomain(Read());
-            _cachedStamp = currentStamp;
-            return _cached;
+            _cached = new CacheEntry(_toDomain(Deserialize(currentContent)), currentContent);
+            return _cached.Domain;
         }
     }
 
-    private FileStamp ReadStamp()
+    private byte[] ReadContent()
     {
-        var fileInfo = new FileInfo(_filePath);
-        if (!fileInfo.Exists)
+        if (!File.Exists(_filePath))
         {
             throw new ConfigurationException(_fileName, "el archivo no existe en el directorio de configuracion.");
         }
 
-        return new FileStamp(fileInfo.LastWriteTimeUtc, fileInfo.Length);
+        return File.ReadAllBytes(_filePath);
     }
 
-    private TFile Read()
+    private TFile Deserialize(byte[] content)
     {
-        var json = File.ReadAllText(_filePath);
+        var json = Encoding.UTF8.GetString(content);
 
         try
         {
@@ -86,5 +84,5 @@ internal sealed class JsonFileLoader<TFile, TDomain> where TFile : class
         }
     }
 
-    private readonly record struct FileStamp(DateTime LastWriteTimeUtc, long Length);
+    private sealed record CacheEntry(TDomain Domain, byte[] Content);
 }

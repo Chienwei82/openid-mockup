@@ -57,7 +57,6 @@ public sealed class JsonScopeStoreTests
 
         Assert.Equal(["email"], store.Find("email")!.Claims);
 
-        Thread.Sleep(200);
         directory.WriteScopesFile(ScopesJson("email", "email_verified", "email"));
 
         Assert.Equal(["email_verified", "email"], store.Find("email")!.Claims);

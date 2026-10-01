@@ -90,7 +90,6 @@ public sealed class JsonClientStoreTests
 
         Assert.Equal("#111111", store.Find(SampleClientId)!.Branding.PrimaryColor);
 
-        WaitForFileChangeDetection();
         directory.WriteClientsFile(ClientsJson(SampleClientId, brandColor: "#222222"));
 
         Assert.Equal("#222222", store.Find(SampleClientId)!.Branding.PrimaryColor);
@@ -197,6 +196,4 @@ public sealed class JsonClientStoreTests
       ]
     }
     """;
-
-    private static void WaitForFileChangeDetection() => Thread.Sleep(200);
 }

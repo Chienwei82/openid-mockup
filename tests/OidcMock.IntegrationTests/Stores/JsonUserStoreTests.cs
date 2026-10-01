@@ -95,7 +95,6 @@ public sealed class JsonUserStoreTests
 
         Assert.Equal("Passw0rd!", store.FindByUserName(SampleUserName)!.Password);
 
-        Thread.Sleep(200);
         directory.WriteUsersFile(UsersJson("jperez", "NuevoPassword1!"));
 
         Assert.Equal("NuevoPassword1!", store.FindByUserName(SampleUserName)!.Password);
