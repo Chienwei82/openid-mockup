@@ -45,10 +45,10 @@ Solo archivos con significado para el proyecto; se omiten `bin/`, `obj/` y `.git
 
 | Ruta | Rol |
 |---|---|
-| `Program.cs` | Composición, `AddJsonStores`, validación fail fast, `app.Run()`. |
+| `Program.cs` | Composición, `AddJsonStores`, validación fail fast, `app.Run()`, lectura de `OidcMock:*`. |
 | `ServiceCollectionExtensions.cs` | `AddJsonStores(...)`: singletons de los tres stores + `TimeProvider.System`. |
-| `HostConfigDirectory.cs` | Resuelve el directorio `config/` (run / repo / publish). |
-| `Stores/JsonFileLoader.cs` | Caché con recarga por comparación de contenido + `Lock`. |
+| `HostConfigDirectory.cs` | Resuelve el directorio `config/` (run / repo / publish) y expone las claves `OidcMock:ConfigDirectory` y `OidcMock:ReloadOnChange`. |
+| `Stores/JsonFileLoader.cs` | Caché del dominio con recarga por comparación de contenido + `Lock`. |
 | `Stores/JsonClientStore.cs` | `IClientStore` sobre `clients.json`. |
 | `Stores/JsonUserStore.cs` | `IUserStore` sobre `users.json`. |
 | `Stores/JsonScopeStore.cs` | `IScopeStore` sobre `scopes.json`. |
@@ -71,5 +71,6 @@ Solo archivos con significado para el proyecto; se omiten `bin/`, `obj/` y `.git
 | `tests/OidcMock.IntegrationTests/Stores/JsonUserStoreTests.cs` | Carga, claims libres y no textuales, búsqueda por `sub`, `null`, JSON roto, hot reload. |
 | `tests/OidcMock.IntegrationTests/Stores/JsonScopeStoreTests.cs` | Carga, `null`, JSON roto, hot reload. |
 | `tests/OidcMock.IntegrationTests/Composition/AddJsonStoresTests.cs` | Registro en DI, lectura de la config de ejemplo, fail fast. |
+| `tests/OidcMock.IntegrationTests/Composition/HostStartupTests.cs` | Arranque real con `WebApplicationFactory<Program>`: config válida arranca, config inválida lanza `ConfigurationException`. |
 | `tests/OidcMock.IntegrationTests/TempConfigDirectory.cs` | Directorio temporal por test para mutar JSON. |
 | `tests/OidcMock.IntegrationTests/RepositoryLayout.cs` | Localiza el `config/` del repositorio desde los tests. |

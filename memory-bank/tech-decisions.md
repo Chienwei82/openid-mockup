@@ -62,6 +62,8 @@ serializar después el `id_token` sin pérdida.
 `HostConfigDirectory.Resolve` busca `<ContentRoot>/config`, `<ContentRoot>/../../config` y
 `<AppContext.BaseDirectory>/config`. Así editar `config/*.json` afecta al ejecutar con `dotnet run`
 sin recompilar, y el binario publicado sigue siendo autónomo.
+`OidcMock:ConfigDirectory` y `OidcMock:ReloadOnChange` permiten forzar ambos valores desde la
+configuración del host (pruebas de arranque, despliegues); sin `ConfigDirectory` gana la resolución.
 
 ## D-010 — Formato de los archivos de configuración
 

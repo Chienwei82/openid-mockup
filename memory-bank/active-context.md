@@ -4,15 +4,16 @@
 
 ## Foco actual
 
-**Tarea:** endurecer la capa de datos JSON tras la revisión de la etapa 1 (T-01 a T-04).
-El memory bank quedó inicializado en este mismo paso.
+**Tarea:** etapa 1 cerrada. Memory bank inicializado y capa de datos endurecida (T-01 a T-04).
+**Siguiente tarea:** T-05, etapa 2 (discovery, JWKS y firma RS256) — ver
+[`tasks/pending.md`](tasks/pending.md).
 
 ## Estado
 
 - Build: ✅ verde (0 warnings, 0 errors con `TreatWarningsAsErrors`).
-- Tests: ✅ 34/34 (8 unit + 26 integration), ejecutados por proyecto:
-  `dotnet test tests/OidcMock.UnitTests/OidcMock.UnitTests.csproj`.
-- Árbol de trabajo: limpio en `b343700 "prompt 1"` + los commits de este ciclo.
+- Tests: ✅ **43/43** (8 unit + 35 integration).
+- Host: ✅ `dotnet run` levanta en `http://localhost:5000` y valida la configuración al arrancar.
+- Último commit: `feat: seam de configuracion OidcMock:ConfigDirectory y ReloadOnChange`.
 
 ## Decisiones tomadas en esta sesión
 
@@ -22,15 +23,17 @@ El memory bank quedó inicializado en este mismo paso.
 - El loader pasa a cachear el **dominio** mediante una función de proyección
   (`JsonFileLoader<TFile, TDomain>`), no el DTO.
 - Con `reloadOnChange: false` el loader no hace ninguna syscall de disco tras la primera lectura.
-- Se elimina `Thread.Sleep(200)` de los tests: con comparación de contenido no hace falta.
+- Se elimina `Thread.Sleep(200)` de los tests: con comparación de contenido no hace falta
+  (el suite de integración bajó de 0.38 s a 0.19 s).
+- Se agrega el seam `OidcMock:ConfigDirectory` / `OidcMock:ReloadOnChange` para poder arrancar el
+  host contra un `config/` arbitrario (pruebas de integración y despliegues).
 
 ## Siguiente paso
 
-1. T-01 → escribir el test rojo de `JsonFileLoader` con recarga desactivada.
-2. T-02 → caché del dominio.
-3. T-03 → comparación de contenido y limpieza de los `Thread.Sleep`.
-4. T-04 → tests de simetría y fail fast del host con `WebApplicationFactory<Program>`.
-5. Cerrar con `dotnet build` + tests por proyecto y actualizar `progress.md` y `tasks/pending.md`.
+1. T-05: `config/signing-key.json` + `JsonSigningKeyStore` + `ITokenSigner` (round-trip firmado
+   verificado con `JsonWebTokenHandler` en unit tests).
+2. T-05: `GET /personafisica/.well-known/openid-configuration` y `.../jwks`.
+3. Cerrar con `dotnet build` + tests por proyecto y actualizar `progress.md` y `tasks/pending.md`.
 
 ## Cómo continuar otro prompt
 

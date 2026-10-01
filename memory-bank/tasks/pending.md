@@ -2,37 +2,36 @@
 
 Detalle de lo que falta. El estado de alto nivel vive en [`progress.md`](../progress.md).
 
-## T-01 · Ciclo 1 — `JsonFileLoader` no toca disco sin recarga
+## Etapa 1 — cerrada ✅
 
-- [ ] `test:` test rojo: con `reloadOnChange: false`, tras la primera lectura, borrar el archivo no
-      debe lanzar y el store debe seguir devolviendo la configuración cacheada.
-- [ ] `fix:` `Load()` devuelve la caché inmediatamente si la recarga está desactivada
-      (sin `ReadStamp()` ni lectura del archivo).
-
-## T-02 · Ciclo 2 — Caché del dominio mapeado
-
-- [ ] `test:` test rojo: dos llamadas consecutivas a `List()` devuelven la **misma instancia**
-      (referencia estable) y el mapeo no se repite.
-- [ ] `refactor:` `JsonFileLoader<TFile, TDomain>` recibe `Func<TFile, TDomain>` y cachea el dominio;
-      los tres stores pasan su mapper.
-
-## T-03 · Ciclo 3 — Detección de cambios por contenido
-
-- [ ] `test:` test rojo: editar un valor **del mismo tamaño** y en la misma fracción de segundo
-      (p. ej. `#111111` → `#222222`) sin `Thread.Sleep` debe reflejarse en la siguiente consulta.
-- [ ] `refactor:` el sello pasa a ser el contenido crudo del archivo (comparación byte a byte);
-      se eliminan los `Thread.Sleep(200)` de los tests de recarga.
-
-## T-04 · Ciclo 4 — Simetría de tests y fail fast del host
-
-- [ ] `test:` archivo inexistente para `JsonUserStore` y `JsonScopeStore`.
-- [ ] `test:` `reloadOnChange: false` para users y scopes (caché estable).
-- [ ] `test:` `WebApplicationFactory<Program>` con configuración inválida ⇒ el arranque falla con
-      `ConfigurationException`; y con configuración válida ⇒ arranca y responde.
+- [x] T-01 `JsonFileLoader` no toca disco sin recarga.
+- [x] T-02 caché del dominio mapeado (`JsonFileLoader<TFile, TDomain>`).
+- [x] T-03 detección de cambios por contenido (tests sin `Thread.Sleep`).
+- [x] T-04 simetría de tests (archivo ausente y caché sin recarga en users/scopes) y fail fast
+      real del host con `WebApplicationFactory<Program>`.
 
 ## T-05 · Etapa 2 — Discovery, JWKS y firma
 
-- [ ] `config/signing-key.json` (RSA 2048) y `JsonSigningKeyStore` + `ITokenSigner`.
-- [ ] `GET /.well-known/openid-configuration` replicando el discovery de referencia.
-- [ ] `GET /.well-known/openid-configuration/jwks` (kty RSA, n, e, kid, alg RS256, use sig).
-- [ ] `iss` con prefijo `/personafisica/` en discovery, id_token y respuestas de autorización.
+- [ ] `test:` `config/signing-key.json` (RSA 2048) + `JsonSigningKeyStore` + `ITokenSigner`.
+- [ ] `test:` `GET /.well-known/openid-configuration` replicando el discovery de referencia
+      (`scopes_supported` desde `IScopeStore`, `issuer` con el prefijo `/personafisica/`).
+- [ ] `test:` `GET /.well-known/openid-configuration/jwks` (kty RSA, `n`, `e`, `kid`, `alg` RS256, `use` sig).
+- [ ] `feat:` firmar un JWT de prueba y verificarlo con `JsonWebTokenHandler` (round-trip en unit tests).
+
+## T-06 · Etapa 3 — Authorization Code
+
+- [ ] `ICodeStore` en memoria + `TimeProvider` (código de un solo uso, con expiración).
+- [ ] `GET /connect/authorize`: validación de `client_id`, `redirect_uri`, `response_type`,
+      `scope`, `state`, `nonce`, PKCE (`plain` y `S256`) y `prompt`.
+- [ ] Pantalla de login mock usando `IUserStore` (contraseña en texto plano) y el `branding` del cliente.
+- [ ] Respuesta con `code`, `state`, `iss` (`authorization_response_iss_parameter_supported`).
+
+## T-07 · Stages 4-7 (pendientes de detalle)
+
+- [ ] Token endpoint con Strategy por grant type (`authorization_code`, `refresh_token`,
+      `client_credentials`, `password`, `implicit`).
+- [ ] Errores RFC 6749/7009/7662 con `Result<T>` y código HTTP correcto.
+- [ ] UserInfo, introspection, revocation, end_session.
+- [ ] Device Authorization y CIBA (poll).
+- [ ] PAR, `response_modes`, frontchannel/backchannel logout, `check_session_iframe`.
+

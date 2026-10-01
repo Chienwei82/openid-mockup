@@ -17,13 +17,31 @@
 ### Stores
 - `Find(...)` devuelve `null` cuando no existe (lo pidió explícitamente el enunciado) en lugar de un
   `Result<T>`; `Result<T>` se reservará para errores de negocio de los casos de uso (authorize, token, etc.).
-- `reloadOnChange` se implementa **sin** `FileSystemWatcher`: cada acceso compara
-  (`LastWriteTimeUtc`, `Length`) con el sello del último contenido cargado y vuelve a deserializar si cambió.
-  Es determinista, sin hilos ni eventos, y suficiente para editar los JSON en caliente. Con
-  `reloadOnChange=false` el archivo se lee una sola vez.
+- `reloadOnChange` se implementa **sin** `FileSystemWatcher`: cada acceso lee el archivo y compara
+  sus **bytes** con los de la última carga; si difieren, se deserializa y se vuelve a mapear a
+  dominio. Es determinista, sin hilos ni eventos, y detecta cambios del mismo tamaño que conservan
+  la marca de tiempo (el sello `(LastWriteTimeUtc, Length)` no los detectaba). Con
+  `reloadOnChange=false` el archivo se lee una sola vez y no se vuelve a tocar el disco.
+- El loader (`JsonFileLoader<TFile, TDomain>`) cachea el **dominio ya mapeado**, no el DTO: recibe el
+  mapper como `Func<TFile, TDomain>` y dos consultas consecutivas devuelven la misma instancia.
+  Todo el `Load()` va bajo `System.Threading.Lock`.
 - Un error de configuración lanza `ConfigurationException` (Core) cuyo mensaje incluye el nombre del
   archivo y el motivo; `IConfigurationValidator` fuerza la lectura de los tres archivos en el arranque
   (*fail fast*), invocado desde `Program.cs` antes de `app.Run()`.
+
+### Configuración del host
+- `OidcMock:ConfigDirectory` y `OidcMock:ReloadOnChange` permiten forzar el directorio de
+  configuración y desactivar la recarga (pruebas de arranque con `WebApplicationFactory`, despliegues).
+  Si no se define `ConfigDirectory`, gana la resolución de `HostConfigDirectory`.
+
+### Ejecutar las pruebas
+- `dotnet test` **a nivel de solución** aborta en este entorno con `Internal CLR error (0x80131506)`
+  al coordinar los dos ejecutables vía Microsoft.Testing.Platform. A nivel de proyecto funciona:
+
+```bash
+dotnet test tests/OidcMock.UnitTests/OidcMock.UnitTests.csproj
+dotnet test tests/OidcMock.IntegrationTests/OidcMock.IntegrationTests.csproj
+```
 
 ### Claims de los usuarios
 - `User.Claims` es `IReadOnlyDictionary<string, JsonElement>`: los nombres son libres (incluidos

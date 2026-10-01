@@ -2,7 +2,8 @@
 
 ## Etapa 1 — Scaffolding + capa de datos
 
-**Estado: completada.** `dotnet build` en verde (0 warnings, 0 errors) y 34/34 tests en verde.
+**Estado: completada.** `dotnet build` en verde (0 warnings, 0 errors) y **43/43 tests** en verde
+(8 unit + 35 integration). El host arranca con `dotnet run` y lee `config/` del repositorio.
 
 | Entregable | Estado |
 |---|---|
@@ -10,15 +11,25 @@
 | `config/clients.json` (2 clientes) / `users.json` (3 usuarios) / `scopes.json` (8 scopes) | ✅ |
 | Core: `Client`, `User`, `ScopeDefinition`, `Branding`, `TokenLifetimes` + `IClientStore`, `IUserStore`, `IScopeStore` | ✅ |
 | Host: `JsonClientStore`, `JsonUserStore`, `JsonScopeStore`, mappers, `AddJsonStores()` | ✅ |
-| Fail fast con `ConfigurationException` al arrancar | ✅ |
-| `reloadOnChange` para editar los JSON sin reiniciar | ✅ |
-| Tests: carga válida, inexistente → `null`, JSON mal formado, recarga en caliente, composición | ✅ (34) |
+| Fail fast con `ConfigurationException` al arrancar (probado con `WebApplicationFactory<Program>`) | ✅ |
+| `reloadOnChange` por comparación de contenido, sin `Thread.Sleep` en los tests | ✅ |
+| Tests: carga válida, inexistente → `null`, JSON mal formado, archivo ausente, recarga en caliente, caché sin recarga, arranque del host | ✅ (43) |
 | Memory bank inicializado (`memory-bank/`) | ✅ |
 
 ### Cifras
 
 - `OidcMock.UnitTests`: 8 tests.
-- `OidcMock.IntegrationTests`: 26 tests.
+- `OidcMock.IntegrationTests`: 35 tests.
+
+### Commits de esta sesión
+
+```
+docs:      inicializa el memory bank del proyecto
+test/fix:  la caché se sirve aunque el archivo desaparezca con reloadOnChange=false
+test/refactor: el loader cachea el dominio ya mapeado (JsonFileLoader<TFile, TDomain>)
+test/refactor: detección de cambios comparando el contenido (fuera el sello de disco)
+test/feat: seam OidcMock:ConfigDirectory + fail fast real del host
+```
 
 ## Endpoints / funcionalidades
 

@@ -76,6 +76,8 @@ que conservan el tipo JSON (bool, número, arreglo) para serializarlos después 
 - `HostConfigDirectory.Resolve` busca, en orden: `<ContentRoot>/config`,
   `<ContentRoot>/../../config` (el `config/` del repo, para editarlo con `dotnet run`) y
   `<AppContext.BaseDirectory>/config` (publicación).
+- `OidcMock:ConfigDirectory` y `OidcMock:ReloadOnChange` sobrescriben la resolución; sin
+  `ConfigDirectory` gana `HostConfigDirectory`. Lo usan las pruebas de arranque y los despliegues.
 - El `.csproj` del Host copia `config/*.json` a la salida (`PreserveNewest`).
 - `InternalsVisibleTo("OidcMock.IntegrationTests")` permite probar los tipos internos de mapeo.
 
