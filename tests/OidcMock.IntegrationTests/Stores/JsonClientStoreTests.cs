@@ -111,6 +111,22 @@ public sealed class JsonClientStoreTests
     }
 
     [Fact]
+    public void DetectaElCambioAunqueElArchivoMantengaElSelloDeDisco()
+    {
+        using var directory = new TempConfigDirectory();
+        var filePath = directory.WriteClientsFile(ClientsJson(SampleClientId, brandColor: "#111111"));
+        var store = new JsonClientStore(directory.Path, reloadOnChange: true);
+
+        Assert.Equal("#111111", store.Find(SampleClientId)!.Branding.PrimaryColor);
+
+        var originalWriteTimeUtc = File.GetLastWriteTimeUtc(filePath);
+        directory.WriteClientsFile(ClientsJson(SampleClientId, brandColor: "#222222"));
+        File.SetLastWriteTimeUtc(filePath, originalWriteTimeUtc);
+
+        Assert.Equal("#222222", store.Find(SampleClientId)!.Branding.PrimaryColor);
+    }
+
+    [Fact]
     public void ReutilizaElDominioCacheadoEnConsultasSuccessivas()
     {
         using var directory = new TempConfigDirectory();
