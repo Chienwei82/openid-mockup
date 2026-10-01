@@ -6,6 +6,13 @@ namespace OidcMock.Core.Errors;
 /// </summary>
 public static class AuthorizationErrors
 {
+    /// <summary>
+    /// El cliente no existe. En el endpoint de autorizacion se responde 400, no 401 como en el token
+    /// endpoint (RFC 6749 5.2 aplica a la autenticacion de cliente del token endpoint).
+    /// </summary>
+    public static ProtocolError InvalidClient(string description) =>
+        new("invalid_client", description, ProtocolErrors.BadRequest);
+
     public static ProtocolError AccessDenied(string description) =>
         new("access_denied", description, ProtocolErrors.BadRequest);
 
