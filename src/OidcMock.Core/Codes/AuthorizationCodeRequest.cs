@@ -12,4 +12,5 @@ public sealed record AuthorizationCodeRequest(
     string? State,
     string? CodeChallenge,
     string? CodeChallengeMethod,
-    TimeSpan Lifetime);
+    TimeSpan Lifetime,
+    string? RedirectUri = null);
