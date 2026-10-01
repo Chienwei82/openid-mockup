@@ -62,6 +62,7 @@ public sealed class AuthorizationCodeGrantHandler(
             code.AuthenticatedAt,
             code.Nonce,
             null,
+            includeIdToken: IssuesIdToken,
             includeRefreshToken: true);
     }
 

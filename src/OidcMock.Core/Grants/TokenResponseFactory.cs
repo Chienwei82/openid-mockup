@@ -24,6 +24,7 @@ public static class TokenResponseFactory
         DateTimeOffset authenticationTime,
         string? nonce,
         string? authorizationCode,
+        bool includeIdToken,
         bool includeRefreshToken)
     {
         ArgumentNullException.ThrowIfNull(tokenFactory);
@@ -43,16 +44,18 @@ public static class TokenResponseFactory
             timeProvider.GetUtcNow(),
             client.TokenLifetimes.AccessToken));
 
-        var idToken = tokenFactory.CreateIdToken(new IdTokenRequest(
-            issuer,
-            client.ClientId,
-            scopes,
-            user,
-            authenticationTime,
-            client.TokenLifetimes.IdentityToken,
-            nonce,
-            accessToken,
-            authorizationCode));
+        var idToken = includeIdToken
+            ? tokenFactory.CreateIdToken(new IdTokenRequest(
+                issuer,
+                client.ClientId,
+                scopes,
+                user,
+                authenticationTime,
+                client.TokenLifetimes.IdentityToken,
+                nonce,
+                accessToken,
+                authorizationCode))
+            : null;
 
         var refreshToken = includeRefreshToken
             ? IssueRefreshToken(refreshTokenStore, client, user, scopes)
