@@ -9,7 +9,7 @@ namespace OidcMock.Host.Stores;
 /// </summary>
 public sealed class JsonClientStore : IClientStore
 {
-    private readonly JsonFileLoader<ClientFile> _loader;
+    private readonly JsonFileLoader<ClientFile, IReadOnlyList<Client>> _loader;
 
     public JsonClientStore(string configDirectory)
         : this(configDirectory, reloadOnChange: true)
@@ -18,13 +18,15 @@ public sealed class JsonClientStore : IClientStore
 
     public JsonClientStore(string configDirectory, bool reloadOnChange)
     {
-        _loader = new JsonFileLoader<ClientFile>(configDirectory, ConfigurationFiles.Clients, reloadOnChange);
+        _loader = new JsonFileLoader<ClientFile, IReadOnlyList<Client>>(
+            configDirectory,
+            ConfigurationFiles.Clients,
+            reloadOnChange,
+            ClientMapper.ToDomain);
     }
 
     public Client? Find(string clientId) =>
-        Clients().FirstOrDefault(client => string.Equals(client.ClientId, clientId, StringComparison.Ordinal));
+        _loader.Load().FirstOrDefault(client => string.Equals(client.ClientId, clientId, StringComparison.Ordinal));
 
-    public IReadOnlyList<Client> List() => Clients();
-
-    private IReadOnlyList<Client> Clients() => ClientMapper.ToDomain(_loader.Load());
+    public IReadOnlyList<Client> List() => _loader.Load();
 }

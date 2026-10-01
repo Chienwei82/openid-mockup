@@ -9,7 +9,7 @@ namespace OidcMock.Host.Stores;
 /// </summary>
 public sealed class JsonScopeStore : IScopeStore
 {
-    private readonly JsonFileLoader<ScopeFile> _loader;
+    private readonly JsonFileLoader<ScopeFile, IReadOnlyList<ScopeDefinition>> _loader;
 
     public JsonScopeStore(string configDirectory)
         : this(configDirectory, reloadOnChange: true)
@@ -18,13 +18,15 @@ public sealed class JsonScopeStore : IScopeStore
 
     public JsonScopeStore(string configDirectory, bool reloadOnChange)
     {
-        _loader = new JsonFileLoader<ScopeFile>(configDirectory, ConfigurationFiles.Scopes, reloadOnChange);
+        _loader = new JsonFileLoader<ScopeFile, IReadOnlyList<ScopeDefinition>>(
+            configDirectory,
+            ConfigurationFiles.Scopes,
+            reloadOnChange,
+            ScopeMapper.ToDomain);
     }
 
     public ScopeDefinition? Find(string name) =>
-        Scopes().FirstOrDefault(scope => string.Equals(scope.Name, name, StringComparison.Ordinal));
+        _loader.Load().FirstOrDefault(scope => string.Equals(scope.Name, name, StringComparison.Ordinal));
 
-    public IReadOnlyList<ScopeDefinition> List() => Scopes();
-
-    private IReadOnlyList<ScopeDefinition> Scopes() => ScopeMapper.ToDomain(_loader.Load());
+    public IReadOnlyList<ScopeDefinition> List() => _loader.Load();
 }
