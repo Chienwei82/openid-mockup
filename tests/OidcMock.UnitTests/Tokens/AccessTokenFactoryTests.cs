@@ -181,6 +181,46 @@ public sealed class AccessTokenFactoryTests
             ["role"] = JsonSerializer.SerializeToElement<string[]>(SampleRoles)
         });
 
+    [Fact]
+    public void ElAccessTokenTomaIatNbfYExpDelMismoInstanteDelReloj()
+    {
+        var factory = new JsonWebTokenFactory(
+            new FixedSigningKeyProvider(new SigningKey(_signingKey)),
+            new ScopesClaimsProjector(Scopes()),
+            new AdvancingTimeProvider(IssuedAt));
+
+        var token = factory.CreateAccessToken(new AccessTokenRequest(
+            Issuer,
+            ClientId,
+            ["openid"],
+            [ClientId],
+            "user-1",
+            SampleUser(),
+            IssuedAt,
+            TimeSpan.FromMinutes(AccessTokenLifetimeInMinutes)));
+
+        var issuedAt = TokenTestValidator.ReadClaim(token, "iat").GetInt64();
+        var notBefore = TokenTestValidator.ReadClaim(token, "nbf").GetInt64();
+        var expires = TokenTestValidator.ReadClaim(token, "exp").GetInt64();
+
+        Assert.Equal(issuedAt, notBefore);
+        Assert.Equal(issuedAt, expires - (AccessTokenLifetimeInMinutes * 60));
+    }
+
+    private sealed class AdvancingTimeProvider(DateTimeOffset start) : TimeProvider
+    {
+        private DateTimeOffset _now = start;
+
+        public override DateTimeOffset GetUtcNow()
+        {
+            var current = _now;
+
+            _now = _now.AddSeconds(1);
+
+            return current;
+        }
+    }
+
     private sealed class FixedSigningKeyProvider(SigningKey key) : ISigningKeyProvider
     {
         public SigningKey GetSigningKey() => key;

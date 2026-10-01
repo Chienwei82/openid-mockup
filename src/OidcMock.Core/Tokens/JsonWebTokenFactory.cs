@@ -1,4 +1,3 @@
-
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using OidcMock.Core.Claims;
@@ -49,6 +48,7 @@ public sealed class JsonWebTokenFactory : ITokenFactory
 
     private SecurityTokenDescriptor BuildIdTokenDescriptor(IdTokenRequest request)
     {
+        var issuedAt = Now();
         var claims = new Dictionary<string, object>(StringComparer.Ordinal)
         {
             [ProtocolClaimNames.Subject] = request.User.Subject,
@@ -58,15 +58,15 @@ public sealed class JsonWebTokenFactory : ITokenFactory
         AddWhenPresent(claims, ProtocolClaimNames.Nonce, request.Nonce);
         AddHashWhenPresent(claims, ProtocolClaimNames.AccessTokenHash, request.AccessToken, TokenHash.FromAccessToken);
         AddHashWhenPresent(claims, ProtocolClaimNames.AuthorizationCodeHash, request.AuthorizationCode, TokenHash.FromAuthorizationCode);
-        AddProjectedUserClaims(claims, request);
+        AddProjectedUserClaims(claims, request.User, request.GrantedScopes);
 
         return new SecurityTokenDescriptor
         {
             Issuer = request.Issuer,
             Audience = request.ClientId,
-            IssuedAt = Now(),
-            NotBefore = Now(),
-            Expires = Now() + request.Lifetime,
+            IssuedAt = issuedAt,
+            NotBefore = issuedAt,
+            Expires = issuedAt + request.Lifetime,
             Claims = claims,
             TokenType = TokenHeaderValues.IdTokenType,
             SigningCredentials = SigningCredentials()
@@ -75,6 +75,7 @@ public sealed class JsonWebTokenFactory : ITokenFactory
 
     private SecurityTokenDescriptor BuildAccessTokenDescriptor(AccessTokenRequest request)
     {
+        var issuedAt = Now();
         var claims = new Dictionary<string, object>(StringComparer.Ordinal)
         {
             [ProtocolClaimNames.Audience] = ToAudienceClaim(request.Audiences),
@@ -84,25 +85,19 @@ public sealed class JsonWebTokenFactory : ITokenFactory
             [ProtocolClaimNames.TokenId] = TokenId.New()
         };
 
-        AddProjectedUserClaims(claims, request);
+        AddProjectedUserClaims(claims, request.User, request.GrantedScopes);
 
         return new SecurityTokenDescriptor
         {
             Issuer = request.Issuer,
-            IssuedAt = Now(),
-            NotBefore = Now(),
-            Expires = Now() + request.Lifetime,
+            IssuedAt = issuedAt,
+            NotBefore = issuedAt,
+            Expires = issuedAt + request.Lifetime,
             Claims = claims,
             TokenType = TokenHeaderValues.AccessTokenType,
             SigningCredentials = SigningCredentials()
         };
     }
-
-    private void AddProjectedUserClaims(Dictionary<string, object> claims, IdTokenRequest request) =>
-        AddProjectedUserClaims(claims, request.User, request.GrantedScopes);
-
-    private void AddProjectedUserClaims(Dictionary<string, object> claims, AccessTokenRequest request) =>
-        AddProjectedUserClaims(claims, request.User, request.GrantedScopes);
 
     private void AddProjectedUserClaims(
         Dictionary<string, object> claims,

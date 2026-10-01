@@ -262,6 +262,45 @@ public sealed class IdTokenFactoryTests
         return Base64Url.Encode(digest.AsSpan(0, digest.Length / 2));
     }
 
+    [Fact]
+    public void IatNbfYExpSeTomanDelMismoInstanteDelReloj()
+    {
+        var advancingClock = new AdvancingTimeProvider(AuthenticatedAt);
+        var factory = new JsonWebTokenFactory(
+            new FixedSigningKeyProvider(new SigningKey(_signingKey)),
+            new ScopesClaimsProjector(Scopes()),
+            advancingClock);
+
+        var token = factory.CreateIdToken(new IdTokenRequest(
+            Issuer,
+            ClientId,
+            ["openid"],
+            SampleUser(),
+            AuthenticatedAt,
+            TimeSpan.FromMinutes(IdentityTokenLifetimeInMinutes)));
+
+        var issuedAt = TokenTestValidator.ReadClaim(token, "iat").GetInt64();
+        var notBefore = TokenTestValidator.ReadClaim(token, "nbf").GetInt64();
+        var expires = TokenTestValidator.ReadClaim(token, "exp").GetInt64();
+
+        Assert.Equal(issuedAt, notBefore);
+        Assert.Equal(issuedAt, expires - (IdentityTokenLifetimeInMinutes * 60));
+    }
+
+    private sealed class AdvancingTimeProvider(DateTimeOffset start) : TimeProvider
+    {
+        private DateTimeOffset _now = start;
+
+        public override DateTimeOffset GetUtcNow()
+        {
+            var current = _now;
+
+            _now = _now.AddSeconds(1);
+
+            return current;
+        }
+    }
+
     private sealed class FixedSigningKeyProvider(SigningKey key) : ISigningKeyProvider
     {
         public SigningKey GetSigningKey() => key;
