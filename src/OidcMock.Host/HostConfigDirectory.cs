@@ -20,6 +20,16 @@ public static class HostConfigDirectory
     /// </summary>
     public const string ReloadOnChangeSettingName = "OidcMock:ReloadOnChange";
 
+    /// <summary>
+    /// Clave de configuracion del prefijo de rutas (por defecto /personafisica).
+    /// </summary>
+    public const string PathBaseSettingName = "OidcMock:PathBase";
+
+    /// <summary>
+    /// Clave de configuracion del issuer anunciado; si no se define se deduce del host y el PathBase.
+    /// </summary>
+    public const string IssuerSettingName = "OidcMock:Issuer";
+
     public static string Resolve(IHostEnvironment environment)
     {
         ArgumentNullException.ThrowIfNull(environment);

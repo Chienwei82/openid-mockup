@@ -8,7 +8,8 @@ namespace OidcMock.IntegrationTests.Composition;
 
 public sealed class HostStartupTests
 {
-    private const string UnknownPath = "/personafisica/.well-known/openid-configuration";
+    private const string DiscoveryPath = "/personafisica/.well-known/openid-configuration";
+    private const string UnknownPath = "/personafisica/connect/token";
 
     [Fact]
     public async Task ArrancaConLaConfiguracionDeEjemploDelRepositorio()
@@ -16,9 +17,11 @@ public sealed class HostStartupTests
         using var factory = new WebApplicationFactory<Program>();
         using var client = factory.CreateClient();
 
-        using var response = await client.GetAsync(UnknownPath, TestContext.Current.CancellationToken);
+        using var discoveryResponse = await client.GetAsync(DiscoveryPath, TestContext.Current.CancellationToken);
+        using var unknownResponse = await client.GetAsync(UnknownPath, TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, discoveryResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, unknownResponse.StatusCode);
     }
 
     [Fact]

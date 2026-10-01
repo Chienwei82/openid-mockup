@@ -1,8 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using OidcMock.Core.Clients;
 using OidcMock.Core.Configuration;
+using OidcMock.Core.Crypto;
+using OidcMock.Core.Discovery;
 using OidcMock.Core.Scopes;
 using OidcMock.Core.Users;
+using OidcMock.Host.Crypto;
 using OidcMock.Host.Stores;
 
 namespace OidcMock.Host;
@@ -37,6 +40,22 @@ public static class ServiceCollectionExtensions
             ConfigDirectory = configDirectory,
             ReloadOnChange = reloadOnChange
         });
+
+    /// <summary>
+    /// Registra las opciones del mock, el discovery y el proveedor de la clave de firma, que usa
+    /// el mismo directorio de configuracion que los stores. Invocar despues de AddJsonStores.
+    /// </summary>
+    public static IServiceCollection AddOidcMock(this IServiceCollection services, OidcMockOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        services.AddSingleton(options);
+        services.AddSingleton<DiscoveryDocumentBuilder>();
+        services.AddSingleton<ISigningKeyProvider>(provider =>
+            new PemSigningKeyProvider(provider.GetRequiredService<JsonStoreOptions>().ConfigDirectory));
+
+        return services;
+    }
 
     private static JsonClientStore CreateClientStore(IServiceProvider provider) =>
         new(GetRequiredOptions(provider).ConfigDirectory, GetRequiredOptions(provider).ReloadOnChange);

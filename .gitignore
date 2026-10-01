@@ -7,5 +7,8 @@ obj/
 artifacts/
 TestResults/
 
+# Clave de firma generada en el primer arranque; no se versiona.
+config/signing-key.pem
+
 # Contexto local de trabajo entre sesiones; no se versiona.
 memory-bank/
