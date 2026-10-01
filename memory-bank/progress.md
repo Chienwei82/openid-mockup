@@ -21,15 +21,21 @@
 - `OidcMock.UnitTests`: 8 tests.
 - `OidcMock.IntegrationTests`: 35 tests.
 
-### Commits de esta sesión
+### Commits de la etapa 1
 
-```
-docs:      inicializa el memory bank del proyecto
-test/fix:  la caché se sirve aunque el archivo desaparezca con reloadOnChange=false
-test/refactor: el loader cachea el dominio ya mapeado (JsonFileLoader<TFile, TDomain>)
-test/refactor: detección de cambios comparando el contenido (fuera el sello de disco)
-test/feat: seam OidcMock:ConfigDirectory + fail fast real del host
-```
+| Commit | Mensaje |
+|---|---|
+| `b343700` | prompt 1 (scaffolding + capa de datos, en un solo commit) |
+| `fd6bc6f` | `docs:` inicializa el memory bank del proyecto |
+| `96a27f2` | `test:` la caché se sirve aunque el archivo desaparezca con `reloadOnChange=false` |
+| `d07bc3c` | `fix:` no releer el archivo cuando la recarga en caliente está desactivada |
+| `749a9f7` | `test:` el dominio cacheado debe reutilizarse entre consultas |
+| `c56cbde` | `refactor:` el loader cachea el dominio ya mapeado |
+| `91ea840` | `test:` detectar cambios que conservan el sello de disco |
+| `e671edd` | `refactor:` detectar cambios comparando el contenido |
+| `e0db41c` | `test:` el arranque del host debe fallar con configuración inválida |
+| `38ac8c2` | `feat:` seam `OidcMock:ConfigDirectory` y `OidcMock:ReloadOnChange` |
+| `8b84dba` | `docs:` actualiza decisiones y memory bank |
 
 ## Endpoints / funcionalidades
 

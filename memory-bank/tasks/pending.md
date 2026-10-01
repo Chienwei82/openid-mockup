@@ -26,7 +26,7 @@ Detalle de lo que falta. El estado de alto nivel vive en [`progress.md`](../prog
 - [ ] Pantalla de login mock usando `IUserStore` (contraseña en texto plano) y el `branding` del cliente.
 - [ ] Respuesta con `code`, `state`, `iss` (`authorization_response_iss_parameter_supported`).
 
-## T-07 · Stages 4-7 (pendientes de detalle)
+## T-07 · Etapas 4-7 (pendientes de detalle)
 
 - [ ] Token endpoint con Strategy por grant type (`authorization_code`, `refresh_token`,
       `client_credentials`, `password`, `implicit`).

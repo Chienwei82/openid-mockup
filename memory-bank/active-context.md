@@ -13,7 +13,8 @@
 - Build: ✅ verde (0 warnings, 0 errors con `TreatWarningsAsErrors`).
 - Tests: ✅ **43/43** (8 unit + 35 integration).
 - Host: ✅ `dotnet run` levanta en `http://localhost:5000` y valida la configuración al arrancar.
-- Último commit: `feat: seam de configuracion OidcMock:ConfigDirectory y ReloadOnChange`.
+- Último commit de código: `38ac8c2 feat: seam de configuracion OidcMock:ConfigDirectory y ReloadOnChange`;
+  después, `8b84dba docs:` con el cierre documental de la etapa 1.
 
 ## Decisiones tomadas en esta sesión
 

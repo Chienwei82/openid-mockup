@@ -22,4 +22,20 @@ código, lee `active-context.md` y `progress.md`; después de cada cambio, actua
 - Los ADRs de detalle viven en [`docs/decisions.md`](../docs/decisions.md); `tech-decisions.md`
   resume el estado actual y apunta allí para el histórico.
 - TDD estricto: `test:` → ciclo rojo → `fix:`/`feat:`/`refactor:` → verde. Un commit por paso.
-- Antes de dar cualquier tarea por terminada: `dotnet build` y los runners de test en verde.
+- Antes de dar cualquier tarea por terminada: `dotnet build` y los tests en verde.
+
+## Verificación
+
+```bash
+dotnet build
+
+# Ojo: 'dotnet test' a nivel de solución aborta en este entorno (ver D-011).
+dotnet test tests/OidcMock.UnitTests/OidcMock.UnitTests.csproj
+dotnet test tests/OidcMock.IntegrationTests/OidcMock.IntegrationTests.csproj
+
+# Ejecución directa de los runners in-process (alternativa más rápida).
+./tests/OidcMock.UnitTests/bin/Debug/net10.0/OidcMock.UnitTests
+./tests/OidcMock.IntegrationTests/bin/Debug/net10.0/OidcMock.IntegrationTests
+```
+
+Estado al cierre de la etapa 1: **43/43 tests** (8 unit + 35 integration), build con 0 warnings.

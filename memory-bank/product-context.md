@@ -18,7 +18,7 @@ entornos de desarrollo, CI y demos.
   `/connect/authorize`, `/connect/token`, `/connect/userinfo`, `/connect/endsession`,
   `/connect/checksession`, `/connect/revocation`, `/connect/introspect`,
   `/connect/deviceauthorization`, `/connect/ciba`, `/connect/par`.
--jwks en `/.well-known/openid-configuration/jwks`; firma **RS256**; `subject_types_supported: public`.
+- JWKS en `/.well-known/openid-configuration/jwks`; firma **RS256**; `subject_types_supported: public`.
 - `authorization_response_iss_parameter_supported: true` (el `iss` también viaja en la respuesta).
 - `code_challenge_methods_supported: plain` y `S256`.
 - `client_secret` en **texto plano** y `password` de usuario en texto plano: es un mock local,
@@ -28,7 +28,7 @@ entornos de desarrollo, CI y demos.
 
 ## Qué NO hace (límites explícitos)
 
-- No hay base de datos, ni migraciones, niORM.
+- No hay base de datos, ni migraciones, ni ORM.
 - No hay cifrado, hash de secretos ni auditoría: el almacenamiento en claro es intencional.
 - No se validan credenciales reales ni se contacta el IdP del BCCR.
 - No se implementan `request` objects firmados, DPoP ni mTLS de cliente en las primeras etapas

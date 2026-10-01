@@ -11,9 +11,9 @@ OidcMock.slnx
 │   └── Configuration/          JsonStoreOptions, ConfigurationFiles,
 │                               ConfigurationException, IConfigurationValidator
 ├── src/OidcMock.Host          Minimal APIs, stores JSON, crypto (futuro).
-│   ├── Stores/                 JsonClientStore, JsonUserStore, JsonScopeStore,
+│   ├── Stores/                 JsonClientStore, JsonUserStore, JsonScopeStore
 │   │   ├── Configuration/      DTOs del formato de los JSON (ClientFile, UserFile, ScopeFile)
-│   │   └── (infra)            JsonFileLoader<TFile,TDomain>, mappers, JsonConfiguration
+│   │   └── (infra)             JsonFileLoader<TFile,TDomain>, mappers, JsonConfiguration
 │   ├── HostConfigDirectory.cs  Localiza config/ en run y en publish
 │   ├── ServiceCollectionExtensions.cs  AddJsonStores()
 │   └── Program.cs              Composición + fail fast
