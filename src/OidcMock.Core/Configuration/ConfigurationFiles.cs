@@ -8,4 +8,5 @@ public static class ConfigurationFiles
     public const string Clients = "clients.json";
     public const string Users = "users.json";
     public const string Scopes = "scopes.json";
+    public const string SigningKey = "signing-key.pem";
 }
