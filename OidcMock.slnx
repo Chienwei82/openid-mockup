@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/OidcMock.Core/OidcMock.Core.csproj" />
+    <Project Path="src/OidcMock.Host/OidcMock.Host.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/OidcMock.IntegrationTests/OidcMock.IntegrationTests.csproj" />
+    <Project Path="tests/OidcMock.UnitTests/OidcMock.UnitTests.csproj" />
+  </Folder>
+</Solution>

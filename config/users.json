@@ -1,0 +1,79 @@
+{
+  "users": [
+    {
+      "sub": "user-persona-fisica",
+      "username": "jperez",
+      "password": "Passw0rd!",
+      "claims": {
+        "given_name": "Juan",
+        "family_name": "Pérez",
+        "name": "Juan Pérez",
+        "preferred_username": "jperez",
+        "email": "jperez@example.cr",
+        "email_verified": true,
+        "phone_number": "+50689998877",
+        "gender": "male",
+        "birthdate": "1985-04-12",
+        "locale": "es-CR",
+        "zoneinfo": "America/Costa_Rica",
+        "updated_at": 1735689600,
+        "login_name": "jperez",
+        "full_name": "Juan Pérez Vargas",
+        "last_name": "Pérez Vargas",
+        "codTipoId": "01",
+        "documentofva": "1-23456789",
+        "nombre": "Juan",
+        "Bccr.IdUsuario": "us-88213",
+        "Bccr.IdEntidad": "ent-1001",
+        "Bccr.CodTipoId": "01",
+        "Bccr.negocio": "comercio-01",
+        "role": [
+          "persona-fisica"
+        ]
+      }
+    },
+    {
+      "sub": "user-persona-juridica",
+      "username": "empresa-demo",
+      "password": "Passw0rd!",
+      "claims": {
+        "name": "Comercial Demo S.A.",
+        "preferred_username": "empresa-demo",
+        "email": "facturacion@empresa-demo.cr",
+        "email_verified": true,
+        "locale": "es-CR",
+        "Bccr.IdEntidad": "ent-2042",
+        "Bccr.IdUsuario": "us-90112",
+        "Bccr.CodTipoId": "02",
+        "Bccr.negocio": "empresa-demo",
+        "codTipoId": "02",
+        "nombre": "Comercial Demo S.A.",
+        "role": [
+          "persona-juridica",
+          "firmadigital"
+        ]
+      }
+    },
+    {
+      "sub": "user-administrador",
+      "username": "admin",
+      "password": "Admin123!",
+      "claims": {
+        "given_name": "Administrador",
+        "family_name": "OidcMock",
+        "name": "Administrador OidcMock",
+        "preferred_username": "admin",
+        "email": "admin@oidcmock.local",
+        "email_verified": true,
+        "role": [
+          "administrador",
+          "roles",
+          "skoruba_identity_admin_api"
+        ],
+        "Bccr.IdUsuario": "us-00001",
+        "Bccr.IdEntidad": "ent-0001",
+        "login_name": "admin"
+      }
+    }
+  ]
+}

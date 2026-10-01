@@ -1,0 +1,71 @@
+{
+  "scopes": [
+    {
+      "name": "openid",
+      "claims": [
+        "sub"
+      ]
+    },
+    {
+      "name": "profile",
+      "claims": [
+        "name",
+        "given_name",
+        "family_name",
+        "last_name",
+        "preferred_username",
+        "nickname",
+        "gender",
+        "birthdate",
+        "locale",
+        "zoneinfo",
+        "updated_at",
+        "picture",
+        "website"
+      ]
+    },
+    {
+      "name": "email",
+      "claims": [
+        "email",
+        "email_verified"
+      ]
+    },
+    {
+      "name": "custom.profile",
+      "claims": [
+        "full_name",
+        "login_name",
+        "codTipoId",
+        "nombre",
+        "documentofva"
+      ]
+    },
+    {
+      "name": "roles",
+      "claims": [
+        "role"
+      ]
+    },
+    {
+      "name": "nombre",
+      "claims": [
+        "nombre",
+        "given_name",
+        "family_name"
+      ]
+    },
+    {
+      "name": "documentofva",
+      "claims": [
+        "documentofva",
+        "Bccr.X509Subject",
+        "X509Subject"
+      ]
+    },
+    {
+      "name": "offline_access",
+      "claims": []
+    }
+  ]
+}
