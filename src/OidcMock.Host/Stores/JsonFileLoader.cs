@@ -31,9 +31,14 @@ internal sealed class JsonFileLoader<T> where T : class
     {
         lock (_gate)
         {
+            if (_cached is not null && !_reloadOnChange)
+            {
+                return _cached;
+            }
+
             var currentStamp = ReadStamp();
 
-            if (_cached is not null && (!_reloadOnChange || currentStamp == _cachedStamp))
+            if (_cached is not null && currentStamp == _cachedStamp)
             {
                 return _cached;
             }
