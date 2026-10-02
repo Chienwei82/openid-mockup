@@ -88,4 +88,45 @@ public sealed class PushedAuthorizationService(
         string.IsNullOrWhiteSpace(scope)
             ? []
             : scope.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    /// <summary>
+    /// Reconstruye la peticion original. Se devuelve como <see cref="AuthorizationRequest"/> y no como
+    /// la forma ya validada para que el authorize la vuelva a pasar por sus reglas: el codigo emitido
+    /// sale de la validacion de hoy, no de la que hizo el push.
+    /// </summary>
+    public Result<AuthorizationRequest> Find(string requestUri)
+    {
+        if (string.IsNullOrEmpty(requestUri))
+        {
+            return Result<AuthorizationRequest>.Fail(
+                AuthorizationErrors.InvalidRequestUri(UnknownRequestUri));
+        }
+
+        var pending = pendingRequests.Find(requestUri);
+
+        return pending.Failed
+            ? Result<AuthorizationRequest>.Fail(pending.Error!)
+            : Result<AuthorizationRequest>.Ok(ToRequest(pending.Value!.Authorization, requestUri));
+    }
+
+    /// <inheritdoc />
+    public void Consume(string requestUri) => pendingRequests.Invalidate(requestUri);
+
+    private static AuthorizationRequest ToRequest(ValidatedAuthorizationRequest authorization, string requestUri) =>
+        new(
+            authorization.Client.ClientId,
+            authorization.RedirectUri,
+            authorization.ResponseType,
+            authorization.Scopes,
+            authorization.Nonce,
+            authorization.State,
+            authorization.CodeChallenge,
+            authorization.CodeChallengeMethod,
+            authorization.Prompt,
+            GrantTypes.AuthorizationCode,
+            authorization.ResponseMode,
+            requestUri);
+
+    private const string UnknownRequestUri =
+        "El request_uri no corresponde a ninguna peticion empujada vigente del mock.";
 }

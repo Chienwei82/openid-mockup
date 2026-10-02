@@ -52,6 +52,9 @@ public sealed class InMemoryPendingAuthorizationStore : IPendingAuthorizationSto
         return Result<PendingAuthorizationRequest>.Ok(request);
     }
 
+    /// <inheritdoc />
+    public void Invalidate(string handle) => _requests.TryRemove(handle, out _);
+
     public Result<PendingAuthorizationRequest> Approve(
         string handle,
         string userName,

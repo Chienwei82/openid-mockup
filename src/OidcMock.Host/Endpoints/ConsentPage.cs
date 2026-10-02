@@ -85,7 +85,10 @@ public static class ConsentPage
             ["state"] = authorization.State,
             ["prompt"] = authorization.Prompt,
             ["code_challenge"] = authorization.CodeChallenge,
-            ["code_challenge_method"] = authorization.CodeChallengeMethod
+            ["code_challenge_method"] = authorization.CodeChallengeMethod,
+            // La peticion empujada se reenvia oculta: el POST del consentimiento vuelve al authorize
+            // y tiene que volver a encontrar los parametros originales detras del request_uri.
+            [AuthorizationRequestBinder.RequestUriField] = authorization.RequestUri
         };
 
         return string.Join(

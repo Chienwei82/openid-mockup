@@ -16,7 +16,12 @@ public sealed record ValidatedAuthorizationRequest(
     string? State,
     string? CodeChallenge,
     string? CodeChallengeMethod,
-    string? Prompt)
+    string? Prompt,
+    /// <summary>
+    /// Referencia de la peticion empujada que origino esta, si la hubo. Viaja hasta las pantallas del
+    /// mock y de ahi al canje del codigo, para que el <c>request_uri</c> caduque al approving.
+    /// </summary>
+    string? RequestUri = null)
 {
     public bool IsImplicit => !ResponseType.Split(' ', StringSplitOptions.RemoveEmptyEntries)
         .Contains(ResponseTypeNames.Code, StringComparer.Ordinal);

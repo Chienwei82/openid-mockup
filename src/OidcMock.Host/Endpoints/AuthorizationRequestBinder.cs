@@ -25,8 +25,12 @@ public static class AuthorizationRequestBinder
             values.GetValueOrDefault("code_challenge_method"),
             values.GetValueOrDefault("prompt"),
             values.GetValueOrDefault("grant_type") ?? GrantTypes.AuthorizationCode,
-            values.GetValueOrDefault("response_mode") ?? ResponseModes.Query);
+            values.GetValueOrDefault("response_mode") ?? ResponseModes.Query,
+            values.GetValueOrDefault(RequestUriField));
     }
+
+    /// <summary>Nombre del parametro con la peticion empujada (RFC 9126 2).</summary>
+    public const string RequestUriField = "request_uri";
 
     private static string[] SplitScopes(string? scope) =>
         string.IsNullOrWhiteSpace(scope)

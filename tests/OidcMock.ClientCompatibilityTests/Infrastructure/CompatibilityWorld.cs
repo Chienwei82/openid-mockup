@@ -30,20 +30,26 @@ public sealed class CompatibilityWorld : IAsyncDisposable
     public static readonly string[] DefaultScopes = ["openid", "profile", "email", "offline_access"];
 
     private readonly CompatibilityConfig _config;
+    private readonly LoopbackAddress _clientAddress;
     private OidcClientHost? _client;
 
-    private CompatibilityWorld(MockHostFixture mock, CompatibilityConfig config)
+    private CompatibilityWorld(MockHostFixture mock, CompatibilityConfig config, LoopbackAddress clientAddress)
     {
         Mock = mock;
         _config = config;
+        _clientAddress = clientAddress;
     }
 
     public MockHostFixture Mock { get; }
 
-    /// <summary>URL base del cliente OIDC. Nulo hasta que se llama a <see cref="StartClientAsync"/>.</summary>
-    public string ClientBaseAddress => _client?.BaseAddress ?? throw new InvalidOperationException("El cliente no ha arrancado.");
+    /// <summary>
+    /// URL base del cliente OIDC. Es la direccion reservada, no la del host arrancado: el
+    /// <c>redirect_uri</c> se escribe en <c>clients.json</c> antes de que exista el cliente, asi que
+    /// esta propiedad se puede consultar desde el principio.
+    /// </summary>
+    public string ClientBaseAddress => _clientAddress.BaseAddress;
 
-    /// <summary>Servicios del cliente, para leer sus opciones ya resueltas desde las pruebas.</summary>
+    /// <summary>Servicios del cliente ya arrancado, para leer sus opciones resueltas.</summary>
     public IServiceProvider ClientServices =>
         _client?.Services ?? throw new InvalidOperationException("El cliente no ha arrancado.");
 
@@ -57,12 +63,13 @@ public sealed class CompatibilityWorld : IAsyncDisposable
         var mock = new MockHostFixture(LoopbackAddress.Reserve(), config);
         await mock.InitializeAsync();
 
-        return new CompatibilityWorld(mock, config);
+        return new CompatibilityWorld(mock, config, clientAddress);
     }
 
     public async Task StartClientAsync(params string[] scopes)
     {
         _client = await OidcClientHost.StartAsync(
+            _clientAddress,
             Mock.Issuer,
             ClientId,
             ClientSecret,

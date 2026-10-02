@@ -21,9 +21,9 @@ namespace OidcMock.ClientCompatibilityTests.Infrastructure;
 /// mock se apartara del protocolo, estos tests lo detectan; si el test los configurara a medida,
 /// estarian probando el test.
 ///
-/// Se levanta sobre Kestrel en un puerto reservado porque el navegador de las pruebas (un
-/// <see cref="HttpClient"/> con <c>AllowAutoRedirect=false</c> y un <c>CookieContainer</c>) recorre
-/// las redirecciones a mano, igual que un navegador, y necesita una URL real.
+/// El puerto lo recibe ya reservado (<paramref name="address"/>) y no lo elige al arrancar: el mock
+/// tiene el <c>redirect_uri</c> de este cliente escrito en <c>clients.json</c>, asi que la direccion
+/// tiene que existir antes de que arranque cualquiera de los dos.
 /// </summary>
 public sealed class OidcClientHost : IAsyncDisposable
 {
@@ -40,6 +40,7 @@ public sealed class OidcClientHost : IAsyncDisposable
     public IServiceProvider Services => _application.Services;
 
     public static async Task<OidcClientHost> StartAsync(
+        LoopbackAddress address,
         string issuer,
         string clientId,
         string clientSecret,
@@ -48,8 +49,10 @@ public sealed class OidcClientHost : IAsyncDisposable
     {
         var builder = WebApplication.CreateSlimBuilder();
 
-        builder.Logging.SetMinimumLevel(LogLevel.Warning);
-        builder.WebHost.UseUrls($"http://127.0.0.1:{LoopbackAddress.Reserve().Port}");
+        builder.Logging.ClearProviders();
+        builder.Logging.AddProvider(CollectingLoggerProvider.Create());
+        builder.Logging.SetMinimumLevel(LogLevel.Trace);
+        builder.WebHost.UseUrls(address.BaseAddress);
 
         builder.Services
             .AddAuthentication(options =>
@@ -70,6 +73,16 @@ public sealed class OidcClientHost : IAsyncDisposable
                 // El mock sirve HTTP plano en loopback: RequireHttpsMetadata solo obliga cuando la
                 // metadata es HTTPS, y no hay TLS que configurar en una prueba de protocolo.
                 options.RequireHttpsMetadata = false;
+
+                // El handler usa response_mode=form_post en el flujo de codigo, y ahi las cookies de
+                // correlacion y de nonce viajan en un POST de vuelta desde el mock. Con la politica por
+                // defecto serian SameSite=None y Secure, y sobre HTTP plano un navegador las
+                // descartaria: el cliente nunca encontraria su correlacion. Un cliente real en
+                // desarrollo sobre HTTP ajusta esto mismo; sobre HTTPS no hay que tocar nada.
+                options.CorrelationCookie.SameSite = SameSiteMode.Lax;
+                options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                options.NonceCookie.SameSite = SameSiteMode.Lax;
+                options.NonceCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 
                 options.Scope.Clear();
                 foreach (var scope in scopes)
@@ -133,6 +146,51 @@ public sealed class OidcClientHost : IAsyncDisposable
     {
         await _application.StopAsync();
         await _application.DisposeAsync();
+    }
+}
+
+/// <summary>Entradas de log del host, para poder ver por que fallo una peticion.</summary>
+public static class CollectingLoggerProvider
+{
+    private static readonly List<string> Entries = [];
+
+    public static IReadOnlyList<string> Logged => Entries;
+
+    public static void Clear() => Entries.Clear();
+
+    public static string Dump() => string.Join(Environment.NewLine, Entries);
+
+    public static ILoggerProvider Create() => new Provider();
+
+    private sealed class Provider : ILoggerProvider
+    {
+        public ILogger CreateLogger(string categoryName) => new CollectingLogger(categoryName);
+
+        public void Dispose()
+        {
+        }
+    }
+
+    private sealed class CollectingLogger(string category) : ILogger
+    {
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            var line = formatter(state, exception);
+
+            lock (Entries)
+            {
+                Entries.Add($"[{logLevel}] {category}: {line}{(exception is null ? string.Empty : Environment.NewLine + exception)}");
+            }
+        }
     }
 }
 

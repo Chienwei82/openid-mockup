@@ -14,7 +14,12 @@ public sealed record AuthorizationRequest(
     string? CodeChallengeMethod,
     string? Prompt,
     string? GrantType,
-    string ResponseMode)
+    string ResponseMode,
+    /// <summary>
+    /// Referencia de una peticion empujada (RFC 9126). Cuando viene, el resto de los campos son los
+    /// que el mock guardo en el <c>request_uri</c> y la peticion se reconstruye desde ahi.
+    /// </summary>
+    string? RequestUri = null)
 {
     /// <summary>
     /// Scopes con los que se valida la peticion. Sin scope la peticion se interpreta como la

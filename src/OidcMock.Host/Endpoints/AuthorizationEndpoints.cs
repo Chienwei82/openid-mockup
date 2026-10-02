@@ -1,6 +1,7 @@
 using OidcMock.Core.Authorization;
 using OidcMock.Core.Configuration;
 using OidcMock.Core.Discovery;
+using OidcMock.Core.PushedRequests;
 using OidcMock.Core.Users;
 
 namespace OidcMock.Host.Endpoints;
@@ -32,9 +33,10 @@ public static class AuthorizationEndpoints
         IAuthorizationInteraction interaction,
         IUserStore users,
         IAuthSessionStore sessions,
+        IPushedAuthorizationService pushedRequests,
         DiscoveryDocumentBuilder discovery,
         OidcMockOptions options) =>
-        new AuthorizationFlow(context, validator, authorization, interaction, users, sessions, discovery, options)
+        new AuthorizationFlow(context, validator, authorization, interaction, users, sessions, pushedRequests, discovery, options)
             .ShowAsync();
 
     private static Task<IResult> ProcessDecision(
@@ -44,8 +46,9 @@ public static class AuthorizationEndpoints
         IAuthorizationInteraction interaction,
         IUserStore users,
         IAuthSessionStore sessions,
+        IPushedAuthorizationService pushedRequests,
         DiscoveryDocumentBuilder discovery,
         OidcMockOptions options) =>
-        new AuthorizationFlow(context, validator, authorization, interaction, users, sessions, discovery, options)
+        new AuthorizationFlow(context, validator, authorization, interaction, users, sessions, pushedRequests, discovery, options)
             .ProcessAsync();
 }

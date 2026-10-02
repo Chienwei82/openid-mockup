@@ -60,7 +60,8 @@ public sealed class AuthorizationRequestValidator(
             request.State,
             request.CodeChallenge,
             DefaultedCodeChallengeMethod(request),
-            string.IsNullOrWhiteSpace(request.Prompt) ? null : request.Prompt);
+            string.IsNullOrWhiteSpace(request.Prompt) ? null : request.Prompt,
+            request.RequestUri);
     }
 
     private static string? DefaultedCodeChallengeMethod(AuthorizationRequest request) =>

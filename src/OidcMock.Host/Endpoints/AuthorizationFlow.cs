@@ -2,6 +2,7 @@ using OidcMock.Core.Authorization;
 using OidcMock.Core.Configuration;
 using OidcMock.Core.Discovery;
 using OidcMock.Core.Errors;
+using OidcMock.Core.PushedRequests;
 using OidcMock.Core.Users;
 
 namespace OidcMock.Host.Endpoints;
@@ -18,6 +19,7 @@ internal sealed class AuthorizationFlow(
     IAuthorizationInteraction interaction,
     IUserStore users,
     IAuthSessionStore sessions,
+    IPushedAuthorizationService pushedRequests,
     DiscoveryDocumentBuilder discovery,
     OidcMockOptions options)
 {
@@ -25,12 +27,20 @@ internal sealed class AuthorizationFlow(
 
     public async Task<IResult> ShowAsync()
     {
-        var request = await AuthorizationRequestBinder.BindAsync(context.Request);
-        var validation = validator.Validate(request);
+        var request = await BindAsync();
+        if (request.Failed)
+        {
+            return RespondToError(
+                AuthorizationValidationResult.Failed(request.Error!, null, null),
+                ResponseModes.Query);
+        }
+
+        var bound = request.Value!;
+        var validation = validator.Validate(bound);
 
         if (validation.IsError)
         {
-            return RespondToError(validation, request.ResponseMode);
+            return RespondToError(validation, bound.ResponseMode);
         }
 
         var authorized = validation.Value!;
@@ -43,18 +53,26 @@ internal sealed class AuthorizationFlow(
                 authorized.ResponseMode),
             AuthorizationStep.Consent => Consent(authorized, decision.UserName!),
             AuthorizationStep.Grant => Grant(authorized, decision.UserName!),
-            _ => Login(authorized, request)
+            _ => Login(authorized, bound)
         };
     }
 
     public async Task<IResult> ProcessAsync()
     {
-        var request = await AuthorizationRequestBinder.BindAsync(context.Request);
-        var validation = validator.Validate(request);
+        var request = await BindAsync();
+        if (request.Failed)
+        {
+            return RespondToError(
+                AuthorizationValidationResult.Failed(request.Error!, null, null),
+                ResponseModes.Query);
+        }
+
+        var bound = request.Value!;
+        var validation = validator.Validate(bound);
 
         if (validation.IsError)
         {
-            return RespondToError(validation, request.ResponseMode);
+            return RespondToError(validation, bound.ResponseMode);
         }
 
         var form = await RequestValues.ReadAsync(context.Request);
@@ -62,6 +80,30 @@ internal sealed class AuthorizationFlow(
         return form.ContainsKey(ConsentPage.DecisionField)
             ? AnswerConsent(validation.Value!, form)
             : SignIn(validation.Value!, form);
+    }
+
+    /// <summary>
+    /// Enlaza la peticion y, si vino empujada (RFC 9126), la sustituye por la original. Un cliente
+    /// que anuncia PAR llega al authorize con solo <c>client_id</c> y <c>request_uri</c>: sin esto,
+    /// el authorize no veria <c>redirect_uri</c> ni <c>response_type</c> y rechazaria a un cliente
+    /// bien configurado.
+    /// </summary>
+    private async Task<Result<AuthorizationRequest>> BindAsync()
+    {
+        var request = await AuthorizationRequestBinder.BindAsync(context.Request);
+
+        if (string.IsNullOrEmpty(request.RequestUri))
+        {
+            return Result<AuthorizationRequest>.Ok(request);
+        }
+
+        var resolved = pushedRequests.Find(request.RequestUri);
+
+        // Un request_uri desconocido o caducado es invalid_request_uri (RFC 9126 4.1), no un invalid_request
+        // generico: el cliente puede distinguirlo y reintentar empujando la peticion otra vez.
+        return resolved.Failed
+            ? Result<AuthorizationRequest>.Fail(AuthorizationErrors.InvalidRequestUri(resolved.Error!.Description))
+            : resolved;
     }
 
     private IResult Login(ValidatedAuthorizationRequest authorized, AuthorizationRequest request) =>
@@ -133,6 +175,11 @@ internal sealed class AuthorizationFlow(
     {
         var granted = authorization.Approve(new AuthorizationApproval(userName, authorized));
 
+        if (granted.Succeeded)
+        {
+            ConsumeRequestUri(authorized);
+        }
+
         return granted.Succeeded
             ? AuthorizationResponder.RedirectWithCode(granted.Value!, authorized.ResponseMode, Issuer)
             : RespondToError(
@@ -141,6 +188,18 @@ internal sealed class AuthorizationFlow(
                     authorized.RedirectUri,
                     authorized.State),
                 authorized.ResponseMode);
+    }
+
+    /// <summary>
+    /// Invalida el request_uri cuando la autorizacion se concede. RFC 9126 4 lo declara de un solo uso:
+    /// si siguiera vivo, la misma peticion empujada podria emitir un segundo codigo.
+    /// </summary>
+    private void ConsumeRequestUri(ValidatedAuthorizationRequest authorized)
+    {
+        if (!string.IsNullOrEmpty(authorized.RequestUri))
+        {
+            pushedRequests.Consume(authorized.RequestUri);
+        }
     }
 
     private IResult Denied(ValidatedAuthorizationRequest authorized) =>

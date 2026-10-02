@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using OidcMock.Host;
 
 namespace OidcMock.ClientCompatibilityTests.Infrastructure;
@@ -78,6 +79,14 @@ public sealed class MockHostFixture : WebApplicationFactory<Program>, IAsyncLife
         // camino que usa un despliegue real en HTTP plano, y ademas el validador de opciones rechaza
         // arrancar si no queda ningun esquema encendido. El puerto ya lo fijo el constructor con
         // UseKestrel, asi que aqui solo se enciende HTTP plano en ese mismo puerto.
+        builder.UseKestrel();
+        builder.ConfigureLogging(logging =>
+        {
+            logging.ClearProviders();
+            logging.AddProvider(CollectingLoggerProvider.Create());
+            logging.SetMinimumLevel(LogLevel.Trace);
+        });
+
         builder.UseSetting("OidcMock:Serving:UseHttps", "false")
             .UseSetting("OidcMock:Serving:AllowHttp", "true")
             .UseSetting("OidcMock:Serving:HttpPort", _address.Port.ToString(CultureInfo.InvariantCulture))
@@ -90,15 +99,14 @@ public sealed class MockHostFixture : WebApplicationFactory<Program>, IAsyncLife
     }
 
     /// <summary>
-    /// Cliente HTTP real contra el mock. No lleva cookies: el navegador de las pruebas de protocolo
-    /// es <see cref="BrowserSession"/>, que si las necesita para la sesion de login.
+    /// Cliente HTTP real contra el mock, sin seguir redirecciones: en un test de protocolo interesa
+    /// ver a donde manda cada paso, y ademas el cliente de este tipo no puede alcanzar el
+    /// <c>TestServer</c> (el mock escucha en Kestrel) asi que no se usa el cliente de la fabrica.
     /// </summary>
-    public HttpClient CreateApiClient() => CreateClient(new WebApplicationFactoryClientOptions
+    public HttpClient CreateApiClient() => new(new HttpClientHandler { AllowAutoRedirect = false })
     {
-        AllowAutoRedirect = false,
-        HandleCookies = false,
         BaseAddress = new Uri(Issuer)
-    });
+    };
 }
 
 /// <summary>

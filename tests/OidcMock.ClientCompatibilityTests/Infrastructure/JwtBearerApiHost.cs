@@ -32,7 +32,8 @@ public sealed class JwtBearerApiHost : IAsyncDisposable
     {
         var builder = WebApplication.CreateSlimBuilder();
 
-        builder.Logging.SetMinimumLevel(LogLevel.Warning);
+        builder.Logging.SetMinimumLevel(LogLevel.Information);
+        builder.Logging.AddSimpleConsole();
         builder.WebHost.UseUrls($"http://127.0.0.1:{LoopbackAddress.Reserve().Port}");
 
         builder.Services

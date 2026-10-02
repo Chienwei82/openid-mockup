@@ -52,6 +52,8 @@ public static class MockEndpoints
 
     public const string Jwks = ".well-known/openid-configuration/jwks";
 
+    public const string PushedAuthorizationRequest = "connect/par";
+
     /// <summary>Combina el PathBase con una ruta del discovery, sin duplicar barras.</summary>
     public static string Resolve(string relative) => $"{PathBase}/{relative.TrimStart('/')}";
 }

@@ -96,7 +96,10 @@ public static class LoginPage
             ["prompt"] = authorization.Prompt,
             ["code_challenge"] = authorization.CodeChallenge,
             ["code_challenge_method"] = authorization.CodeChallengeMethod,
-            ["grant_type"] = request.GrantType
+            ["grant_type"] = request.GrantType,
+            // La peticion empujada se reenvia oculta: el POST del login vuelve al authorize y tiene
+            // que volver a encontrar los parametros originales detras del request_uri.
+            [AuthorizationRequestBinder.RequestUriField] = authorization.RequestUri
         };
 
         return string.Join(

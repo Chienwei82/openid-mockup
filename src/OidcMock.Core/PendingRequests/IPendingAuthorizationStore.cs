@@ -28,6 +28,12 @@ public interface IPendingAuthorizationStore
 
     Result<PendingAuthorizationRequest> Deny(string handle);
 
+    /// <summary>
+    /// Invalida la peticion sin mas. Lo usa PAR: su <c>request_uri</c> no se canjea por el sondeo, sino
+    /// al emitir el codigo de autorizacion, y <see cref="Redeem"/> solo borra lo ya aprobado.
+    /// </summary>
+    void Invalidate(string handle);
+
     void Expire();
 
     IReadOnlyList<PendingAuthorizationRequest> List();
