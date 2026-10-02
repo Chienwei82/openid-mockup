@@ -2,6 +2,7 @@ using OidcMock.Core.Configuration;
 using OidcMock.Core.Crypto;
 using OidcMock.Core.Discovery;
 using OidcMock.Core.Scopes;
+using OidcMock.Host.Cors;
 
 namespace OidcMock.Host.Endpoints;
 
@@ -15,7 +16,8 @@ public static class DiscoveryEndpoints
         ArgumentNullException.ThrowIfNull(endpoints);
 
         var options = endpoints.ServiceProvider.GetRequiredService<OidcMockOptions>();
-        var group = endpoints.MapGroup(EndpointUri.NormalizePathBase(options.PathBase));
+        var group = endpoints.MapGroup(EndpointUri.NormalizePathBase(options.PathBase))
+            .RequireCors(OidcMockCors.PolicyName);
 
         group.MapGet(EndpointPaths.Configuration, PublishDiscovery);
         group.MapGet(EndpointPaths.Jwks, PublishJsonWebKeySet);

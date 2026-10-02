@@ -1,3 +1,5 @@
+using OidcMock.Core.Configuration;
+
 namespace OidcMock.IntegrationTests;
 
 /// <summary>
@@ -31,6 +33,18 @@ public sealed class TempConfigDirectory : IDisposable
     public string WriteUsersFile(string content) => WriteFile(UsersFileName, content);
 
     public string WriteScopesFile(string content) => WriteFile(ScopesFileName, content);
+
+    /// <summary>
+    /// Copia los tres JSON de configuracion del repositorio, para partir de una configuracion valida
+    /// y romper solo una pieza concreta.
+    /// </summary>
+    public void CopyRepositoryConfiguration()
+    {
+        foreach (var fileName in new[] { ConfigurationFiles.Clients, ConfigurationFiles.Users, ConfigurationFiles.Scopes })
+        {
+            WriteFile(fileName, File.ReadAllText(RepositoryLayout.ConfigFile(fileName)));
+        }
+    }
 
     public void Dispose()
     {

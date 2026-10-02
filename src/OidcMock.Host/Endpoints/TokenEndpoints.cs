@@ -6,6 +6,7 @@ using OidcMock.Core.Grants;
 using OidcMock.Core.Introspection;
 using OidcMock.Core.Revocation;
 using OidcMock.Core.UserInfo;
+using OidcMock.Host.Cors;
 
 namespace OidcMock.Host.Endpoints;
 
@@ -27,9 +28,13 @@ public static class TokenEndpoints
         var options = endpoints.ServiceProvider.GetRequiredService<OidcMockOptions>();
         var group = endpoints.MapGroup(EndpointUri.NormalizePathBase(options.PathBase));
 
-        group.MapPost(EndpointPaths.Token, IssueToken);
-        group.MapGet(EndpointPaths.UserInfo, DescribeUserInfo);
-        group.MapPost(EndpointPaths.UserInfo, DescribeUserInfo);
+        var browser = OidcMockCors.PolicyName;
+
+        // El token endpoint y el userinfo los consume una SPA; introspect y revocation son de
+        // backends que no hacen preflight, asi que no se exponen a otros origenes.
+        group.MapPost(EndpointPaths.Token, IssueToken).RequireCors(browser);
+        group.MapGet(EndpointPaths.UserInfo, DescribeUserInfo).RequireCors(browser);
+        group.MapPost(EndpointPaths.UserInfo, DescribeUserInfo).RequireCors(browser);
         group.MapPost(EndpointPaths.Introspection, Introspect);
         group.MapPost(EndpointPaths.Revocation, Revoke);
 

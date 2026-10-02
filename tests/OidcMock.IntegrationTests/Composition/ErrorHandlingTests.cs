@@ -1,11 +1,9 @@
 using System.Net;
 using System.Text.Json;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using OidcMock.Core.Grants;
+using OidcMock.Core.Configuration;
+using OidcMock.Core.Discovery;
 using OidcMock.Host;
 using OidcMock.IntegrationTests.Endpoints;
 
@@ -17,16 +15,17 @@ namespace OidcMock.IntegrationTests.Composition;
 /// </summary>
 public sealed class ErrorHandlingTests
 {
-    private const string CrashingPath = "/falla-inesperada";
+    private const string JwksPath = "/personafisica/.well-known/openid-configuration/jwks";
     private const string TokenPath = "/personafisica/connect/token";
+    private const string CorruptKey = "no soy una clave PEM";
 
     [Fact]
     public async Task UnErrorNoPrevistoSeRespondeConProblemDetailsYNoConFormatoOAuth()
     {
-        using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(AddCrashingEndpoint);
+        using var factory = FactoryWithCorruptSigningKey();
         using var client = factory.CreateClient();
 
-        using var response = await client.GetAsync(CrashingPath, TestContext.Current.CancellationToken);
+        using var response = await client.GetAsync(JwksPath, TestContext.Current.CancellationToken);
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
@@ -39,13 +38,13 @@ public sealed class ErrorHandlingTests
     [Fact]
     public async Task ElErrorNoPrevistoNoSeExponeAlCliente()
     {
-        using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(AddCrashingEndpoint);
+        using var factory = FactoryWithCorruptSigningKey();
         using var client = factory.CreateClient();
 
-        using var response = await client.GetAsync(CrashingPath, TestContext.Current.CancellationToken);
+        using var response = await client.GetAsync(JwksPath, TestContext.Current.CancellationToken);
         var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
-        Assert.DoesNotContain("boom", body, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(CorruptKey, body, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -68,31 +67,18 @@ public sealed class ErrorHandlingTests
     }
 
     /// <summary>
-    /// Anade un endpoint que revienta, para provocar un error no previsto de verdad en vez de
-    /// simularlo: asi se prueba el pipeline completo, no el manejador aislado.
+    /// La clave de firma ilegible hace que el endpoint del JWKS reviente de verdad, dentro del
+    /// pipeline real y no en un endpoint de laboratorio.
     /// </summary>
-    private static void AddCrashingEndpoint(IWebHostBuilder builder)
+    private static WebApplicationFactory<Program> FactoryWithCorruptSigningKey()
     {
-        builder.ConfigureServices(services => services.AddSingleton<StartupFilter>());
-        builder.Configure(app => { });
-    }
+        var directory = new TempConfigDirectory();
+        directory.CopyRepositoryConfiguration();
+        directory.WriteFile(ConfigurationFiles.SigningKey, CorruptKey);
 
-    private sealed class StartupFilter : IStartupFilter
-    {
-        public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) =>
-            app =>
-            {
-                app.Use(async (context, nextMiddleware) =>
-                {
-                    if (context.Request.Path == CrashingPath)
-                    {
-                        throw new InvalidOperationException("boom: detalle que no debe verse");
-                    }
-
-                    await nextMiddleware();
-                });
-
-                next(app);
-            };
+        return new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder => builder.UseSetting(
+                HostConfigDirectory.ConfigDirectorySettingName,
+                directory.Path));
     }
 }

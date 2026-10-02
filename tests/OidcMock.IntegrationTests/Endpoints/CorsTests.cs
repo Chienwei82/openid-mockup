@@ -54,8 +54,11 @@ public sealed class CorsTests
         using var response = await client.SendAsync(preflight, TestContext.Current.CancellationToken);
 
         Assert.Equal(SpaOrigin, AllowOrigin(response));
-        Assert.Contains("POST", response.Headers.GetValues("Access-Control-Allow-Methods"));
-        Assert.Contains("authorization", response.Headers.GetValues("Access-Control-Allow-Headers"));
+        var methods = response.Headers.GetValues("Access-Control-Allow-Methods").Single();
+        var headers = response.Headers.GetValues("Access-Control-Allow-Headers").Single();
+
+        Assert.Contains("POST", methods, StringComparison.Ordinal);
+        Assert.Contains("authorization", headers, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
