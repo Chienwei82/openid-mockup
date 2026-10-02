@@ -52,6 +52,12 @@ public abstract class GrantHandlerTestBase
 
     protected FakeTimeProvider Clock { get; }
 
+    /// <summary>
+    /// Clientes de ejemplo. Se resuelve una sola vez por clase de prueba: cada <c>Find</c> devuelve la
+    /// misma instancia, asi que un test no puede cambiar los lifetimes de otro por accidente.
+    /// </summary>
+    protected OidcMock.Core.Clients.IClientStore Clients { get; } = Fixtures.ClientStoreFixture.Create();
+
     protected ICodeStore CodeStore { get; }
 
     protected IRefreshTokenStore RefreshTokens { get; }
