@@ -5,6 +5,18 @@
     <UserSecretsId>oidc-mock-host</UserSecretsId>
   </PropertyGroup>
 
+  <!--
+    Publicacion autocontenida y de un solo archivo: el mock se copia a un equipo o a un contenedor
+    sin instalar el runtime de .NET. El RID se lo pasa publish.sh o el Dockerfile (linux-x64 y
+    win-x64); sin RID, la salida es framework-dependent, que es lo que se quiere para 'dotnet run'.
+  -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\OidcMock.Core\OidcMock.Core.csproj" />
   </ItemGroup>

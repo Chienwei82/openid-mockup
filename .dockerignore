@@ -1,0 +1,13 @@
+# Contexto de build del Dockerfile: solo lo que la imagen necesita.
+.git
+.gitignore
+**/bin
+**/obj
+artifacts
+TestResults
+docs
+memory-bank
+tests
+scripts
+.vs
+.idea
