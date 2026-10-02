@@ -125,6 +125,7 @@ El login es una pantalla HTML con la lista de usuarios de `config/users.json`. C
 | --- | --- |
 | `jperez` | `Passw0rd!` |
 | `empresa-demo` | `Passw0rd!` |
+| `admin` | `Admin123!` |
 
 ---
 
@@ -338,7 +339,9 @@ Todos cuelgan del `PathBase` (`/personafisica` por defecto). En la tabla, `<base
 | `POST` | `<base>/connect/ciba` | CIBA, entrega `poll` | cliente |
 
 La autenticación de cliente admite `client_secret_basic` y `client_secret_post`, que es lo que anuncia
-el discovery.
+el discovery. Es obligatoria en `token`, `par`, `introspect`, `revocation`, `deviceauthorization` y
+`ciba`: un cliente público se identifica solo con `client_id`, y uno confidencial tiene que aportar su
+secreto, en el cuerpo o en el encabezado `Authorization`.
 
 ---
 
