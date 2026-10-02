@@ -25,6 +25,9 @@ internal sealed class ClientEntry
     [JsonPropertyName("post_logout_redirect_uris")]
     public List<string>? PostLogoutRedirectUris { get; init; }
 
+    [JsonPropertyName("frontchannel_logout_uri")]
+    public string? FrontchannelLogoutUri { get; init; }
+
     [JsonPropertyName("allowed_grant_types")]
     public List<string>? AllowedGrantTypes { get; init; }
 

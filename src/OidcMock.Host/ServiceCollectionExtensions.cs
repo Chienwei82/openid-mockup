@@ -8,6 +8,7 @@ using OidcMock.Core.Configuration;
 using OidcMock.Core.Crypto;
 using OidcMock.Core.Discovery;
 using OidcMock.Core.DeviceAuthorization;
+using OidcMock.Core.EndSession;
 using OidcMock.Core.Grants;
 using OidcMock.Core.Introspection;
 using OidcMock.Core.PendingRequests;
@@ -81,7 +82,10 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IRefreshTokenStore, InMemoryRefreshTokenStore>();
         services.AddSingleton<ITokenRevocationStore, InMemoryTokenRevocationStore>();
         services.AddSingleton<ITokenFactory, JsonWebTokenFactory>();
+        services.AddSingleton<SignedTokenValidator>();
         services.AddSingleton<IAccessTokenReader, AccessTokenReader>();
+        services.AddSingleton<IIdTokenReader, IdTokenReader>();
+        services.AddSingleton<IEndSessionService, EndSessionService>();
         services.AddSingleton<IClaimsProjector, ScopesClaimsProjector>();
         services.AddSingleton<IAuthorizationRequestValidator, AuthorizationRequestValidator>();
 

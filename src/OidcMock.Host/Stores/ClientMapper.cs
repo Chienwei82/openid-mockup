@@ -37,7 +37,8 @@ internal static class ClientMapper
             entry.RequirePkce,
             entry.RequireClientSecret,
             ToTokenLifetimes(entry.TokenLifetimes),
-            ToBranding(entry.Branding));
+            ToBranding(entry.Branding),
+            entry.FrontchannelLogoutUri);
     }
 
     private static TokenLifetimes ToTokenLifetimes(TokenLifetimesEntry? entry) =>

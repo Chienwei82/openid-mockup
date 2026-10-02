@@ -13,8 +13,14 @@ public sealed record Client(
     bool RequirePkce,
     bool RequireClientSecret,
     TokenLifetimes TokenLifetimes,
-    Branding Branding)
+    Branding Branding,
+    string? FrontchannelLogoutUri = null)
 {
+    /// <summary>
+    /// URL donde el cliente recibe el aviso de frontchannel logout (OpenID Connect Front-Channel
+    /// Logout 3). Es opcional: si el cliente no la declara, el mock no tiene a quien avisar.
+    /// </summary>
+    public bool SupportsFrontchannelLogout => !string.IsNullOrEmpty(FrontchannelLogoutUri);
     public bool AllowsGrantType(string grantType) => Contains(AllowedGrantTypes, grantType);
 
     public bool AllowsRedirectUri(string redirectUri) => Contains(RedirectUris, redirectUri);

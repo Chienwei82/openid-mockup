@@ -78,7 +78,8 @@ public sealed class DiscoveryDocumentBuilder(IScopeStore scopeStore, OidcMockOpt
             PromptValuesSupported = PromptValues,
             AuthorizationResponseIssParameterSupported = true,
             BackchannelTokenDeliveryModesSupported = DiscoveryCapabilities.BackchannelTokenDeliveryModes,
-            BackchannelUserCodeParameterSupported = true
+            BackchannelUserCodeParameterSupported = true,
+            FrontchannelLogoutSupported = true
         };
     }
 

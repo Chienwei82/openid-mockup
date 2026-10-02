@@ -98,6 +98,9 @@ public sealed record DiscoveryDocument
     [JsonPropertyName("backchannel_user_code_parameter_supported")]
     public bool BackchannelUserCodeParameterSupported { get; init; }
 
+    [JsonPropertyName("frontchannel_logout_supported")]
+    public bool FrontchannelLogoutSupported { get; init; }
+
     /// <summary>
     /// Todas las URLs del documento, para verificar que cuelgan del issuer.
     /// </summary>

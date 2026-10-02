@@ -16,6 +16,7 @@ app.Services.GetRequiredService<IConfigurationValidator>().Validate();
 app.MapDiscoveryEndpoints();
 app.MapAuthorizationEndpoints();
 app.MapTokenEndpoints();
+app.MapEndSessionEndpoints();
 app.MapPushedRequestEndpoints();
 app.MapPollEndpoints();
 

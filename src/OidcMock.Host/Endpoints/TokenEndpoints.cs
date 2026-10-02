@@ -32,8 +32,6 @@ public static class TokenEndpoints
         group.MapPost(EndpointPaths.UserInfo, DescribeUserInfo);
         group.MapPost(EndpointPaths.Introspection, Introspect);
         group.MapPost(EndpointPaths.Revocation, Revoke);
-        group.MapGet(EndpointPaths.EndSession, EndSession);
-        group.MapPost(EndpointPaths.EndSession, EndSession);
 
         return endpoints;
     }
@@ -163,48 +161,6 @@ public static class TokenEndpoints
 
     private static ProtocolError InvalidClient() =>
         ProtocolErrors.InvalidClient("El cliente no se ha autenticado correctamente.");
-
-    /// <summary>
-    /// end_session del mock: valida el post_logout_redirect_uri contra los clientes registrados y
-    /// redirige. No hay estado de sesion que cerrar, asi que terminar la sesion es no hacer nada mas.
-    /// </summary>
-    private static async Task<IResult> EndSession(HttpContext context, IClientStore clientStore)
-    {
-        var values = await RequestValues.ReadAsync(context.Request);
-        var redirectUri = values.GetValueOrDefault("post_logout_redirect_uri");
-
-        if (!IsRegisteredPostLogoutUri(clientStore, values, redirectUri))
-        {
-            return ErrorResponse(new Core.Errors.ProtocolError(
-                "invalid_request",
-                "El post_logout_redirect_uri no esta registrado para el cliente.",
-                Core.Errors.ProtocolErrors.BadRequest));
-        }
-
-        var state = values.GetValueOrDefault("state");
-
-        return Results.Redirect(
-            string.IsNullOrEmpty(state)
-                ? redirectUri!
-                : QueryStringHelper.AppendQuery(redirectUri!, new Dictionary<string, string> { ["state"] = state }));
-    }
-
-    private static bool IsRegisteredPostLogoutUri(
-        IClientStore clientStore,
-        IReadOnlyDictionary<string, string> values,
-        string? redirectUri)
-    {
-        if (string.IsNullOrEmpty(redirectUri))
-        {
-            return false;
-        }
-
-        var clientId = values.GetValueOrDefault("client_id");
-
-        return string.IsNullOrEmpty(clientId)
-            ? clientStore.List().Any(client => client.AllowsPostLogoutRedirectUri(redirectUri))
-            : clientStore.Find(clientId)?.AllowsPostLogoutRedirectUri(redirectUri) == true;
-    }
 
     private static async Task<TokenEndpointRequest> BindTokenRequestAsync(HttpRequest request)
     {

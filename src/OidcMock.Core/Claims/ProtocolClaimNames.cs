@@ -18,4 +18,5 @@ public static class ProtocolClaimNames
     public const string Scope = "scope";
     public const string ClientId = "client_id";
     public const string TokenId = "jti";
+    public const string SessionId = "sid";
 }
