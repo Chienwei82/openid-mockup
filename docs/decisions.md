@@ -1,5 +1,58 @@
 # Decisiones de diseño
 
+## Prompt 8 — userinfo, introspect y revocation con un store de revocaciones compartido
+
+### Un solo `ITokenRevocationStore` para userinfo, introspect, revocation y los grants
+- El access token del mock es un JWT sin estado: no hay nada que "borrar" en el token. Antes de esta
+  etapa `TokenRevocationService` **no revocaba access tokens en absoluto** (devolvia `true` y seguian
+  sirviendo hasta el `exp`), asi que revocar era decorativo. Ahora se registra el `jti`.
+- El store se indexa por `jti` (access tokens) y por `family_id` (refresh tokens). Cada entrada guarda
+  el `exp` del token al que corresponde y se descarta cuando ese instante pasa: a partir de ahi la
+  revocacion es indistinguible de un token caducado, asi que guardarla seria memoria inutil.
+- Lo consultan los tres casos de uso y el grant `refresh_token`. En el handler es una **segunda puerta**:
+  el store de refresh tokens ya habria fallado al canjear, pero si la revocacion llego por otra via, el
+  store de revocaciones manda. Se dejo escrito asi, y con test, para que nadie lo quite creyendolo
+  redundante.
+- Vive en memoria y no se persiste: al reiniciar el mock el estado de los tokens tampoco sobrevive, de
+  modo que un registro en disco solo rechazaria tokens que nadie puede volver a presentar.
+
+### `FindIssued`: revocar un refresh token ya canjeado
+- `IRefreshTokenStore` exponia `List()` (solo vivos) y una memoria de "rotados" que guardaba unica y
+  exclusivamente el `family_id`. Con eso, revocar un token **ya canjeado** no encontraba nada y la
+  familia quedaba viva, que es justo el camino normal de un cliente real: canjear y despues revocar el
+  token anterior.
+- `FindIssued(token)` busca en vivos **y** en rotados, y devuelve el `RefreshToken` completo. Por eso
+  `_rotated` paso de guardar un record reduzido a guardar el token entero: hace falta el `client_id` para
+  que revocar el token de otro cliente no le corte la sesion.
+- Se sustituyo el record `RotatedToken` por el token entero en lugar de ampliar el record a mano: menos
+  tipos y una sola fuente de verdad para cliente, sujeto, scopes y familia.
+
+### `introspect` y `revocation` autentican al cliente
+- Antes ambos leian `client_id` del cuerpo **sin comprobar nada**: `/introspect` permitia preguntar por
+  el estado de cualquier token del mock y `/revocation` permitia cerrar las sesiones de otro cliente
+  con solo conocer su `client_id`. Ambos exigen ahora `ClientAuthenticator` (basic o post), y la
+  ausencia de credenciales es `invalid_client` 401, no un `active=false` ni un 200.
+- Se extrajo `ClientCredentialsReader` para que token, introspect y revocation lean las credenciales
+  igual: encabezado `Authorization` gana al cuerpo (RFC 6749 2.3.1), sin tres reglas distintas.
+- Publicos siguen entrando por `client_id` solo, que es lo que ya hacia `ClientAuthenticator`.
+
+### `WWW-Authenticate` en userinfo
+- RFC 6750 3: el 401 de un recurso protegido lleva el reto Bearer. **Sin credenciales** el reto va sin
+  codigo de error (`Bearer`), porque no se puede afirmar que un token sea invalido si no se presento
+  ninguno; **con token invalido** va `Bearer error="invalid_token", error_description="..."`. El reto
+  se compone en `BearerChallenge` (Core) porque su forma es protocolo, no host.
+- `userinfo` acepta ademas el token en el cuerpo o en el query string (RFC 6750 2.2 y 2.3), no solo en
+  el encabezado: hay clientes que no pueden poner cabeceras. El encabezado manda si vino.
+
+### Bug encontrado por los tests: la clave de firma se liberaba en cada lectura
+- `AccessTokenReader` hacia `using var signingKey = signingKeyProvider.GetSigningKey()`. Pero la clave
+  **es del host** y `PemSigningKeyProvider` la cachea entre peticiones: la primera lectura de un token
+  la liberaba y la segunda lanzaba `ObjectDisposedException`. En el proceso real eso significaba que
+  `/userinfo`, `/introspect` y `/revocation` respondian 500 **desde el segundo token en adelante**; solo
+  funcionaba la primera peticion de cada proceso.
+- No lo detectaba ningun test porque cada test leia un solo token. Se anadio
+  `LeeVariosTokensSeguidosConLaMismaClaveDelProveedor`, y se verifico revirtiendo la correccion.
+
 ## Prompt 7 — Grants refresh_token y client_credentials
 
 ### Familias de refresh token y deteccion de reutilizacion
