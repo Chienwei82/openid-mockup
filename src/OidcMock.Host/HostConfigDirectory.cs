@@ -11,6 +11,12 @@ public static class HostConfigDirectory
     private const string RepositoryRelativePath = "../..";
 
     /// <summary>
+    /// Seccion de configuracion del mock. Todas las claves de abajo cuelgan de ella, asi que una
+    /// instancia se enlaza a <see cref="OidcMockOptions"/> completa.
+    /// </summary>
+    public const string SectionName = "OidcMock";
+
+    /// <summary>
     /// Clave de configuracion que permite forzar el directorio de configuracion (pruebas, despliegues).
     /// </summary>
     public const string ConfigDirectorySettingName = "OidcMock:ConfigDirectory";

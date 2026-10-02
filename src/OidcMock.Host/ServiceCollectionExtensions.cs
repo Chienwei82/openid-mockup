@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using OidcMock.Core.Authorization;
 using OidcMock.Core.Authorization.Validators;
 using OidcMock.Core.Claims;
@@ -19,6 +20,7 @@ using OidcMock.Core.Tokens;
 using OidcMock.Core.UserInfo;
 using OidcMock.Core.Users;
 using OidcMock.Host.Crypto;
+using OidcMock.Host.Configuration;
 using OidcMock.Host.Stores;
 
 namespace OidcMock.Host;
@@ -55,14 +57,24 @@ public static class ServiceCollectionExtensions
         });
 
     /// <summary>
-    /// Registra las opciones del mock, el discovery y el proveedor de la clave de firma, que usa
-    /// el mismo directorio de configuracion que los stores. Invocar despues de AddJsonStores.
+    /// Registra las opciones del mock desde la seccion de configuracion, con validacion al arrancar
+    /// (<c>ValidateOnStart</c>), el discovery y el proveedor de la clave de firma, que usa el mismo
+    /// directorio de configuracion que los stores. Invocar despues de AddJsonStores.
     /// </summary>
-    public static IServiceCollection AddOidcMock(this IServiceCollection services, OidcMockOptions options)
+    public static IServiceCollection AddOidcMock(this IServiceCollection services, IConfiguration configuration)
     {
-        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(configuration);
 
-        services.AddSingleton(options);
+        services.AddSingleton<IValidateOptions<OidcMockOptions>, OidcMockOptionsValidation>();
+        services.AddOptions<OidcMockOptions>()
+            .Bind(configuration)
+            // El enlace de configuracion anade elementos a una lista ya poblada en vez de
+            // reemplazarla, asi que la lista nace vacia y los origenes por defecto se aplican
+            // despues, solo si la configuracion no trajo ninguno.
+            .PostConfigure(ApplyDefaultCorsOrigins)
+            .ValidateOnStart();
+        // El resto del codigo pide OidcMockOptions por su clase; se resuelve el mismo objeto ya validado.
+        services.AddSingleton(provider => provider.GetRequiredService<IOptions<OidcMockOptions>>().Value);
         services.AddSingleton<DiscoveryDocumentBuilder>();
         services.AddSingleton<ISigningKeyProvider>(provider =>
             new PemSigningKeyProvider(provider.GetRequiredService<JsonStoreOptions>().ConfigDirectory));
@@ -131,6 +143,14 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IGrantHandler, CibaGrantHandler>();
 
         return services;
+    }
+
+    private static void ApplyDefaultCorsOrigins(OidcMockOptions options)
+    {
+        if (options.AllowedCorsOrigins.Count == 0)
+        {
+            options.AllowedCorsOrigins = OidcMockOptions.DefaultAllowedCorsOrigins;
+        }
     }
 
     private static JsonClientStore CreateClientStore(IServiceProvider provider) =>

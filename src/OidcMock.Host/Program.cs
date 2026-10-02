@@ -6,7 +6,7 @@ using OidcMock.Host.Endpoints;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddJsonStores(ResolveStoreOptions(builder));
-builder.Services.AddOidcMock(ResolveOidcMockOptions(builder));
+builder.Services.AddOidcMock(builder.Configuration.GetSection(HostConfigDirectory.SectionName));
 builder.Services.AddOidcMockProtocol();
 
 var app = builder.Build();
@@ -31,12 +31,6 @@ static JsonStoreOptions ResolveStoreOptions(WebApplicationBuilder builder)
         ? HostConfigDirectory.DefaultOptions(builder.Environment, reloadOnChange)
         : new JsonStoreOptions { ConfigDirectory = configuredDirectory, ReloadOnChange = reloadOnChange };
 }
-
-static OidcMockOptions ResolveOidcMockOptions(WebApplicationBuilder builder) => new()
-{
-    PathBase = builder.Configuration[HostConfigDirectory.PathBaseSettingName] ?? OidcMockOptions.DefaultPathBase,
-    Issuer = builder.Configuration[HostConfigDirectory.IssuerSettingName]
-};
 
 /// <summary>
 /// Punto de entrada visible para WebApplicationFactory en las pruebas de integracion.
