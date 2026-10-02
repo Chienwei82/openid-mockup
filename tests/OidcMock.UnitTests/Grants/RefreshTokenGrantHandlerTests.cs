@@ -167,12 +167,43 @@ public sealed class RefreshTokenGrantHandlerTests : GrantHandlerTestBase
         Assert.Equal("invalid_grant", (await HandleAsync("inventado")).Error?.Code);
     }
 
+    /// <summary>
+    /// OpenID Connect Core 3.1.3.3: si el refresh conserva el scope <c>openid</c>, la respuesta tiene
+    /// que traer un <c>id_token</c> nuevo. Un cliente que renueva la sesion lo necesita para volver
+    /// a validar al usuario, y el handler de ASP.NET Core lo da por hecho.
+    /// </summary>
     [Fact]
-    public async Task ElRefreshNoReemiteIdTokenPorDisenoDelMock()
+    public async Task ElRefreshQueConservaElScopeOpenidEmiteUnIdTokenNuevo()
+    {
+        var response = await HandleAsync(IssueRefreshToken(scopes: ["openid", "email"]).Token);
+
+        Assert.True(response.Succeeded, response.Error?.ToString());
+        Assert.NotNull(response.Value?.IdToken);
+    }
+
+    /// <summary>
+    /// Sin <c>openid</c> el canje es de OAuth a secas: devolver un id_token seria inventar una
+    /// identidad donde el cliente no la pidio.
+    /// </summary>
+    [Fact]
+    public async Task ElRefreshSinScopeOpenidNoEmiteIdToken()
+    {
+        var response = await HandleAsync(IssueRefreshToken(scopes: ["email"]).Token);
+
+        Assert.True(response.Succeeded, response.Error?.ToString());
+        Assert.Null(response.Value?.IdToken);
+    }
+
+    /// <summary>El id_token renovado no lleva nonce: el canje no es una peticion de autorizacion.</summary>
+    [Fact]
+    public async Task ElIdTokenRenovadoNoLlevaNonce()
     {
         var response = await HandleAsync(IssueRefreshToken().Token);
 
-        Assert.Null(response.Value?.IdToken);
+        var idToken = response.Value?.IdToken;
+
+        Assert.NotNull(idToken);
+        Assert.False(TokenTestValidator.HasClaim(idToken!, "nonce"));
     }
 
     private RefreshToken IssueRefreshToken(

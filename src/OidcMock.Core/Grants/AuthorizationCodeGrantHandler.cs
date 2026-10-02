@@ -67,17 +67,9 @@ public sealed class AuthorizationCodeGrantHandler(
             code.AuthenticatedAt,
             code.Nonce,
             null,
-            includeIdToken: IssuesIdToken && GrantsIdToken(code.Scopes),
+            includeIdToken: IssuesIdToken && IdTokenRules.GrantsIdToken(code.Scopes),
             includeRefreshToken: GrantsRefreshToken(request.Client, code.Scopes));
     }
-
-    /// <summary>
-    /// El id_token solo tiene sentido con el scope openid (OpenID Connect Core 3.1.3.6), que ademas
-    /// el authorize endpoint exige siempre, asi que en la practica esta comprobacion es una red de
-    /// seguridad para un code emitido por otra via.
-    /// </summary>
-    private static bool GrantsIdToken(IReadOnlyList<string> scopes) =>
-        scopes.Contains(ScopeNames.OpenId, StringComparer.Ordinal);
 
     /// <summary>
     /// Un refresh token solo si el cliente lo pidio con offline_access y su configuracion se lo

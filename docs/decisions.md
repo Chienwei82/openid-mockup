@@ -607,3 +607,45 @@ CORS presente y el aviso de clave no persistida apareciendo en el log.
   en archivos de configuración a mano.
 - `client_secret` en texto plano, tal como se pidió (los secretos de `users.json` también, ya que el
   mock es solo para desarrollo local y offline).
+
+## Etapa 11: README, revision critica y bug del refresh
+
+### El canje de refresh_token tiene que devolver id_token
+
+- **Bug real, encontrado probando contra un cliente real.** `RefreshTokenGrantHandler.IssuesIdToken`
+  valia `false` y habia un test que lo fijaba como "decision del mock". OpenID Connect Core 3.1.3.3
+  dice lo contrario: si el refresh conserva el scope `openid`, la respuesta trae un `id_token` nuevo.
+  Sin el, una aplicacion que renueva la sesion no puede volver a validar al usuario, y el handler
+  `Microsoft.AspNetCore.Authentication.OpenIdConnect` da por hecho que llega.
+- **Como se detecto:** el canje por HTTP devolvia `access_token`, `refresh_token` y `scope`, pero no
+  `id_token`. El sintoma se veia como un token renewal que "no funcionaba", no como un token mal formado.
+- **Arreglo:** `IssuesIdToken => true` mas la regla compartida `IdTokenRules.GrantsIdToken(scopes)`, que
+  antes vivia duplicada como metodo privado en el grant de codigo. Sin `openid` no se emite: un canje
+  OAuth a secas no inventa identidades. El `id_token` renovado no lleva `nonce`, porque no es una
+  peticion de autorizacion.
+- **Decision:** el comportamiento anterior era una interpretacion defendible del RFC 6749 en isolation,
+  pero incompatible con OpenID Connect y, sobre todo, con clientes reales. Mandó la prueba de
+  compatibilidad sobre el criterio previo.
+
+### Defectos del arnés de pruebas (no del mock)
+
+- **La sesion se perdia entre pasos.** El helper hacia el login en un `BrowserSession` y lo descartaba;
+  las pruebas siguientes abrian otro sin la cookie, asi que se probaba el refresh contra un cliente sin
+  sesion. Ahora el mundo firmado y el navegador se devuelven juntos en un `SignedInWorld`.
+- **`Results.SignOut` con un solo esquema** abandona la sesion del proveedor pero deja viva la cookie de
+  la aplicacion: el logout parecia funcionar y la sesion seguia abierta. Se cierran los dos esquemas.
+- **Un test afirmaba algo falso:** el segundo `/refresh` usa el token que la renovacion acaba de canjear,
+  asi que era la renovacion correcta la que fallaba. Para observar la rotacion hace falta reenviar el
+  token ya canjeado, y para eso `/refresh?anterior=1` lo reenvia a proposito.
+- **La API de JwtBearer no exigia autorizacion:** sin `.RequireAuthorization()` respondia 200 con un
+  principal vacio, y los casos negativos no podian fallar.
+- `ProtocolMessage.Scope` vacio en `OnTokenValidated` era una lectura equivocada, no un bug: en el camino
+  de userinfo ese mensaje no es la respuesta del token endpoint. Los diagnosticos temporales se
+  retiraron al confirmar la causa real.
+
+### Verificacion
+
+`dotnet build` en verde (0 warnings) y **528/528 tests** (332 unit + 178 integration + 18 compatibilidad
+de cliente). La suite de compatibilidad levanta el mock sobre Kestrel real y usa los clientes de verdad:
+`OpenIdConnect` para el login, la renovacion y el logout, y `JwtBearer` para la API, ambos configurados
+solo con el issuer.

@@ -32,6 +32,7 @@ public sealed class CompatibilityWorld : IAsyncDisposable
     private readonly CompatibilityConfig _config;
     private readonly LoopbackAddress _clientAddress;
     private OidcClientHost? _client;
+    private JwtBearerApiHost? _api;
 
     private CompatibilityWorld(MockHostFixture mock, CompatibilityConfig config, LoopbackAddress clientAddress)
     {
@@ -78,6 +79,17 @@ public sealed class CompatibilityWorld : IAsyncDisposable
     }
 
     /// <summary>
+    /// Levanta la API protegida con JwtBearer, tambien configurada solo con el issuer: las claves y el
+    /// emisor salen del discovery, y la audiencia del <c>client_id</c> del cliente de maquina a maquina.
+    /// </summary>
+    public async Task<JwtBearerApiHost> StartApiAsync()
+    {
+        _api = await JwtBearerApiHost.StartAsync(Mock.Issuer, TestContext.Current.CancellationToken);
+
+        return _api;
+    }
+
+    /// <summary>
     /// El discovery se lee como lo haria el handler: con el ConfigurationManager de IdentityModel
     /// sobre la direccion que se construye a partir del Authority. Descargarlo a mano probaria el
     /// documento, no el camino que sigue el cliente de verdad.
@@ -105,6 +117,11 @@ public sealed class CompatibilityWorld : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        if (_api is not null)
+        {
+            await _api.DisposeAsync();
+        }
+
         if (_client is not null)
         {
             await _client.DisposeAsync();

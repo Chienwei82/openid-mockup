@@ -24,6 +24,15 @@ public sealed class CompatibilityConfig : IDisposable
     }
 
     /// <summary>
+    /// Cliente de maquina a maquina, sin usuario: es el que usa el grant client_credentials y el que
+    /// valida la API protegida con JwtBearer.
+    /// </summary>
+    public const string ServiceClientId = "backend-service";
+
+    /// <summary>Secreto del cliente de maquina a maquina.</summary>
+    public const string ServiceClientSecret = "super-secret-backend";
+
+    /// <summary>
     /// Directorio que se le pasa al mock con <c>OidcMock:ConfigDirectory</c>. El nombre lleva el
     /// prefijo del tipo a proposito: un property llamado <c>Path</c> o <c>Directory</c> sombrearia
     /// <see cref="System.IO.Path"/> o <see cref="System.IO.Directory"/> dentro de la clase.
@@ -52,6 +61,22 @@ public sealed class CompatibilityConfig : IDisposable
                 "allowed_grant_types": [ "authorization_code", "refresh_token" ],
                 "allowed_scopes": [ "openid", "profile", "email", "offline_access" ],
                 "require_pkce": true,
+                "require_client_secret": true,
+                "token_lifetimes": {
+                  "access_token": "00:30:00",
+                  "id_token": "00:30:00",
+                  "refresh_token": "08:00:00",
+                  "authorization_code": "00:05:00"
+                }
+              },
+              {
+                "client_id": {{Quote(ServiceClientId)}},
+                "client_secret": {{Quote(ServiceClientSecret)}},
+                "redirect_uris": [],
+                "post_logout_redirect_uris": [],
+                "allowed_grant_types": [ "client_credentials" ],
+                "allowed_scopes": [ "openid", "email" ],
+                "require_pkce": false,
                 "require_client_secret": true,
                 "token_lifetimes": {
                   "access_token": "00:30:00",

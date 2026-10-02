@@ -123,21 +123,29 @@ public sealed class OidcClientHost : IAsyncDisposable
 
         application.MapGet("/refresh", async (HttpContext context) =>
         {
-            var refreshed = await TokenRefresher.RefreshAsync(context);
+            // ?anterior=1 reenvia el refresh token que la renovacion anterior ya canjeo, para poder
+            // observar la rotacion desde fuera de la aplicacion.
+            var reusePrevious = context.Request.Query["anterior"] == "1";
+            var refreshed = await TokenRefresher.RefreshAsync(context, reusePrevious);
 
             return refreshed.Succeeded
                 ? Results.Json(refreshed.Value!)
                 : Results.BadRequest(new { error = refreshed.Error });
         });
 
+        // El logout tiene que cerrar los DOS esquemas: con el de OpenID Connect solo se abandona la
+        // sesion del proveedor y la cookie de la aplicacion sigue viva, que es justo el fallo que
+        // estas pruebas tienen que detectar.
         application.MapGet("/logout", (HttpContext context) => Results.SignOut(
             new AuthenticationProperties { RedirectUri = "/" },
-            [OpenIdConnectDefaults.AuthenticationScheme]));
+            [CookieAuthenticationDefaults.AuthenticationScheme, OpenIdConnectDefaults.AuthenticationScheme]));
 
         // El handler vuelve aqui tras el end session y despues redirige al RedirectUri final.
         application.MapGet("/signout-callback-oidc", () => Results.Ok());
 
-        application.MapGet("/", () => Results.Ok("sesion cerrada"));
+        // "sesion cerrada" en texto plano: es lo que veria una persona al volver del logout, y la prueba
+        // compara la pagina, no un JSON.
+        application.MapGet("/", () => Results.Text("sesion cerrada"));
     }
 
     private const string ProfilePath = "/profile";

@@ -21,7 +21,12 @@ public sealed class RefreshTokenGrantHandler(
 {
     public string GrantType => GrantTypes.RefreshToken;
 
-    public bool IssuesIdToken => false;
+    /// <summary>
+    /// OpenID Connect Core 3.1.3.3: al renovar una sesion que conserva el scope <c>openid</c>, la
+    /// respuesta trae un <c>id_token</c> nuevo. El canje no lleva nonce, porque no es una peticion de
+    /// autorizacion: el nonce solo ata la respuesta del authorize con su peticion.
+    /// </summary>
+    public bool IssuesIdToken => true;
 
     public Task<Result<TokenResponse>> HandleAsync(TokenRequest request) =>
         Task.FromResult(Handle(request));
@@ -76,7 +81,7 @@ public sealed class RefreshTokenGrantHandler(
             timeProvider.GetUtcNow(),
             null,
             null,
-            includeIdToken: IssuesIdToken,
+            includeIdToken: IssuesIdToken && IdTokenRules.GrantsIdToken(scopes),
             includeRefreshToken: true,
             refreshTokenFamilyId: refreshToken.FamilyId);
     }

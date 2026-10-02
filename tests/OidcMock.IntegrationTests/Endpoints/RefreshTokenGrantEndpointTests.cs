@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.IdentityModel.JsonWebTokens;
 using OidcMock.Core.Grants;
 
 namespace OidcMock.IntegrationTests.Endpoints;
@@ -99,6 +100,30 @@ public sealed class RefreshTokenGrantEndpointTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
+    /// <summary>
+    /// OpenID Connect Core 3.1.3.3: la renovacion de una sesion con scope openid devuelve un
+    /// id_token nuevo, que es lo que espera cualquier cliente real al canjear su refresh token.
+    /// </summary>
+    [Fact]
+    public async Task ElCanjeDevuelveUnIdTokenNuevoCuandoElScopeConservaOpenId()
+    {
+        using var client = OidcTestClient.Create();
+        var code = await OidcTestClient.SignInAsync(client);
+        var issued = await OidcTestClient.RequestTokensAsync(
+            client,
+            GrantTypes.AuthorizationCode,
+            code,
+            new Dictionary<string, string> { ["scope"] = "openid email offline_access" });
+
+        var response = await OidcTestClient.PostTokenAsync(client, Form(issued.RefreshToken!));
+        var body = JsonDocument.Parse(await ReadBodyAsync(response)).RootElement;
+
+        var idToken = body.GetProperty("id_token").GetString();
+
+        Assert.False(string.IsNullOrEmpty(idToken), "La renovacion tiene que devolver id_token.");
+        Assert.Equal(OidcTestClient.UserSubject, ReadClaim(idToken!, "sub"));
+    }
+
     private static async Task<string> CanjeAsync(HttpClient client, string refreshToken)
     {
         var response = await OidcTestClient.PostTokenAsync(client, Form(refreshToken));
@@ -120,6 +145,13 @@ public sealed class RefreshTokenGrantEndpointTests
 
     private static string ReadRefreshToken(string body) =>
         JsonDocument.Parse(body).RootElement.GetProperty("refresh_token").GetString()!;
+
+    /// <summary>
+    /// Lee un claim del payload de un JWT. No valida la firma: aqui solo se comprueba que el token
+    /// emitido lleva el claim que tiene que llevar, y la validacion tiene sus propias pruebas.
+    /// </summary>
+    private static string ReadClaim(string jwt, string claim) =>
+        new JsonWebToken(jwt).GetClaim(claim).Value;
 
     private static async Task<string> ErrorAsync(HttpResponseMessage response) =>
         JsonDocument.Parse(await ReadBodyAsync(response)).RootElement.GetProperty("error").GetString()!;

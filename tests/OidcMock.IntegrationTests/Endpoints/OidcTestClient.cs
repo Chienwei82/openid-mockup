@@ -23,6 +23,9 @@ public static class OidcTestClient
     public const string ServiceClientId = "backend-service";
     public const string ServiceSecret = "super-secret-backend";
 
+    /// <summary>Sujeto del usuario de ejemplo con el que hacen login estas pruebas.</summary>
+    public const string UserSubject = "user-persona-fisica";
+
     /// <summary>
     /// Segundo cliente web con authorization_code y secreto: sirve para comprobar que un codigo
     /// emitido para otro cliente no se canjea, sin que la respuesta sea unsupported_grant_type.

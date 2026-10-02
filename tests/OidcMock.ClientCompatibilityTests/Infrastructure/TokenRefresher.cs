@@ -22,14 +22,23 @@ namespace OidcMock.ClientCompatibilityTests.Infrastructure;
 /// </summary>
 public static class TokenRefresher
 {
-    public static async Task<RefreshOutcome> RefreshAsync(HttpContext context)
+    /// <summary>
+    /// Nombre con el que la renovacion guarda el refresh token que acaba de canjear. Una aplicacion
+    /// real no lo haria: esta suite lo necesita para poder reenviar un token ya rotado y comprobar
+    /// que el mock lo rechaza, que es la unica forma de observar la rotacion desde fuera.
+    /// </summary>
+    public const string PreviousRefreshTokenName = "refresh_token_anterior";
+
+    public static async Task<RefreshOutcome> RefreshAsync(HttpContext context, bool reusePreviousToken = false)
     {
         var session = await context.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-        var refreshToken = session.Properties?.GetTokenValue(OpenIdConnectParameterNames.RefreshToken);
+        var tokenName = reusePreviousToken ? PreviousRefreshTokenName : OpenIdConnectParameterNames.RefreshToken;
+        var refreshToken = session.Properties?.GetTokenValue(tokenName);
 
         if (string.IsNullOrEmpty(refreshToken))
         {
-            return RefreshOutcome.Ko("La sesion no tiene refresh token.");
+            var available = session.Properties?.GetTokens().Select(token => token.Name) ?? [];
+            return RefreshOutcome.Ko($"La sesion no tiene el token '{tokenName}'. Tokens: [{string.Join(", ", available)}].");
         }
 
         var options = context.RequestServices.GetRequiredService<IOptionsMonitor<OpenIdConnectOptions>>()
@@ -51,11 +60,13 @@ public static class TokenRefresher
         }
 
         // La cookie se vuelve a emitir con los tokens nuevos: el canje por si solo no cambia la sesion.
+        // El token canjeado se guarda aparte para que la prueba de rotacion pueda reenviarlo.
         var properties = session.Properties!;
         properties.StoreTokens(
         [
             new AuthenticationToken { Name = OpenIdConnectParameterNames.AccessToken, Value = tokens.AccessToken },
-            new AuthenticationToken { Name = OpenIdConnectParameterNames.RefreshToken, Value = tokens.RefreshToken }
+            new AuthenticationToken { Name = OpenIdConnectParameterNames.RefreshToken, Value = tokens.RefreshToken },
+            new AuthenticationToken { Name = PreviousRefreshTokenName, Value = refreshToken }
         ]);
 
         await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, session.Principal!, properties);

@@ -17,7 +17,12 @@ namespace OidcMock.ClientCompatibilityTests.Infrastructure;
 /// </summary>
 public sealed class JwtBearerApiHost : IAsyncDisposable
 {
-    private const string Audience = "backend-service";
+    /// <summary>
+    /// Audiencia que espera el JwtBearer. El access token del mock lleva el <c>client_id</c> como
+    /// <c>aud</c> (RFC 9068 lo define asi), asi que para validar el token de este cliente hay que
+    /// poner su id, no un nombre inventado.
+    /// </summary>
+    private const string Audience = CompatibilityConfig.ServiceClientId;
 
     private readonly WebApplication _application;
 
@@ -52,8 +57,10 @@ public sealed class JwtBearerApiHost : IAsyncDisposable
 
         var application = builder.Build();
 
-        application.MapGet(ProtectedPath, (HttpContext context) =>
-            Results.Json(Claims.Describe(context.User)));
+        // Exigir autorizacion es lo que convierte esto en una API protegida: sin token, o con un token
+        // que no valida contra el JWKS del discovery, la respuesta tiene que ser 401.
+        application.MapGet(ProtectedPath, (HttpContext context) => Results.Json(Claims.Describe(context.User)))
+            .RequireAuthorization();
 
         await application.StartAsync(cancellationToken);
 
