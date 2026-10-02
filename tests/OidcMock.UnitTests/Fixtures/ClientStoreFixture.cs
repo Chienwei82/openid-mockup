@@ -10,8 +10,32 @@ public sealed class ClientStoreFixture
 {
     public const string SpaClientId = "web-app-spa";
     public const string ServiceClientId = "backend-service";
+    public const string ConfidentialWebClientId = "web-app-confidencial";
 
-    public static IClientStore Create() => new InMemoryClientStore([Spa(), Service()]);
+    public static IClientStore Create() =>
+        new InMemoryClientStore([Spa(), Service(), ConfidentialWeb()]);
+
+    /// <summary>
+    /// Cliente confidencial con <c>redirect_uri</c> registrada y sin exigir PKCE.
+    /// <see cref="Service"/> es confidencial pero no registra redireccion (es de maquina a maquina), asi
+    /// que no sirve para probar un flujo de autorizacion con el: cualquier push suyo falla antes de
+    /// llegar a la autenticacion, y la prueba no distinguiria "secreto correcto" de "cliente valido".
+    /// </summary>
+    public static Client ConfidentialWeb() => new(
+        ConfidentialWebClientId,
+        "super-secreto-web",
+        ["https://localhost:5173/callback"],
+        ["https://localhost:5173/"],
+        ["authorization_code", "refresh_token"],
+        ["openid", "profile", "email", "offline_access"],
+        RequirePkce: false,
+        RequireClientSecret: true,
+        new TokenLifetimes(
+            AccessToken: TimeSpan.FromMinutes(30),
+            IdentityToken: TimeSpan.FromMinutes(30),
+            RefreshToken: TimeSpan.FromHours(8),
+            AuthorizationCode: TimeSpan.FromMinutes(5)),
+        new Branding("OidcMock - Web Confidencial", null, "#00695C"));
 
     /// <summary>Coordinador con los dos metodos de autenticacion que el token endpoint admite.</summary>
     public static ClientAuthenticator AuthenticatorOver(IClientStore clientStore) =>
