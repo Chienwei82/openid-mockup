@@ -1,4 +1,5 @@
 using OidcMock.Core.Authorization;
+using OidcMock.Core.Authorization.Validators;
 using OidcMock.Core.Codes;
 using OidcMock.Core.Grants;
 using OidcMock.Core.Scopes;
@@ -15,14 +16,14 @@ public sealed class AuthorizationRequestValidatorTests
 {
     private readonly AuthorizationRequestValidator _validator = new(
         ClientStoreFixture.Create(),
-        ScopeStoreFixture.Create(),
         [
             new ClientExistsValidator(),
             new RedirectUriValidator(),
             new GrantTypeValidator(),
             new ResponseTypeValidator(),
             new OpenIdScopeValidator(),
-            new AllowedScopesValidator(ClientStoreFixture.Create()),
+            new AllowedScopesValidator(),
+            new KnownScopesValidator(ScopeStoreFixture.Create()),
             new PkceRequiredValidator(),
             new CodeChallengeMethodValidator(),
             new PromptValidator(),

@@ -1,4 +1,5 @@
 using OidcMock.Core.Authorization;
+using OidcMock.Core.Authorization.Validators;
 using OidcMock.Core.Codes;
 using OidcMock.Core.Grants;
 using OidcMock.Core.Scopes;
@@ -56,7 +57,7 @@ public sealed class RedirectUriValidatorTests
 /// <summary>Regla: cada scope solicitado tiene que estar permitido para el cliente.</summary>
 public sealed class AllowedScopesValidatorTests
 {
-    private readonly AllowedScopesValidator _validator = new(ClientStoreFixture.Create());
+    private readonly AllowedScopesValidator _validator = new();
 
     [Fact]
     public void AceptaScopesPermitidos() => Assert.Null(_validator.Validate(Context()));
@@ -116,9 +117,13 @@ public sealed class CodeChallengeMethodValidatorTests
 
     [Theory]
     [InlineData("MD5")]
-    [InlineData("")]
+    [InlineData("sha1")]
     public void RechazaUnMetodoNoSoportado(string method) =>
         Assert.Equal("invalid_request", _validator.Validate(Context(codeChallengeMethod: method))?.Code);
+
+    [Fact]
+    public void UnMetodoEnBlancoSeTrataComoMethodAusente() =>
+        Assert.Null(_validator.Validate(Context(codeChallengeMethod: " ")));
 
     [Fact]
     public void RechazaUnMetodoSinCodeChallenge() =>
@@ -141,7 +146,7 @@ public sealed class ResponseModeValidatorTests
 
     [Theory]
     [InlineData("form_get")]
-    [InlineData("")]
+    [InlineData("form_get ")]
     public void RechazaUnResponseModeNoSoportado(string mode) =>
         Assert.Equal("invalid_request", _validator.Validate(Context(responseMode: mode))?.Code);
 }

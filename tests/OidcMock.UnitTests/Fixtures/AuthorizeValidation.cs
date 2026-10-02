@@ -1,15 +1,20 @@
 using OidcMock.Core.Authorization;
 using OidcMock.Core.Clients;
 using OidcMock.Core.Grants;
+using OidcMock.Core.Scopes;
 
 namespace OidcMock.UnitTests.Fixtures;
 
 /// <summary>
 /// Construye peticiones de autorizacion para probar validadores sueltos, sin levantar el host.
-/// Un parametro a null significa "no enviar", para que cada test se centre en su regla.
+/// Un parametro a null significa "no enviar", para que cada test se centre en su regla. El cliente
+/// se resuelve del store a partir del client_id, igual que hace la cadena, para que un test de
+/// "cliente desconocido" no se contradiga a si mismo.
 /// </summary>
 public static class AuthorizeValidation
 {
+    private static readonly IClientStore Clients = ClientStoreFixture.Create();
+
     public const string RedirectUri = "https://localhost:5173/callback";
     public const string CodeChallenge = "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM";
 
@@ -39,5 +44,5 @@ public static class AuthorizeValidation
                 prompt,
                 grantType,
                 responseMode ?? ResponseModes.Query),
-            client ?? ClientStoreFixture.Spa());
+            client ?? Clients.Find(clientId!));
 }

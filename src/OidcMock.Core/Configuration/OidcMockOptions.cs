@@ -21,4 +21,13 @@ public sealed class OidcMockOptions
     /// sirve un discovery coherente sin configuracion previa.
     /// </summary>
     public string? Issuer { get; init; }
+
+    /// <summary>
+    /// Vigencia de la sesion de login que recuerda el authorize entre peticiones. Es larga a
+    /// proposito: en un mock de desarrollo interesa no reescribir la contrasena cada vez.
+    /// </summary>
+    public static TimeSpan DefaultSessionLifetime => TimeSpan.FromHours(8);
+
+    /// <summary>Vigencia de la sesion de login que recuerda el authorize entre peticiones.</summary>
+    public TimeSpan SessionLifetime { get; init; } = DefaultSessionLifetime;
 }
