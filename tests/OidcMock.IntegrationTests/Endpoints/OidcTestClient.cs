@@ -32,15 +32,38 @@ public static class OidcTestClient
             .CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
 
     public static string AuthorizeUrl() =>
-        $"{PathBase}/{EndpointPaths.Authorize}" +
-        $"?client_id={ClientId}" +
-        $"&redirect_uri={Uri.EscapeDataString(RedirectUri)}" +
-        "&response_type=code" +
-        "&scope=openid%20email" +
-        "&state=st-1" +
-        "&nonce=n-1" +
-        $"&code_challenge={Uri.EscapeDataString(Sha256Base64Url(CodeVerifier))}" +
-        "&code_challenge_method=S256";
+        BuildAuthorizeUrl([]);
+
+    /// <summary>
+    /// URL de authorize con los parametros por defecto del cliente de pruebas, sobrescribiendo los
+    /// que se pasen. Asi cada test declara solo lo que cambia respecto al caso bueno.
+    /// </summary>
+    public static string BuildAuthorizeUrl(Dictionary<string, string?> parameters) =>
+        $"{PathBase}/{EndpointPaths.Authorize}?{QueryString(DefaultParameters(), parameters)}";
+
+    private static IEnumerable<KeyValuePair<string, string?>> DefaultParameters() =>
+    [
+        new("client_id", ClientId),
+        new("redirect_uri", RedirectUri),
+        new("response_type", "code"),
+        new("scope", "openid email"),
+        new("state", "st-1"),
+        new("nonce", "n-1"),
+        new("code_challenge", Sha256Base64Url(CodeVerifier)),
+        new("code_challenge_method", "S256")
+    ];
+
+    private static string QueryString(
+        IEnumerable<KeyValuePair<string, string?>> defaults,
+        Dictionary<string, string?> overrides)
+    {
+        var values = defaults
+            .Where(parameter => !overrides.ContainsKey(parameter.Key))
+            .Concat(overrides)
+            .Select(parameter => $"{parameter.Key}={Uri.EscapeDataString(parameter.Value ?? string.Empty)}");
+
+        return string.Join('&', values);
+    }
 
     public static string Sha256Base64Url(string verifier) =>
         Base64Url.Encode(System.Security.Cryptography.SHA256.HashData(
