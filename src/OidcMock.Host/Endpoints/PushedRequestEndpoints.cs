@@ -22,11 +22,9 @@ public static class PushedRequestEndpoints
         return endpoints;
     }
 
-    private static async Task<IResult> Push(HttpContext context, IPushedAuthorizationService par, OidcMockOptions options)
+    private static async Task<IResult> Push(HttpContext context, IPushedAuthorizationService par)
     {
-        var result = par.Push(
-            ToPushParameters(await RequestValues.ReadAsync(context.Request)),
-            options.Issuer ?? string.Empty);
+        var result = par.Push(ToPushParameters(await RequestValues.ReadAsync(context.Request)));
 
         return result.Succeeded
             ? Results.Json(new

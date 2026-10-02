@@ -85,7 +85,6 @@ public sealed class InMemoryPendingAuthorizationStoreTests
             "web-app-spa",
             ["openid"],
             Authorization(),
-            "https://localhost/personafisica/",
             Now + Lifetime,
             TimeSpan.FromSeconds(5)));
 

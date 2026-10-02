@@ -9,7 +9,12 @@ namespace OidcMock.Core.PushedRequests;
 /// </summary>
 public interface IPushedAuthorizationService
 {
-    Result<PushedAuthorizationResponse> Push(PushRequestParameters parameters, string issuer);
+    /// <summary>
+    /// Guarda la peticion empujada y devuelve su <c>request_uri</c>. No recibe el issuer: la peticion
+    /// se vuelve a validar en el authorize y los tokens se emiten ahi, con el issuer que resuelve esa
+    /// peticion. Guardarlo aqui seria un segundo emisor que nadie lee.
+    /// </summary>
+    Result<PushedAuthorizationResponse> Push(PushRequestParameters parameters);
 
     /// <summary>
     /// Reconstruye la peticion original desde un request_uri. La resuelve el authorize, porque un

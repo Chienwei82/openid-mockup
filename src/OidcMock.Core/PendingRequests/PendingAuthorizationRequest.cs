@@ -12,7 +12,6 @@ public sealed record PendingAuthorizationRequest(
     string ClientId,
     IReadOnlyList<string> Scopes,
     ValidatedAuthorizationRequest Authorization,
-    string Issuer,
     DateTimeOffset ExpiresAt,
     TimeSpan Interval,
     string? DeviceCode = null,

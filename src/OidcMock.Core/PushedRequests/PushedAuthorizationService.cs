@@ -4,6 +4,7 @@ using OidcMock.Core.Clients;
 using OidcMock.Core.Errors;
 using OidcMock.Core.Grants;
 using OidcMock.Core.PendingRequests;
+using OidcMock.Core.Scopes;
 
 namespace OidcMock.Core.PushedRequests;
 
@@ -20,7 +21,7 @@ public sealed class PushedAuthorizationService(
 {
     private static readonly TimeSpan RequestUriLifetime = TimeSpan.FromMinutes(5);
 
-    public Result<PushedAuthorizationResponse> Push(PushRequestParameters parameters, string issuer)
+    public Result<PushedAuthorizationResponse> Push(PushRequestParameters parameters)
     {
         ArgumentNullException.ThrowIfNull(parameters);
 
@@ -44,7 +45,6 @@ public sealed class PushedAuthorizationService(
             validation.Value!.Client.ClientId,
             validation.Value.Scopes,
             validation.Value,
-            issuer,
             issuedAt + RequestUriLifetime,
             TimeSpan.Zero));
 
@@ -75,7 +75,7 @@ public sealed class PushedAuthorizationService(
             parameters.ClientId,
             parameters.RedirectUri,
             parameters.ResponseType,
-            SplitScopes(parameters.Scope),
+            ScopeNames.Split(parameters.Scope),
             parameters.Nonce,
             parameters.State,
             parameters.CodeChallenge,
@@ -83,11 +83,6 @@ public sealed class PushedAuthorizationService(
             parameters.Prompt,
             GrantTypes.AuthorizationCode,
             parameters.ResponseMode ?? ResponseModes.Query);
-
-    private static string[] SplitScopes(string? scope) =>
-        string.IsNullOrWhiteSpace(scope)
-            ? []
-            : scope.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
     /// <summary>
     /// Reconstruye la peticion original. Se devuelve como <see cref="AuthorizationRequest"/> y no como

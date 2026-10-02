@@ -136,7 +136,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ITokenRevocationService, TokenRevocationService>();
         services.AddSingleton<IPendingAuthorizationStore, InMemoryPendingAuthorizationStore>();
         services.AddSingleton<IPushedAuthorizationService, PushedAuthorizationService>();
-        services.AddSingleton<IDeviceAuthorizationService, DeviceAuthorizationService>();
+        services.AddSingleton<IPollAuthorizationService, PollAuthorizationService>();
 
         // Cada grant es una estrategia y la DI la resuelve por su constructor. Agregar un grant nuevo
         // es registrar una linea mas, sin tocar el dispatcher del token endpoint.
