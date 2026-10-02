@@ -77,6 +77,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddOidcMockProtocol(this IServiceCollection services)
     {
         services.AddSingleton<ICodeStore, InMemoryCodeStore>();
+        services.AddSingleton<IAuthSessionStore, InMemoryAuthSessionStore>();
         services.AddSingleton<IRefreshTokenStore, InMemoryRefreshTokenStore>();
         services.AddSingleton<ITokenFactory, JsonWebTokenFactory>();
         services.AddSingleton<IAccessTokenReader, AccessTokenReader>();

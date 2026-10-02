@@ -49,7 +49,7 @@ public sealed class InMemoryAuthSessionStoreTests
         var store = CreateStore();
         var session = store.Start("jperez", "user-1");
 
-        store.End(session.SessionId);
+        store.Close(session.SessionId);
 
         Assert.Null(store.Find(session.SessionId));
     }
@@ -88,10 +88,10 @@ public sealed class InMemoryAuthSessionStoreTests
         store.Expire();
         var afterwards = store.Start("posterior", "user-3");
 
-        Assert.Empty(store.List().Where(item => item.SessionId == vencida.SessionId));
+        Assert.DoesNotContain(store.List(), item => item.SessionId == vencida.SessionId);
         Assert.Contains(store.List(), item => item.SessionId == afterwards.SessionId);
         Assert.NotEqual(vigente.SessionId, afterwards.SessionId);
     }
 
-    private InMemoryAuthSessionStore CreateStore() => new(_time);
+    private InMemoryAuthSessionStore CreateStore() => new(_time, new OidcMockOptions());
 }
