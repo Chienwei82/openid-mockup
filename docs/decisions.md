@@ -1,5 +1,102 @@
 # Decisiones de diseño
 
+## Prompt 4 — Authorization Code, token endpoint y endpoints protegidos
+
+### Estructura del dominio
+- `Core/Errors`: `Result<T>` + `ProtocolError` (codigo, descripcion, status HTTP) y dos catalogos,
+  `ProtocolErrors` (token endpoint) y `AuthorizationErrors` (authorize). Centralizarlos evita que el
+  mismo error viaje con status distintos en dos sitios.
+- `ProtocolErrors.InvalidClient` es **401** (RFC 6749 5.2) pero `AuthorizationErrors.InvalidClient`
+  es **400**: en `/connect/authorize` el cliente no se autentica, solo se identifica. Copiar el status
+  sin pensar rompe clientes reales..
+- `Result<T>` dispara **CA1000** (no statics en tipos genericos). Se suprime con `SuppressMessage` y
+  justificacion: las fabricas deben vivir en el propio `Result<T>` para poder escribirse
+  `Result<TokenResponse>.Ok(...)` sin repetir el constructor privado en cada caso de uso.
+- La propiedad booleana del resultado de validacion se llama `IsError`, no `Failed`, porque `Failed`
+  choca con el metodo fabrica `Failed(...)` del mismo tipo.
+
+### Autorizacion: reglas encadenadas y redireccion segura
+- `AuthorizationRequestValidator` aplica una lista de `AuthorizationRule` (delegados): cada regla
+  devuelve el error o `null` y se toma el primer fallo. Anadir una regla es agregar una entrada, sin
+  tocar las existentes y sin `if` anidados. La lista es de **instancia** porque `ValidateScopes`
+  consulta el `IScopeStore` inyectado (y un inicializador de campo no puede referenciar metodos de
+  instancia, asi que el constructor es explicito).
+- `AuthorizationValidationResult.CanRedirect` distingue los errores que viajan por `redirect_uri` de
+  los que se muestran en el endpoint. **Solo se redirige cuando `client_id` y `redirect_uri` ya son
+  validos**: si no, el endpoint seria un vector de *open redirect*.
+- **PKCE sin `code_challenge_method` usa `plain`**, el default de RFC 7636 4.3 (no S256). Un challenge
+  sin metodo no es error; un metodo sin challenge si lo es.
+- La respuesta lleva siempre `iss` (`authorization_response_iss_parameter_supported`).
+
+### Grants como Strategy
+- `IGrantHandler` + `GrantHandlerRegistry`: el token endpoint **no conoce** los casos particulares de
+  ningun grant. Agregar uno es registrar `services.AddSingleton<IGrantHandler, X>()` y nada mas.
+- `TokenEndpointService` autentica al cliente y valida scopes **antes** de despachar, y sale temprano
+  con el primer error. Un cliente publico (sin secreto) es valido en el token endpoint: la
+  proteccion la aporta el PKCE que exigio el authorize.
+- `authorization_code` verifica `redirect_uri` y `code_verifier` contra lo guardado al emitir el
+  codigo (RFC 6749 4.1.3). El **codigo guarda el redirect_uri**: sin el, el canje fallaba contra el
+  servidor real y solo se detectaba recorriendo el flujo completo contra el host.
+- `refresh_token` **rota**: cada canje consume el token y emite uno nuevo.
+- `client_credentials` no emite `id_token` ni `refresh_token`, y sin usuario no proyecta claims.
+- El grant `refresh_token` **no reemite `id_token`** en el mock; `IGrantHandler.IssuesIdToken` decide
+  caso por caso en lugar de asumirlo en la fabrica comun.
+
+### `AccessTokenReader`
+- UserInfo, introspect y revocation leen el token por un unico `IAccessTokenReader`, que valida firma,
+  issuer y vida util contra el JWKS. Validar a mano en cada endpoint habria dispersado la firma.
+- La vida util se comprueba con el **`TimeProvider` inyectado**, no con el reloj del proceso: un token
+  emitido con un reloj de pruebas se rechazaria como caducado. Es el mismo problema que el `nbf` de la
+  etapa 3 (D-015), ahora del lado de la lectura.
+- `audiences: null` desactiva la comprobacion de audiencia, que es lo que necesita userinfo (su
+  audiencia es el propio `client_id` del token, que todavia no se conoce). Ademas hay que poner
+  `ValidateAudience = false`: con la lista vacia la libreria **lanza** en lugar de pasar.
+
+### Introspection y revocation
+- Un token desconocido, caducado o de **otro cliente** se responde `active=false` (RFC 7662 2.2), no
+  con un error: el endpoint no debe filtrar por que fallo. La revocacion responde 200 igual
+  (RFC 7009 2.2), aunque internamente si distingue si algo se revoco.
+- El access token es un JWT sin estado: no hay nada que borrar. Se considera revocado para coherencia
+  y caduca por `exp`, igual que el servidor real.
+
+### Flujos por sondeo (device, CIBA) y PAR
+- Los tres comparten `IPendingAuthorizationStore`: peticion pendiente, handle, expiracion, intervalo de
+  sondeo, aprobacion y canje de un solo uso. Un store, no tres.
+- `PollGrantHandler` es la base de `device_code` y CIBA: antes de canjear responde
+  `authorization_pending` si el usuario no ha respondido y `access_denied` si lo denego (RFC 8628 3.5).
+- El handle viaja en `device_code` (RFC 8628) o en `auth_req_id` (CIBA); el token endpoint lee
+  cualquiera de los dos.
+- **CIBA en el mock no pide confirmacion al usuario**: si el `login_hint` identifica a un usuario del
+  store, la peticion queda aprobada de inmediato. Es el camino feliz para probar aplicaciones sin
+  montar un segundo canal de usuario.
+- `Deny` limpia la aprobacion previa. Marcar solo `Denied` dejaba el `Subject` puesto y el sondeo
+  podia canjear igual; lo detecto el test `DenegarlaImpideElCanjede`.
+
+### Endpoints
+- `RequestValues.ReadAsync` lee query string y formulario en un solo sitio, para que userinfo acepte
+  GET y POST sin duplicar. Es `async` porque `ReadFormAsync` no tiene version sincrona.
+- Los endpoints son `async Task<IResult>`: leer el formulario es asincrono y bloquearlo con
+  `.GetAwaiter().GetResult()` seria incorrecto.
+- `client_secret_basic` se acepta en el encabezado `Authorization` y `client_secret_post` en el
+  cuerpo, como anuncia el discovery.
+- Los **response_mode** se resuelven en `AuthorizationResponder`: `query` (redireccion), `fragment`
+  (redireccion con `#`) y `form_post` (HTML con autoenvio).
+- El HTML se escapa con `HtmlEncoder`: sin el, un nombre de cliente con acentos rompia las aserciones
+  de los tests de integracion y, mas importante, permitiria inyectar marcado.
+
+### Fuera de alcance, decidido
+- **frontchannel/backchannel logout (D-018)**: el discovery **no** anuncia `*_logout_supported`. El
+  mock no mantiene sesion, asi que no hay estado que notificar a los clientes. `end_session` valida
+  el `post_logout_redirect_uri` contra los clientes registrados y redirige. Anunciarlo sin
+  implementarlo romperia clientes que esperan recibir la notificacion.
+- **Response types implicitos (D-019)**: `id_token`, `token` y sus combinaciones se **validan** (el
+  discovery los anuncia porque el servidor real lo hace) pero no emiten tokens en el fragmento. Solo
+  el flujo `code` esta implementado; el fragmento exigiria negociacion de clave, que el mock no
+  necesita para su proposito.
+- **`ClientCertificate`**, request objects (`request`/`request_uri`) y DPoP siguen omitidos del
+  discovery, igual que en la etapa 2 (D-013).
+
+
 ## Prompt 3 — Emisión de tokens (id_token y access_token)
 
 ### Dependencia añadida
