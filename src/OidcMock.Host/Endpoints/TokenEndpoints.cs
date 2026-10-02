@@ -2,6 +2,7 @@ using OidcMock.Core.Clients;
 using OidcMock.Core.Configuration;
 using OidcMock.Core.Discovery;
 using OidcMock.Core.Errors;
+using OidcMock.Host.Logging;
 using OidcMock.Core.Grants;
 using OidcMock.Core.Introspection;
 using OidcMock.Core.Revocation;
@@ -20,6 +21,12 @@ public static class TokenEndpoints
 
     /// <summary>Nombre del parametro con el access token en /userinfo (RFC 6750 2.2 y 2.3).</summary>
     private const string AccessTokenField = "access_token";
+
+    /// <summary>
+    /// Categoria de log del token endpoint. Se nombra a mano porque la clase es estatica y no sirve
+    /// como argumento de tipo para CreateLogger.
+    /// </summary>
+    public const string LogCategory = "OidcMock.Host.Endpoints.TokenEndpoints";
 
     public static IEndpointRouteBuilder MapTokenEndpoints(this IEndpointRouteBuilder endpoints)
     {
@@ -45,15 +52,48 @@ public static class TokenEndpoints
         HttpContext context,
         ITokenEndpointService tokenEndpoint,
         DiscoveryDocumentBuilder discoveryBuilder,
+        ILoggerFactory loggerFactory,
         OidcMockOptions options)
     {
+        var logger = loggerFactory.CreateLogger(LogCategory);
+        var request = await BindTokenRequestAsync(context.Request);
         var result = await tokenEndpoint.IssueTokenAsync(
-            await BindTokenRequestAsync(context.Request),
+            request,
             IssuerResolver.Resolve(context.Request, discoveryBuilder, options));
+
+        LogOutcome(logger, request, result);
 
         return result.Succeeded
             ? TokenResponseWithoutCaching(context, Results.Json(result.Value, TokenResponse.SerializerOptions))
             : TokenResponseWithoutCaching(context, ErrorResponse(result.Error!));
+    }
+
+    /// <summary>
+    /// Se registra el resultado con metadatos (grant, cliente, caducidad) y nunca con el token, el
+    /// refresh token ni el secreto: lo que se emite es una credencial viva.
+    /// </summary>
+    private static void LogOutcome(
+        ILogger logger,
+        TokenEndpointRequest request,
+        Result<TokenResponse> result)
+    {
+        if (result.Succeeded)
+        {
+            var issued = result.Value!;
+            OidcMockLog.TokensIssued(
+                logger,
+                request.GrantType ?? "(sin grant_type)",
+                request.Credentials.ClientId ?? "(sin client_id)",
+                (int)issued.ExpiresIn,
+                issued.RefreshToken is not null);
+            return;
+        }
+
+        OidcMockLog.TokenRequestRejected(
+            logger,
+            result.Error!.Code,
+            request.Credentials.ClientId ?? "(sin client_id)",
+            request.Credentials.Method);
     }
 
     /// <summary>

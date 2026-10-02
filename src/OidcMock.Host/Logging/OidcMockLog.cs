@@ -43,27 +43,21 @@ public static partial class OidcMockLog
     [LoggerMessage(
         EventId = 3000,
         Level = LogLevel.Information,
-        Message = "Tokens emitidos por '{GrantType}' al cliente '{ClientId}' (subject '{Subject}', " +
-                  "caduca en {ExpiresInSeconds}s, refresh emitido: {RefreshTokenIssued})")]
+        Message = "Tokens emitidos por '{GrantType}' al cliente '{ClientId}' (caduca en {ExpiresInSeconds}s, " +
+                  "refresh emitido: {RefreshTokenIssued})")]
     public static partial void TokensIssued(
         ILogger logger,
         string grantType,
         string clientId,
-        string subject,
         int expiresInSeconds,
         bool refreshTokenIssued);
 
     [LoggerMessage(
         EventId = 3001,
         Level = LogLevel.Warning,
-        Message = "El token endpoint rechazo la peticion con '{Error}' para el cliente '{ClientId}'")]
-    public static partial void TokenRequestRejected(ILogger logger, string error, string clientId);
-
-    [LoggerMessage(
-        EventId = 3100,
-        Level = LogLevel.Information,
-        Message = "El cliente '{ClientId}' se autentico con '{Method}'")]
-    public static partial void ClientAuthenticated(ILogger logger, string clientId, string method);
+        Message = "El token endpoint rechazo la peticion con '{Error}' para el cliente '{ClientId}' " +
+                  "usando '{Method}'")]
+    public static partial void TokenRequestRejected(ILogger logger, string error, string clientId, string method);
 
     [LoggerMessage(
         EventId = 3101,

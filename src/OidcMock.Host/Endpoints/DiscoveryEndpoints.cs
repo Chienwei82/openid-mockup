@@ -36,7 +36,9 @@ public static class DiscoveryEndpoints
 
     private static IResult PublishJsonWebKeySet(ISigningKeyProvider signingKeyProvider)
     {
-        using var signingKey = signingKeyProvider.GetSigningKey();
+        // La clave la posee y dispose el proveedor: liberarla aqui tumbaria la firma de los tokens
+        // que se emitieran despues, porque es la misma instancia cacheada.
+        var signingKey = signingKeyProvider.GetSigningKey();
         return Results.Json(JsonWebKeySetBuilder.Build(signingKey.Key), JsonWebKeySet.SerializerOptions);
     }
 

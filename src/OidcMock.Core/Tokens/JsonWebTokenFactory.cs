@@ -135,12 +135,27 @@ public sealed class JsonWebTokenFactory : ITokenFactory
         }
     }
 
+    /// <summary>
+    /// CryptoProviderFactory propio y sin cache. IdentityModel cachea los proveedores de firma por
+    /// kid, asi que dos instancias del mock con la misma clave (dos pruebas, dos WebApplicationFactory)
+    /// comparten la RSA de la primera: al liberarla, la segunda falla con ObjectDisposedException al
+    /// firmar. Desactivar la cache evita el cruce.
+    /// </summary>
+    private static readonly CryptoProviderFactory SigningCryptoProviderFactory = new()
+    {
+        CacheSignatureProviders = false
+    };
+
     private SigningCredentials SigningCredentials()
     {
         var signingKey = _signingKeyProvider.GetSigningKey();
 
         return new SigningCredentials(
-            new RsaSecurityKey(signingKey.Key) { KeyId = signingKey.KeyId },
+            new RsaSecurityKey(signingKey.Key)
+            {
+                KeyId = signingKey.KeyId,
+                CryptoProviderFactory = SigningCryptoProviderFactory
+            },
             TokenHeaderValues.SignatureAlgorithm);
     }
 
