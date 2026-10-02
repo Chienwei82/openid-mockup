@@ -152,9 +152,21 @@ public static class OidcTestClient
         HttpClient client,
         IReadOnlyDictionary<string, string> values,
         string clientId,
+        string clientSecret) =>
+        PostWithBasicAuthAsync(client, EndpointPaths.Token, values, clientId, clientSecret);
+
+    /// <summary>
+    /// POST a cualquier endpoint con las credenciales en el encabezado Authorization: la
+    /// autenticacion por basic la hacen /introspect y /revocation igual que el token endpoint.
+    /// </summary>
+    public static Task<HttpResponseMessage> PostWithBasicAuthAsync(
+        HttpClient client,
+        string path,
+        IReadOnlyDictionary<string, string> values,
+        string clientId,
         string clientSecret)
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, $"{PathBase}/{EndpointPaths.Token}")
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{PathBase}/{path}")
         {
             Content = new FormUrlEncodedContent(values)
         };

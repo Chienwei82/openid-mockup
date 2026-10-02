@@ -229,6 +229,25 @@ public sealed class UserInfoIntrospectionRevocationTests : GrantHandlerTestBase
         Assert.True(introspected.Value?.Active);
     }
 
+    /// <summary>
+    /// El caso que de verdad pasa en un cliente real: rota, y despues revoca el token que ya canjeo.
+    /// Como el canje lo consumio, sigue en la memoria de "rotados" y no en los vivos: si la revocacion
+    /// solo mirara los vivos, la familia quedaria viva y el rotado seguiria renovando la sesion.
+    /// </summary>
+    [Fact]
+    public void RevocarUnRefreshTokenYaCanjeadoTambienCortaLaFamilia()
+    {
+        var original = IssueRefreshToken();
+        var canjeado = RefreshTokens.Redeem(original.Token).Value!;
+        var siguiente = RefreshTokens.Issue(new RefreshTokenRequest(
+            ClientId, "user-1", ["openid", "email"], TimeSpan.FromHours(1), canjeado.FamilyId));
+
+        Revoke(original.Token);
+
+        Assert.True(Revocations.IsRefreshTokenFamilyRevoked(siguiente.FamilyId));
+        Assert.False(Introspect(siguiente.Token).Value?.Active);
+    }
+
     [Fact]
     public void RevocarUnTokenDesconocidoRespondeExitoSinError()
     {

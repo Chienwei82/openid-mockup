@@ -19,7 +19,12 @@ public sealed class InMemoryRefreshTokenStore : IRefreshTokenStore
         "El refresh token ya fue canjeado. Se revoco toda la familia por posible reutilizacion.";
 
     private readonly ConcurrentDictionary<string, RefreshToken> _tokens = new(StringComparer.Ordinal);
-    private readonly ConcurrentDictionary<string, RotatedToken> _rotated = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Tokens ya canjeados. Se guarda el token entero, y no solo su familia, porque hace falta saber
+    /// tambien de quien era para que revocar un token ya canjeado no le robe la familia a otro cliente.
+    /// </summary>
+    private readonly ConcurrentDictionary<string, RefreshToken> _rotated = new(StringComparer.Ordinal);
     private readonly TimeProvider _timeProvider;
 
     public InMemoryRefreshTokenStore(TimeProvider timeProvider)
@@ -69,11 +74,33 @@ public sealed class InMemoryRefreshTokenStore : IRefreshTokenStore
             return Fail(InvalidRefreshToken);
         }
 
-        _rotated[token] = new RotatedToken(refreshToken.FamilyId, refreshToken.ExpiresAt);
+        _rotated[token] = refreshToken;
 
         return refreshToken.IsExpiredAt(_timeProvider.GetUtcNow())
             ? Fail(InvalidRefreshToken)
             : Result<RefreshToken>.Ok(refreshToken);
+    }
+
+    /// <summary>
+    /// Busca el token tanto entre los vivos como entre los ya canjeados. Un cliente que rota y luego
+    /// revoca el token anterior (el camino normal, porque el canje lo consume) sigue siendo dueno de
+    /// una familia que se puede cortar, y no de un token "desconocido" que no se puede borrar.
+    /// </summary>
+    public RefreshToken? FindIssued(string token)
+    {
+        if (string.IsNullOrEmpty(token))
+        {
+            return null;
+        }
+
+        Expire();
+
+        if (_tokens.TryGetValue(token, out var live))
+        {
+            return live;
+        }
+
+        return _rotated.TryGetValue(token, out var rotated) ? rotated : null;
     }
 
     public void Revoke(string token)
@@ -129,10 +156,4 @@ public sealed class InMemoryRefreshTokenStore : IRefreshTokenStore
 
     private static Result<RefreshToken> Fail(string description) =>
         Result<RefreshToken>.Fail(ProtocolErrors.InvalidGrant(description));
-
-    /// <summary>
-    /// Recuerdo de un token ya canjeado: que familia revocation y hasta cuando se recuerda, para no
-    /// crecer sin limite.
-    /// </summary>
-    private sealed record RotatedToken(string FamilyId, DateTimeOffset ExpiresAt);
 }

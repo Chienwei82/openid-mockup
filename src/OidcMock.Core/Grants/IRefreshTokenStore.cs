@@ -18,6 +18,13 @@ public interface IRefreshTokenStore
     /// </summary>
     Result<RefreshToken> Redeem(string token);
 
+    /// <summary>
+    /// Datos de un token que el mock emitio, este mismo o ya canjeado. Es lo que permite revocar un
+    /// token que ya se canjeo: acordarse de el es lo unico que permite saber a que familia cortarle la
+    /// sesion.
+    /// </summary>
+    RefreshToken? FindIssued(string token);
+
     void Revoke(string token);
 
     /// <summary>Revoca la familia a la que pertenece el token indicado.</summary>

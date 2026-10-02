@@ -29,27 +29,23 @@ public sealed class TokenRevocationService(
 
     /// <summary>
     /// Revocar un refresh token corta la familia entera: la rotacion emite un token nuevo de la misma
-    /// familia, asi que revocar solo el presented dejaria vivo al siguiente de la cadena.
+    /// familia, asi que revocar solo el presentado dejaria vivo al siguiente de la cadena. Se busca el
+    /// token entre los vivos **y** entre los ya canjeados, porque el camino normal de un cliente es
+    /// canjear y despues revocar el token anterior, que ya no esta vivo.
     /// </summary>
     private bool RevokeRefreshToken(string token, string requestingClientId)
     {
-        var owned = FindOwnedRefreshToken(token, requestingClientId);
-        if (owned is null)
+        var issued = refreshTokenStore.FindIssued(token);
+        if (issued is null || !string.Equals(issued.ClientId, requestingClientId, StringComparison.Ordinal))
         {
             return false;
         }
 
-        refreshTokenStore.Revoke(owned.Token);
-        refreshTokenStore.RevokeFamily(owned.FamilyId);
-        revocations.RevokeRefreshTokenFamily(owned.FamilyId, owned.ExpiresAt);
+        refreshTokenStore.RevokeFamily(issued.FamilyId);
+        revocations.RevokeRefreshTokenFamily(issued.FamilyId, issued.ExpiresAt);
 
         return true;
     }
-
-    private RefreshToken? FindOwnedRefreshToken(string token, string requestingClientId) =>
-        refreshTokenStore.List().FirstOrDefault(candidate =>
-            string.Equals(candidate.Token, token, StringComparison.Ordinal) &&
-            string.Equals(candidate.ClientId, requestingClientId, StringComparison.Ordinal));
 
     /// <summary>
     /// El access token es un JWT sin estado: no hay nada que borrar en el token, asi que se registra

@@ -1,6 +1,7 @@
 using OidcMock.Core.Clients;
 using OidcMock.Core.Configuration;
 using OidcMock.Core.Discovery;
+using OidcMock.Core.Errors;
 using OidcMock.Core.Grants;
 using OidcMock.Core.Introspection;
 using OidcMock.Core.Revocation;
@@ -13,6 +14,12 @@ namespace OidcMock.Host.Endpoints;
 /// </summary>
 public static class TokenEndpoints
 {
+    /// <summary>Nombre del parametro con el token, en /introspect y /revocation (RFC 7662, RFC 7009).</summary>
+    private const string TokenField = "token";
+
+    /// <summary>Nombre del parametro con el access token en /userinfo (RFC 6750 2.2 y 2.3).</summary>
+    private const string AccessTokenField = "access_token";
+
     public static IEndpointRouteBuilder MapTokenEndpoints(this IEndpointRouteBuilder endpoints)
     {
         ArgumentNullException.ThrowIfNull(endpoints);
@@ -60,55 +67,102 @@ public static class TokenEndpoints
         return result;
     }
 
-    private static IResult DescribeUserInfo(
+    /// <summary>
+    /// /connect/userinfo acepta el Bearer en el encabezado (RFC 6750 2.1) y, cuando no hay, en el
+    /// cuerpo o en el query string (RFC 6750 2.2 y 2.3), que es lo que hacen los clientes que no
+    /// pueden poner cabeceras. El encabezado manda: si vino, es la credencial que el cliente eligio.
+    /// </summary>
+    private static async Task<IResult> DescribeUserInfo(
         HttpContext context,
         IUserInfoService userInfo,
         DiscoveryDocumentBuilder discoveryBuilder,
         OidcMockOptions options)
     {
+        var values = await RequestValues.ReadAsync(context.Request);
+        var accessToken = RequestValues.ReadBearerToken(context.Request) ??
+            values.GetValueOrDefault(AccessTokenField);
+
+        if (string.IsNullOrEmpty(accessToken))
+        {
+            return BearerChallengeResults.WithoutCredentials(context);
+        }
+
         var result = userInfo.Describe(
-            RequestValues.ReadBearerToken(context.Request) ?? string.Empty,
+            accessToken,
             IssuerResolver.Resolve(context.Request, discoveryBuilder, options),
+            // La audiencia es el client_id del propio token, todavia desconocido: se valida la firma,
+            // el issuer y la vigencia, que es lo que importa para autorizar la llamada.
             audiences: null);
 
-        return result.Succeeded ? Results.Json(result.Value) : ErrorResponse(result.Error!);
+        return result.Succeeded
+            ? Results.Json(result.Value)
+            : BearerChallengeResults.InvalidToken(context, result.Error!);
     }
 
+    /// <summary>
+    /// RFC 7662 2.1: la introspection exige cliente autenticado. Sin ella, cualquiera podria preguntar
+    /// por el estado de cualquier token del mock, asi que un cliente ausente o con secreto erroneo es
+    /// invalid_client (401) y no una respuesta con active=false.
+    /// </summary>
     private static async Task<IResult> Introspect(
         HttpContext context,
         IIntrospectionService introspection,
+        ClientAuthenticator clientAuthenticator,
         DiscoveryDocumentBuilder discoveryBuilder,
         OidcMockOptions options)
     {
         var values = await RequestValues.ReadAsync(context.Request);
-        var clientId = values.GetValueOrDefault("client_id") ?? string.Empty;
+        var client = AuthenticateClient(clientAuthenticator, context.Request, values);
+        if (client is null)
+        {
+            return ProtocolErrorResults.From(InvalidClient());
+        }
 
         var result = introspection.Introspect(
-            values.GetValueOrDefault("token") ?? string.Empty,
+            values.GetValueOrDefault(TokenField) ?? string.Empty,
             IssuerResolver.Resolve(context.Request, discoveryBuilder, options),
-            [clientId],
-            clientId);
+            [client.ClientId],
+            client.ClientId);
 
         return Results.Json(result.Value, IntrospectionResponse.SerializerOptions);
     }
 
+    /// <summary>
+    /// RFC 7009 2.1: la revocacion tambien exige cliente autenticado, y por el mismo motivo que la
+    /// introspection: sin ella, quien conociera el client_id de una victima podria cerrarle las sesiones.
+    /// El token desconocido se responde 200 (RFC 7009 2.2), para no revelar si existio.
+    /// </summary>
     private static async Task<IResult> Revoke(
         HttpContext context,
         ITokenRevocationService revocation,
+        ClientAuthenticator clientAuthenticator,
         DiscoveryDocumentBuilder discoveryBuilder,
         OidcMockOptions options)
     {
         var values = await RequestValues.ReadAsync(context.Request);
-        var clientId = values.GetValueOrDefault("client_id") ?? string.Empty;
+        var client = AuthenticateClient(clientAuthenticator, context.Request, values);
+        if (client is null)
+        {
+            return ProtocolErrorResults.From(InvalidClient());
+        }
 
         var result = revocation.Revoke(
-            values.GetValueOrDefault("token") ?? string.Empty,
+            values.GetValueOrDefault(TokenField) ?? string.Empty,
             IssuerResolver.Resolve(context.Request, discoveryBuilder, options),
-            [clientId],
-            clientId);
+            [client.ClientId],
+            client.ClientId);
 
         return result.Failed ? ErrorResponse(result.Error!) : Results.Empty;
     }
+
+    private static Client? AuthenticateClient(
+        ClientAuthenticator clientAuthenticator,
+        HttpRequest request,
+        IReadOnlyDictionary<string, string> values) =>
+        clientAuthenticator.Authenticate(ClientCredentialsReader.Read(request, values));
+
+    private static ProtocolError InvalidClient() =>
+        ProtocolErrors.InvalidClient("El cliente no se ha autenticado correctamente.");
 
     /// <summary>
     /// end_session del mock: valida el post_logout_redirect_uri contra los clientes registrados y
