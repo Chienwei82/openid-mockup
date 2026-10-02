@@ -6,6 +6,9 @@ namespace OidcMock.Core.Configuration;
 /// </summary>
 public sealed class ServingOptions
 {
+    /// <summary>Seccion de configuracion de escucha, bajo <c>OidcMock</c>.</summary>
+    public const string SectionName = "Serving";
+
     /// <summary>Puerto por defecto de HTTPS, el habitual del perfil de desarrollo de ASP.NET Core.</summary>
     public const int DefaultHttpsPort = 5443;
 

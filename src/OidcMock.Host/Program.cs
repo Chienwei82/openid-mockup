@@ -54,8 +54,9 @@ static JsonStoreOptions ResolveStoreOptions(WebApplicationBuilder builder)
 /// </summary>
 static void ConfigureListening(WebApplicationBuilder builder)
 {
+    // La seccion es OidcMock:Serving, no OidcMock: leer esta ultima daria las opciones por defecto.
     var serving = builder.Configuration
-        .GetSection(HostConfigDirectory.SectionName)
+        .GetSection($"{HostConfigDirectory.SectionName}:{ServingOptions.SectionName}")
         .Get<ServingOptions>() ?? new ServingOptions();
 
     if (!serving.UseHttps && !serving.AllowHttp)

@@ -1,6 +1,7 @@
 using System.Net;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using OidcMock.Core.Configuration;
 using OidcMock.Host;
@@ -76,6 +77,33 @@ public sealed class HostStartupTests
         using var response = await client.GetAsync(DiscoveryPath, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    /// <summary>
+    /// Regresion: la configuracion de escucha vive en OidcMock:Serving, y leer la seccion OidcMock
+    /// entera devolvia las opciones por defecto, asi que el contenedor acababa sirviendo HTTPS con el
+    /// certificado de desarrollo en lugar de HTTP plano.
+    /// </summary>
+    [Fact]
+    public void LaConfiguracionDeEscuchaSeLeeDeSuPropiaSeccion()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                [$"{HostConfigDirectory.SectionName}:{ServingOptions.SectionName}:UseHttps"] = "false",
+                [$"{HostConfigDirectory.SectionName}:{ServingOptions.SectionName}:AllowHttp"] = "true",
+                [$"{HostConfigDirectory.SectionName}:{ServingOptions.SectionName}:HttpPort"] = "8099"
+            })
+            .Build();
+
+        var serving = configuration
+            .GetSection($"{HostConfigDirectory.SectionName}:{ServingOptions.SectionName}")
+            .Get<ServingOptions>();
+
+        Assert.NotNull(serving);
+        Assert.False(serving.UseHttps);
+        Assert.True(serving.AllowHttp);
+        Assert.Equal(8099, serving.HttpPort);
     }
 
     [Fact]
