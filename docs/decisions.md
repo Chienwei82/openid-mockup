@@ -1,5 +1,63 @@
 # Decisiones de diseño
 
+## Prompt 6 — POST /connect/token, registro de grants y autenticacion de cliente
+
+### El token endpoint es un registro de estrategias
+- `IGrantHandler.HandleAsync` devuelve `Task<Result<TokenResponse>>` como pide el enunciado, aunque hoy
+  ningun grant haga E/S: la firma asienta el contrato (un grant podria consultar una clave remota o
+  un perfil externo) y obliga a que el endpoint sea `async` de verdad. Cada handler envuelve su cuerpo
+  sincrono con `Task.FromResult`, sin `async` vacio para no provocar CS1998.
+- `GrantHandlerRegistry` arma el diccionario por el **orden de registro en DI**: agregar un grant es
+  una linea mas en `AddOidcMockProtocol`, sin tocar el dispatcher. Un `grant_type` sin handler es
+  `unsupported_grant_type`, igual que un grant que el cliente no tiene permitido.
+- La autenticacion del cliente es **otra Strategy**, no un `if` en el endpoint: `IClientAuthenticator`
+  con una implementacion por metodo (`ClientSecretBasicAuthenticator`, `ClientSecretPostAuthenticator`)
+  y un coordinador, `ClientAuthenticator`, que resuelve el cliente por `client_id` y delega la
+  comparacion del secreto. La comparacion en tiempo constante es `ClientSecrets`, compartido por
+  ambos metodos, porque es la misma regla con dos lecturas del secreto.
+- `TokenEndpointRequest` lleva un `ClientCredentials` (metodo + client_id + secreto) en vez de dos
+  cadenas sueltas: el endpoint no debe saber de donde salio cada valor, solo que metodo se uso.
+- El discovery ya no tiene su propia lista de metodos de autenticacion: anuncia
+  `ClientAuthenticator.SupportedMethods`, de modo que no puede quedar por detras de lo que el token
+  endpoint acepta.
+
+### Precedencia de las credenciales
+- **El encabezado `Authorization` gana al cuerpo** (RFC 6749 2.3.1). Antes se mezclaba con
+  `values["client_id"] ?? ReadBasicAuth(...)`, que ademas de ser ambiguo dejaba que un
+  `client_secret` del cuerpo autenticara a un cliente que habia elegido `client_secret_basic`.
+  Ahora el endpoint elige metodo: con encabezado Basic es `client_secret_basic`; sin el, es
+  `client_secret_post` (que es tambien lo que hacen los clientes publicos, que solo se identifican
+  por `client_id`).
+- Cliente publico (`require_client_secret=false`) se acepta solo por `client_id`, y se acepta aunque
+  le sobre un secreto: en `authorization_code` el secreto no viaja y la proteccion la da el PKCE.
+- El base64 del encabezado vive en `BasicAuthorizationHeader`, no en el endpoint: un encabezado que
+  no es Basic o un base64 corrupto no son credenciales, y la peticion acaba en `invalid_client`.
+
+### Que tokens emite el authorization_code
+- El `refresh_token` se emite **solo si el code lleva `offline_access` y el cliente lo tiene
+  permitido** (OpenID Connect Core 11). Antes se emitia siempre, lo que hacia que cualquier cliente
+  obtuviera un refresh token sin haberlo pedido. Se aplico tambien `offline_access` al
+  `allowed_scopes` del cliente de ejemplo y al scope por defecto de las pruebas de integracion.
+- El `id_token` se emite **solo si el code lleva `openid`**. El authorize endpoint ya lo exige
+  siempre, asi que la comprobacion es una red de seguridad para un code emitido por otra via.
+- **El code se consume SIEMPRE**, incluso cuando falla una validacion posterior (PKCE, redirect_uri,
+  cliente). El canje se hace primero y las demas comprobaciones van despues, de modo que un code no
+  se puede reutilizar para tantear las validaciones. Los tests lo fijan intentando un segundo canje
+  con los datos correctos.
+
+### Cabeceras del token endpoint
+- Toda respuesta del token endpoint, **tambien los errores**, lleva `Cache-Control: no-store,
+  no-cache` y `Pragma: no-cache` (RFC 6749 5.1). Sin esto un 401 por secreto equivocado o un token
+  emitido podrian quedar cacheados por un proxy. Se pone en el `HttpContext` antes de escribir la
+  respuesta, para que aplique igual al exito y al error.
+
+### Cliente de ejemplo
+- Se anadio `web-app-confidencial` (con secreto y `authorization_code`) porque para probar "un code de
+  otro cliente" hace falta un segundo cliente que **si** tenga ese grant permitido: con
+  `backend-service` la respuesta correcta era `unsupported_grant_type` y la prueba no llegaba a
+  comprobar el `invalid_grant`. Los dos tests que afirmaban "hay 2 clientes" ahora comprueban que
+  existen los clientes concretos, no el numero, para que agregar un cliente de ejemplo no los rompa.
+
 ## Prompt 5 — GET/POST /connect/authorize, cadena de validadores y sesion
 
 ### La cadena son clases, no delegados
