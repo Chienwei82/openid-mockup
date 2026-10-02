@@ -1,3 +1,4 @@
+using OidcMock.IntegrationTests;
 using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
@@ -19,7 +20,7 @@ public sealed class DiscoveryEndpointTests
     [Fact]
     public async Task PublicaElDiscoveryConCodigoOkYContentTypeJson()
     {
-        using var factory = new WebApplicationFactory<Program>();
+        using var factory = MockHost.Create();
         using var client = factory.CreateClient();
 
         using var response = await client.GetAsync($"{DefaultPathBase}{ConfigurationPath}", TestContext.Current.CancellationToken);
@@ -31,7 +32,7 @@ public sealed class DiscoveryEndpointTests
     [Fact]
     public async Task ElDiscoveryAnunciaElIssuerDelHostQueSeConsulta()
     {
-        using var factory = new WebApplicationFactory<Program>();
+        using var factory = MockHost.Create();
         using var client = factory.CreateClient();
 
         var document = await GetDiscoveryAsync(client, DefaultPathBase);
@@ -44,7 +45,7 @@ public sealed class DiscoveryEndpointTests
     [Fact]
     public async Task TodosLosEndpointsDelDiscoveryCuelganDelIssuer()
     {
-        using var factory = new WebApplicationFactory<Program>();
+        using var factory = MockHost.Create();
         using var client = factory.CreateClient();
 
         var document = await GetDiscoveryAsync(client, DefaultPathBase);
@@ -63,7 +64,7 @@ public sealed class DiscoveryEndpointTests
     [Fact]
     public async Task ElJwksPublicaUnaSolaClaveRsaConSuKid()
     {
-        using var factory = new WebApplicationFactory<Program>();
+        using var factory = MockHost.Create();
         using var client = factory.CreateClient();
 
         var key = (await GetJsonAsync(client, $"{DefaultPathBase}{JwksPath}")).RootElement.GetProperty("keys").EnumerateArray().Single();
@@ -108,7 +109,7 @@ public sealed class DiscoveryEndpointTests
     [Fact]
     public async Task CambiarElPathBaseCambiaLaRutaYTodasLasUrls()
     {
-        using var factory = new WebApplicationFactory<Program>()
+        using var factory = MockHost.Create()
             .WithWebHostBuilder(builder => builder.UseSetting(PathBaseSettingName, CustomPathBase));
         using var client = factory.CreateClient();
 
@@ -127,7 +128,7 @@ public sealed class DiscoveryEndpointTests
     public async Task ElIssuerConfiguradoGanaAlHostDeLaPeticion()
     {
         const string issuer = "https://oauth2.bccr.fi.cr/personafisica";
-        using var factory = new WebApplicationFactory<Program>()
+        using var factory = MockHost.Create()
             .WithWebHostBuilder(builder => builder.UseSetting(IssuerSettingName, issuer));
         using var client = factory.CreateClient();
 
@@ -146,7 +147,7 @@ public sealed class DiscoveryEndpointTests
     }
 
     private static WebApplicationFactory<Program> CreateFactory(TempConfigDirectory directory) =>
-        new WebApplicationFactory<Program>()
+        MockHost.Create()
             .WithWebHostBuilder(builder => builder.UseSetting(HostConfigDirectory.ConfigDirectorySettingName, directory.Path));
 
     private static async Task<JsonDocument> GetDiscoveryAsync(HttpClient client, string pathBase) =>

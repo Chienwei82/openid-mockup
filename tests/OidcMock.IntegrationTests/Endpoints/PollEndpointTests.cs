@@ -139,6 +139,54 @@ public sealed class PollEndpointTests
         Assert.False(string.IsNullOrWhiteSpace(body.RootElement.GetProperty("access_token").GetString()));
     }
 
+    /// <summary>
+    /// El discovery anuncia <c>backchannel_user_code_parameter_supported</c>, asi que un cliente que
+    /// lo pida tiene que recibir un codigo por el que el usuario pueda identificar la peticion en
+    /// una pantalla. Sin el, el mock afirma una capacidad que su propio endpoint no cumple.
+    /// </summary>
+    [Fact]
+    public async Task CibaDevuelveUserCodeCuandoElClienteLoPide()
+    {
+        using var client = Create();
+
+        using var started = await PostFormAsync(
+            client,
+            EndpointPaths.Ciba,
+            new Dictionary<string, string>
+            {
+                ["client_id"] = ClientId,
+                ["login_hint"] = UserName,
+                ["scope"] = "openid",
+                ["user_code_parameter_supported"] = "true"
+            });
+
+        var body = (await ReadJsonAsync(started)).RootElement;
+
+        Assert.False(string.IsNullOrWhiteSpace(body.GetProperty("user_code").GetString()));
+        Assert.False(string.IsNullOrWhiteSpace(body.GetProperty("verification_uri").GetString()));
+    }
+
+    /// <summary>Sin pedirlo, la respuesta se queda en lo minimo: el codigo es opcional.</summary>
+    [Fact]
+    public async Task CibaNoDevuelveUserCodeSiElClienteNoLoPide()
+    {
+        using var client = Create();
+
+        using var started = await PostFormAsync(
+            client,
+            EndpointPaths.Ciba,
+            new Dictionary<string, string>
+            {
+                ["client_id"] = ClientId,
+                ["login_hint"] = UserName,
+                ["scope"] = "openid"
+            });
+
+        var body = (await ReadJsonAsync(started)).RootElement;
+
+        Assert.False(body.TryGetProperty("user_code", out _));
+    }
+
     [Fact]
     public async Task CheckSessionSirveElIframeHtml()
     {

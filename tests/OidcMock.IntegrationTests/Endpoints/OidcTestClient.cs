@@ -1,3 +1,4 @@
+using OidcMock.IntegrationTests;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
@@ -41,9 +42,80 @@ public static class OidcTestClient
     /// Cliente que NO sigue redirecciones: el authorize responde con un 302 que hay que inspeccionar
     /// para leer el codigo, y un cliente que lo siguiera fallaria al intentar salir a la aplicacion.
     /// </summary>
-    public static HttpClient Create() =>
-        new WebApplicationFactory<Program>()
-            .CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+    public static HttpClient Create()
+    {
+        var factory = MockHost.Create();
+
+        // El handler del TestServer se envuelve en uno que ademas es dueno del host: asi, cuando la
+        // prueba libera el cliente, se libera tambien el host y sus watchers. Devolver solo el cliente
+        // que da CreateClient filtraba un host entero por prueba, y al agotarse el limite de inotify del
+        // sistema los tests empezaban a fallar con errores que no tenian nada que ver con lo que
+        // comprobaban.
+        return new HttpClient(
+            new HostOwningHandler(new CookieCapturingHandler(factory.Server.CreateHandler()), factory),
+            disposeHandler: true)
+        {
+            BaseAddress = factory.Server.BaseAddress
+        };
+    }
+
+    /// <summary>
+    /// Guarda y devuelve las cookies entre peticiones.
+    ///
+    /// El handler del <c>TestServer</c> no lleva cookies: las de sesion del mock (login, consentimiento)
+    /// las fija una peticion y las necesita la siguiente. Sin este contenedor, las pruebas que atraviesan
+    /// el login y luego el consentimiento se quedarian sin sesion a mitad del flujo.
+    /// </summary>
+    private sealed class CookieCapturingHandler(HttpMessageHandler inner)
+        : DelegatingHandler(inner)
+    {
+        private readonly CookieContainer _cookies = new();
+
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            var cookieHeader = _cookies.GetCookieHeader(request.RequestUri!);
+
+            request.Headers.Remove("Cookie");
+
+            if (!string.IsNullOrEmpty(cookieHeader))
+            {
+                request.Headers.Add("Cookie", cookieHeader);
+            }
+
+            var response = await base.SendAsync(request, cancellationToken);
+
+            if (response.Headers.TryGetValues("Set-Cookie", out var setCookies))
+            {
+                foreach (var setCookie in setCookies)
+                {
+                    _cookies.SetCookies(request.RequestUri!, setCookie);
+                }
+            }
+
+            return response;
+        }
+
+    }
+
+    /// <summary>
+    /// Delegating handler que libera tambien el host. Va en la cadena porque un
+    /// <see cref="HttpClient"/> libera sus handlers al liberarse.
+    /// </summary>
+    private sealed class HostOwningHandler(HttpMessageHandler inner, WebApplicationFactory<Program> host)
+        : DelegatingHandler(inner)
+    {
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            if (disposing)
+            {
+                host.Dispose();
+            }
+        }
+    }
 
     public static string AuthorizeUrl() =>
         BuildAuthorizeUrl(DefaultParameters());

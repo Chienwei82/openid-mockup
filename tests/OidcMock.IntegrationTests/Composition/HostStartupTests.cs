@@ -1,3 +1,4 @@
+using OidcMock.IntegrationTests;
 using System.Net;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -16,7 +17,7 @@ public sealed class HostStartupTests
     [Fact]
     public async Task ArrancaConLaConfiguracionDeEjemploDelRepositorio()
     {
-        using var factory = new WebApplicationFactory<Program>();
+        using var factory = MockHost.Create();
         using var client = factory.CreateClient();
 
         using var discoveryResponse = await client.GetAsync(DiscoveryPath, TestContext.Current.CancellationToken);
@@ -31,7 +32,7 @@ public sealed class HostStartupTests
     {
         using var directory = new TempConfigDirectory();
         directory.WriteClientsFile("{ nope }");
-        using var factory = new WebApplicationFactory<Program>()
+        using var factory = MockHost.Create()
             .WithWebHostBuilder(builder => builder.UseSetting(HostConfigDirectory.ConfigDirectorySettingName, directory.Path));
 
         var exception = Assert.Throws<ConfigurationException>(factory.CreateClient);
@@ -46,7 +47,7 @@ public sealed class HostStartupTests
     [InlineData("OidcMock:Serving:HttpsPort", "0")]
     public void NoArrancaConOpcionesInvalidas(string setting, string value)
     {
-        using var factory = new WebApplicationFactory<Program>()
+        using var factory = MockHost.Create()
             .WithWebHostBuilder(builder => builder.UseSetting(setting, value));
 
         var exception = Assert.Throws<OptionsValidationException>(factory.CreateClient);
@@ -57,7 +58,7 @@ public sealed class HostStartupTests
     [Fact]
     public void NoArrancaConUnOrigenCorsQueNoEsUnOrigen()
     {
-        using var factory = new WebApplicationFactory<Program>()
+        using var factory = MockHost.Create()
             .WithWebHostBuilder(builder => builder.UseSetting("OidcMock:AllowedCorsOrigins:0", "*"));
 
         var exception = Assert.Throws<OptionsValidationException>(factory.CreateClient);
@@ -68,7 +69,7 @@ public sealed class HostStartupTests
     [Fact]
     public async Task ArrancaConHttpPlanoSinHttpsParaContenedores()
     {
-        using var factory = new WebApplicationFactory<Program>()
+        using var factory = MockHost.Create()
             .WithWebHostBuilder(builder => builder
                 .UseSetting("OidcMock:Serving:UseHttps", "false")
                 .UseSetting("OidcMock:Serving:AllowHttp", "true"));
@@ -109,7 +110,7 @@ public sealed class HostStartupTests
     [Fact]
     public async Task LosOrigenesPorDefectoSeAplicanCuandoLaConfiguracionNoTraeNinguno()
     {
-        using var factory = new WebApplicationFactory<Program>();
+        using var factory = MockHost.Create();
         using var client = factory.CreateClient();
 
         using var response = await client.SendAsync(Request(origin: OidcMockOptions.DefaultAllowedCorsOrigins[1]), TestContext.Current.CancellationToken);
@@ -121,7 +122,7 @@ public sealed class HostStartupTests
     public async Task UnOrigenConfiguradoReemplazaALosOrigenesPorDefecto()
     {
         const string origin = "http://localhost:9999";
-        using var factory = new WebApplicationFactory<Program>()
+        using var factory = MockHost.Create()
             .WithWebHostBuilder(builder => builder.UseSetting("OidcMock:AllowedCorsOrigins:0", origin));
         using var client = factory.CreateClient();
 

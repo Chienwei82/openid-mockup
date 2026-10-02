@@ -97,8 +97,27 @@ public static class PollEndpoints
             pendingRequests.Approve(request.Handle, user.UserName, user.Subject, DateTimeOffset.UtcNow);
         }
 
-        return Results.Json(new CibaResponse(request.Handle, (int)CibaLifetime.TotalSeconds, CibaIntervalInSeconds));
+        return Results.Json(
+            WantsUserCode(values)
+                ? new CibaResponse(
+                    request.Handle,
+                    (int)CibaLifetime.TotalSeconds,
+                    CibaIntervalInSeconds,
+                    UserCodeGenerator.New(),
+                    VerificationUri.Constant)
+                : new CibaResponse(request.Handle, (int)CibaLifetime.TotalSeconds, CibaIntervalInSeconds));
     }
+
+    /// <summary>
+    /// El codigo de usuario es opcional en CIBA: solo se devuelve si el cliente declara que lo admite
+    /// con <c>user_code_parameter_supported</c>, como hacen los que lo muestran en su pantalla para
+    /// que el usuario pueda distinguir la peticion.
+    /// </summary>
+    private static bool WantsUserCode(IReadOnlyDictionary<string, string> values) =>
+        string.Equals(
+            values.GetValueOrDefault("user_code_parameter_supported"),
+            "true",
+            StringComparison.OrdinalIgnoreCase);
 
     private static PendingAuthorizationRequest RegisterCiba(
         IPendingAuthorizationStore pendingRequests,
@@ -136,8 +155,17 @@ public sealed record DeviceAuthorizationBody(
     [property: JsonPropertyName("expires_in")] int ExpiresIn,
     [property: JsonPropertyName("interval")] int Interval);
 
-/// <summary>Cuerpo de la respuesta de CIBA.</summary>
+/// <summary>
+/// Cuerpo de la respuesta de CIBA. Los dos ultimos campos solo se rellenan cuando el cliente ha
+/// pedido el codigo de usuario, y por eso son opcionales en la forma serializada.
+/// </summary>
 public sealed record CibaResponse(
     [property: JsonPropertyName("auth_req_id")] string AuthReqId,
     [property: JsonPropertyName("expires_in")] int ExpiresIn,
-    [property: JsonPropertyName("interval")] int Interval);
+    [property: JsonPropertyName("interval")] int Interval,
+    [property: JsonPropertyName("user_code")]
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    string? UserCode = null,
+    [property: JsonPropertyName("verification_uri")]
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    string? VerificationUri = null);

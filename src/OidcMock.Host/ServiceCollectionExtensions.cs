@@ -22,6 +22,7 @@ using OidcMock.Core.UserInfo;
 using OidcMock.Core.Users;
 using OidcMock.Host.Crypto;
 using OidcMock.Host.Configuration;
+using OidcMock.Host.Endpoints;
 using OidcMock.Host.Stores;
 
 namespace OidcMock.Host;
@@ -39,9 +40,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(options);
         services.AddSingleton(TimeProvider.System);
 
-        services.AddSingleton<IClientStore>(provider => CreateClientStore(provider));
-        services.AddSingleton<IUserStore>(provider => CreateUserStore(provider));
-        services.AddSingleton<IScopeStore>(provider => CreateScopeStore(provider));
+        services.AddSingleton<IClientStore>(provider => CreateStore<JsonClientStore>(provider));
+        services.AddSingleton<IUserStore>(provider => CreateStore<JsonUserStore>(provider));
+        services.AddSingleton<IScopeStore>(provider => CreateStore<JsonScopeStore>(provider));
         services.AddSingleton<IConfigurationValidator, JsonConfigurationValidator>();
 
         return services;
@@ -103,6 +104,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IEndSessionService, EndSessionService>();
         services.AddSingleton<IClaimsProjector, ScopesClaimsProjector>();
         services.AddSingleton<IAuthorizationRequestValidator, AuthorizationRequestValidator>();
+        services.AddSingleton<AuthorizationBinder>();
 
         // La cadena de validacion de authorize es una lista de reglas de una sola comprobacion, en
         // el orden en que se registran. Agregar una comprobacion es una linea mas, sin tocar la
@@ -156,14 +158,17 @@ public static class ServiceCollectionExtensions
         }
     }
 
-    private static JsonClientStore CreateClientStore(IServiceProvider provider) =>
-        new(GetRequiredOptions(provider).ConfigDirectory, GetRequiredOptions(provider).ReloadOnChange);
+    /// <summary>
+    /// Crea un store JSON con el directorio y la recarga de las opciones. Los tres se construyen igual y
+    /// solo cambia el tipo, asi que un metodo generico evita tres copias que se pueden desincronizar.
+    /// </summary>
+    private static TStore CreateStore<TStore>(IServiceProvider provider)
+        where TStore : class
+    {
+        var options = GetRequiredOptions(provider);
 
-    private static JsonUserStore CreateUserStore(IServiceProvider provider) =>
-        new(GetRequiredOptions(provider).ConfigDirectory, GetRequiredOptions(provider).ReloadOnChange);
-
-    private static JsonScopeStore CreateScopeStore(IServiceProvider provider) =>
-        new(GetRequiredOptions(provider).ConfigDirectory, GetRequiredOptions(provider).ReloadOnChange);
+        return (TStore)Activator.CreateInstance(typeof(TStore), options.ConfigDirectory, options.ReloadOnChange)!;
+    }
 
     private static JsonStoreOptions GetRequiredOptions(IServiceProvider provider) =>
         provider.GetRequiredService<JsonStoreOptions>();

@@ -1,3 +1,4 @@
+using OidcMock.IntegrationTests;
 using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
@@ -76,7 +77,7 @@ public sealed class ErrorHandlingTests
         directory.CopyRepositoryConfiguration();
         directory.WriteFile(ConfigurationFiles.SigningKey, CorruptKey);
 
-        return new WebApplicationFactory<Program>()
+        return MockHost.Create()
             .WithWebHostBuilder(builder => builder.UseSetting(
                 HostConfigDirectory.ConfigDirectorySettingName,
                 directory.Path));

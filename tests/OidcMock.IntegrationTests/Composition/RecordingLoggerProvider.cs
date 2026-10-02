@@ -41,6 +41,18 @@ public sealed class RecordingLoggerProvider : ILoggerProvider
         OwnEntries.Any(entry => entry.Message.Contains(value, StringComparison.Ordinal)
             || entry.State?.Contains(value, StringComparison.Ordinal) == true);
 
+    /// <summary>
+    /// Falla si el mock no ha registrado nada propio.
+    ///
+    /// Los tests de "no se registra el secreto" comprueban una ausencia, y una ausencia se cumple
+    /// tambien con un log vacio: si el provider no recogiera nada, pasarian sin comprobar nada. Este
+    /// guard los obliga a haber registrado antes de poder concluir que el valor no aparece.
+    /// </summary>
+    public void AssertLoggedSomething()
+    {
+        Assert.NotEmpty(OwnEntries);
+    }
+
     private sealed class RecordingLogger(string category, ConcurrentQueue<RecordedLog> entries) : ILogger
     {
         public IDisposable? BeginScope<TState>(TState state)

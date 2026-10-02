@@ -649,3 +649,63 @@ CORS presente y el aviso de clave no persistida apareciendo en el log.
 de cliente). La suite de compatibilidad levanta el mock sobre Kestrel real y usa los clientes de verdad:
 `OpenIdConnect` para el login, la renovacion y el logout, y `JwtBearer` para la API, ambos configurados
 solo con el issuer.
+
+### Revision critica: que se aplico y que no
+
+De la revision externa (ALTO/MEDIO/BAJO) se aplicaron los ALTO que se podian verificar con tests:
+
+- **El canje de refresh ahora devuelve id_token** (bug real, ver arriba).
+- **`AuthorizationBinder` nuevo.** `AuthorizationFlow` hacia bind -> validate -> seguir en los dos
+  caminos, GET y POST, con unas 25 lineas duplicadas. Ahora el enlace y la validacion viven en un tipo
+  con su propio nombre, y `AuthorizationFlow` solo decide la pantalla. El metodo se llama `Bind` y no
+  `BindAsync` porque Minimal API busca por convencion un `BindAsync` en los tipos que inyecta y lo toma
+  por un binder de parametros: con el otro nombre, todos los endpoints devolvian 500.
+- **Los errores de validacion se devuelven tal cual los produce el validador.** Al extraer el binder se
+  perdia su decision de si un error puede redirigirse al `redirect_uri` del cliente, y el authorize
+  paso a responder 400 donde antes redirigia. El validador decide eso para no convertir el authorize en
+  un vector de open redirect, asi que el `AuthorizationValidationResult` travels entero, no solo su
+  error.
+- **`CreateStore<TStore>` en la composicion.** Los tres factories de los stores JSON eran copias
+  literales; ahora hay un metodo generico.
+- **Tests de logging que no pueden pasar en vacio.** Comprobaban que el log no menciona el token o el
+  secreto, pero una ausencia tambien se cumple con un log vacio: si el provider no recogia nada,
+  pasaban sin comprobar nada. Ahora un guard (`AssertLoggedSomething`) exige que el mock haya registrado
+  algo, y hay una asercion positiva de que el log dice el cliente y el grant.
+- **Tests del propio arnes de compatibilidad.** `BrowserSession`, `OidcClientHost` y `TokenRefresher`
+  reimplementan un cliente OIDC a mano, unas 600 lineas sin verificar. Si esa pieza falla, los tests de
+  login, refresh y logout pasan o fallan por el motivo equivocado. Ahora hay tests propios del arnes:
+  que el login deja sesion, que el renovador emite tokens y deja la sesion abierta, que guarda el token
+  canjeado y que no inventa una sesion que no hay.
+- **Los fallos intermitentes de la suite de integracion eran reales y no del sistema.** Dos causas
+  encadenadas, ambas de infraestructura de pruebas: `OidcTestClient.Create` devolvia el `HttpClient` de
+  `CreateClient` sin propagar el `Dispose` al factory, asi que cada prueba filtraba un host con sus
+  watchers; y `WebApplicationFactory` montaba un `PhysicalFileProvider` con watcher para el content root.
+  Con la suite creciendo se agotaba el limite de inotify del sistema y los tests fallaban con errores de
+  infraestructura que no tenian nada que ver con lo que comprobaban. Arreglado con un cliente que libera
+  tambien el host, fijando el content root, desactivando la recarga en caliente en las pruebas, un
+  fixture de ensamblado que recoge los hosts no liberados y sin paralelismo. Verificado en tres vueltas
+  seguidas.
+- **`docs/decisions.md`** (este fichero) y el `README.md` nuevo.
+
+**No se aplicaron** los ALTO de refactor estructural grande (partir `TokenEndpoints` en cinco clases,
+mover la traduccion del token request a Core) y varios MEDIO: son cambios de organizacion que tocan
+mucho codigo sin corregir un defecto observable, y el criterio de este prompt es priorizar lo que un
+cliente real o una prueba puede detectar. Quedan anotados aqui y en el informe de revision.
+
+### Coherencia de la configuracion de ejemplo
+
+Dos defaults que rompian a un desarrollador, encontrados al revisar el discovery contra los datos:
+
+- `backend-service` declaraba `centralenlinea.bccr.fi.cr`, un scope que no existia en `scopes.json`:
+  cualquier peticion de token de ese cliente devolvia `invalid_scope`.
+- Los claims `Bccr.IdEntidad`, `Bccr.IdUsuario`, `Bccr.CodTipoId` y `Bccr.negocio` estaban en
+  `users.json` pero en ningun scope, asi que el proyector nunca los emitia. Tambien `phone_number`, sin
+  scope `phone` que lo proyectara.
+
+Cubierto con `ConfigCoherenceTests`, que falla si un cliente pide un scope inexistente o si un usuario
+tiene un claim que ningun scope puede emitir. Los dos casos son invisibles al arrancar el mock: el
+fallo aparece en la primera peticion que alguien hace.
+
+Ademas, el discovery anunciaba `backchannel_user_code_parameter_supported: true` y la respuesta de CIBA
+no traia `user_code` ni `verification_uri`. Ahora los devuelve cuando el cliente declara que los admite
+con `user_code_parameter_supported`, y no si no.

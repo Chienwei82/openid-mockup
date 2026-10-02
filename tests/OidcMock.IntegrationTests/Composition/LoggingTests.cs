@@ -38,7 +38,12 @@ public sealed class LoggingTests
 
         Assert.NotNull(firstTokens.AccessToken);
         Assert.NotNull(secondTokens.AccessToken);
+
+        // Y que no sean el mismo token: si el segundo navegador recibiera el del primero, la prueba
+        // pasaria sin haber firmado nada con la segunda RSA.
+        Assert.NotEqual(firstTokens.AccessToken, secondTokens.AccessToken);
     }
+
     [Fact]
     public async Task EmiteUnEventoAlEmitirTokensConSuClienteYSuCaducidad()
     {
@@ -69,9 +74,13 @@ public sealed class LoggingTests
         var code = await OidcTestClient.SignInAsync(client);
         var tokens = await OidcTestClient.RequestTokensAsync(client, GrantTypes.AuthorizationCode, code);
 
+        // El guard va primero: sin el, "no aparece" tambien se cumple con un log vacio.
+        harness.Recorder.AssertLoggedSomething();
+
         Assert.NotNull(tokens.AccessToken);
+        Assert.NotNull(tokens.IdToken);
         Assert.False(harness.Recorder.OwnLogsMention(tokens.AccessToken!));
-        Assert.False(harness.Recorder.OwnLogsMention(tokens.IdToken ?? string.Empty));
+        Assert.False(harness.Recorder.OwnLogsMention(tokens.IdToken!));
     }
 
     [Fact]
@@ -83,9 +92,18 @@ public sealed class LoggingTests
         var code = await OidcTestClient.SignInAsync(client);
         var tokens = await OidcTestClient.RequestTokensAsync(client, GrantTypes.AuthorizationCode, code);
 
+        harness.Recorder.AssertLoggedSomething();
+
         Assert.NotNull(tokens.RefreshToken);
         Assert.False(harness.Recorder.OwnLogsMention(tokens.RefreshToken!));
         Assert.False(harness.Recorder.OwnLogsMention(code));
+
+        // Y el log tiene que seguir siendo util: si no dice ni el cliente ni el grant, no sirve para
+        // diagnosticar nada.
+        Assert.Contains(
+            harness.Recorder.In(TokenEndpointsLogCategory),
+            entry => entry.EventId == 3000
+                && entry.Message.Contains(OidcTestClient.ClientId, StringComparison.Ordinal));
     }
 
     [Fact]
@@ -104,6 +122,7 @@ public sealed class LoggingTests
 
         Assert.False(harness.Recorder.OwnLogsMention("secreto-inventado"));
         Assert.Contains(harness.Recorder.Entries, entry => entry.EventId is 3101 or 3001);
+        harness.Recorder.AssertLoggedSomething();
     }
 
     [Fact]
@@ -129,12 +148,15 @@ public sealed class LoggingTests
     /// </summary>
     private sealed class LogHarness : IDisposable
     {
-        private readonly WebApplicationFactory<Program> _factory = new();
+        private readonly WebApplicationFactory<Program> _factory;
 
         public LogHarness()
         {
             Recorder = new RecordingLoggerProvider();
-            _factory = _factory.WithWebHostBuilder(builder => builder.ConfigureLogging(logging =>
+
+            // Se usa MockHost y no un factory propio para que el host no levante un watcher extra:
+            // el limite de inotify del sistema se agota antes de que estas pruebas empiecen.
+            _factory = MockHost.Create().WithWebHostBuilder(builder => builder.ConfigureLogging(logging =>
                 logging.AddProvider(Recorder).SetMinimumLevel(LogLevel.Debug)));
         }
 

@@ -28,27 +28,25 @@ public static class AuthorizationEndpoints
 
     private static Task<IResult> ShowAuthorization(
         HttpContext context,
-        IAuthorizationRequestValidator validator,
+        AuthorizationBinder binder,
         IAuthorizationService authorization,
         IAuthorizationInteraction interaction,
         IUserStore users,
         IAuthSessionStore sessions,
-        IPushedAuthorizationService pushedRequests,
         DiscoveryDocumentBuilder discovery,
         OidcMockOptions options) =>
-        new AuthorizationFlow(context, validator, authorization, interaction, users, sessions, pushedRequests, discovery, options)
+        new AuthorizationFlow(context, binder, authorization, interaction, users, sessions, discovery, options)
             .ShowAsync();
 
     private static Task<IResult> ProcessDecision(
         HttpContext context,
-        IAuthorizationRequestValidator validator,
+        AuthorizationBinder binder,
         IAuthorizationService authorization,
         IAuthorizationInteraction interaction,
         IUserStore users,
         IAuthSessionStore sessions,
-        IPushedAuthorizationService pushedRequests,
         DiscoveryDocumentBuilder discovery,
         OidcMockOptions options) =>
-        new AuthorizationFlow(context, validator, authorization, interaction, users, sessions, pushedRequests, discovery, options)
+        new AuthorizationFlow(context, binder, authorization, interaction, users, sessions, discovery, options)
             .ProcessAsync();
 }

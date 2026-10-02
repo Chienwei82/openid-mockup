@@ -12,6 +12,12 @@ public static class RepositoryLayout
 
     public static string ConfigDirectory => Path.Combine(RootDirectory, ConfigDirectoryName);
 
+    /// <summary>
+    /// Content root del host del mock en las pruebas. Fijarlo evita que WebApplicationFactory infiera
+    /// el directorio de contenido y monte un watcher para detectarlo.
+    /// </summary>
+    public static string ContentRoot => Path.Combine(RootDirectory, "src", "OidcMock.Host");
+
     public static string ConfigFile(string fileName) => Path.Combine(ConfigDirectory, fileName);
 
     public static void EnsureExists(string path)

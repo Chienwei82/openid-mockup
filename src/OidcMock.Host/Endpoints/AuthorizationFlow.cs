@@ -14,12 +14,11 @@ namespace OidcMock.Host.Endpoints;
 /// </summary>
 internal sealed class AuthorizationFlow(
     HttpContext context,
-    IAuthorizationRequestValidator validator,
+    AuthorizationBinder binder,
     IAuthorizationService authorization,
     IAuthorizationInteraction interaction,
     IUserStore users,
     IAuthSessionStore sessions,
-    IPushedAuthorizationService pushedRequests,
     DiscoveryDocumentBuilder discovery,
     OidcMockOptions options)
 {
@@ -27,23 +26,13 @@ internal sealed class AuthorizationFlow(
 
     public async Task<IResult> ShowAsync()
     {
-        var request = await BindAsync();
-        if (request.Failed)
+        var binding = await binder.Bind(context.Request);
+
+        if (binding.Authorized is not { } authorized)
         {
-            return RespondToError(
-                AuthorizationValidationResult.Failed(request.Error!, null, null),
-                ResponseModes.Query);
+            return RespondBindingError(binding);
         }
 
-        var bound = request.Value!;
-        var validation = validator.Validate(bound);
-
-        if (validation.IsError)
-        {
-            return RespondToError(validation, bound.ResponseMode);
-        }
-
-        var authorized = validation.Value!;
         var decision = interaction.Decide(authorized, SessionId());
 
         return decision.Step switch
@@ -53,58 +42,32 @@ internal sealed class AuthorizationFlow(
                 authorized.ResponseMode),
             AuthorizationStep.Consent => Consent(authorized, decision.UserName!),
             AuthorizationStep.Grant => Grant(authorized, decision.UserName!),
-            _ => Login(authorized, bound)
+            _ => Login(authorized, binding.Bound!)
         };
     }
 
     public async Task<IResult> ProcessAsync()
     {
-        var request = await BindAsync();
-        if (request.Failed)
-        {
-            return RespondToError(
-                AuthorizationValidationResult.Failed(request.Error!, null, null),
-                ResponseModes.Query);
-        }
+        var binding = await binder.Bind(context.Request);
 
-        var bound = request.Value!;
-        var validation = validator.Validate(bound);
-
-        if (validation.IsError)
+        if (binding.Authorized is not { } authorized)
         {
-            return RespondToError(validation, bound.ResponseMode);
+            return RespondBindingError(binding);
         }
 
         var form = await RequestValues.ReadAsync(context.Request);
 
-        return form.ContainsKey(ConsentPage.DecisionField)
-            ? AnswerConsent(validation.Value!, form)
-            : SignIn(validation.Value!, form);
+        return IsConsentAnswer(form)
+            ? AnswerConsent(authorized, form)
+            : SignIn(authorized, form);
     }
 
     /// <summary>
-    /// Enlaza la peticion y, si vino empujada (RFC 9126), la sustituye por la original. Un cliente
-    /// que anuncia PAR llega al authorize con solo <c>client_id</c> y <c>request_uri</c>: sin esto,
-    /// el authorize no veria <c>redirect_uri</c> ni <c>response_type</c> y rechazaria a un cliente
-    /// bien configurado.
+    /// Distingue el POST de consentimiento del POST de login por el campo que trae el formulario. La
+    /// regla vive aqui, con nombre, y no repartida en el <c>if</c> que elige la pantalla.
     /// </summary>
-    private async Task<Result<AuthorizationRequest>> BindAsync()
-    {
-        var request = await AuthorizationRequestBinder.BindAsync(context.Request);
-
-        if (string.IsNullOrEmpty(request.RequestUri))
-        {
-            return Result<AuthorizationRequest>.Ok(request);
-        }
-
-        var resolved = pushedRequests.Find(request.RequestUri);
-
-        // Un request_uri desconocido o caducado es invalid_request_uri (RFC 9126 4.1), no un invalid_request
-        // generico: el cliente puede distinguirlo y reintentar empujando la peticion otra vez.
-        return resolved.Failed
-            ? Result<AuthorizationRequest>.Fail(AuthorizationErrors.InvalidRequestUri(resolved.Error!.Description))
-            : resolved;
-    }
+    private static bool IsConsentAnswer(IReadOnlyDictionary<string, string> form) =>
+        form.ContainsKey(ConsentPage.DecisionField);
 
     private IResult Login(ValidatedAuthorizationRequest authorized, AuthorizationRequest request) =>
         Results.Content(LoginPage.Render(authorized, users.List(), request), HtmlContentType);
@@ -198,7 +161,7 @@ internal sealed class AuthorizationFlow(
     {
         if (!string.IsNullOrEmpty(authorized.RequestUri))
         {
-            pushedRequests.Consume(authorized.RequestUri);
+            binder.ConsumeRequestUri(authorized.RequestUri);
         }
     }
 
@@ -209,6 +172,22 @@ internal sealed class AuthorizationFlow(
                 authorized.RedirectUri,
                 authorized.State),
             authorized.ResponseMode);
+
+    /// <summary>
+    /// Traduce un enlace fallido a la respuesta que corresponde. Cuando la peticion llego a enlazarse,
+    /// el error va al <c>redirect_uri</c> del cliente (RFC 6749 4.1.2.1): el navegador del usuario tiene
+    /// que ver el fallo en la aplicacion a la que queria entrar. Solo si ni siquiera se pudo enlazar
+    /// (un <c>request_uri</c> desconocido, una peticion ilegible) se responde aqui, porque no hay a
+    /// quien redirigir y la unica forma de que el cliente se entere es ver el error de frente.
+    /// </summary>
+    private IResult RespondBindingError(AuthorizationBinder.Binding binding)
+    {
+        var bound = binding.Bound;
+
+        // El response mode se decide por defecto en el query: si la peticion no llego a leerse, no hay
+        // modo declarado al que ajustarse.
+        return RespondToError(binding.Validation, bound?.ResponseMode ?? ResponseModes.Query);
+    }
 
     private IResult RespondToError(AuthorizationValidationResult validation, string responseMode) =>
         AuthorizationResponder.RespondToError(validation, Issuer, responseMode);

@@ -38,7 +38,11 @@
         "login_name",
         "codTipoId",
         "nombre",
-        "documentofva"
+        "documentofva",
+        "Bccr.IdUsuario",
+        "Bccr.IdEntidad",
+        "Bccr.CodTipoId",
+        "Bccr.negocio"
       ]
     },
     {
@@ -66,6 +70,20 @@
     {
       "name": "offline_access",
       "claims": []
+    },
+    {
+      "name": "centralenlinea.bccr.fi.cr",
+      "claims": [
+        "Bccr.IdEntidad",
+        "Bccr.negocio"
+      ]
+    },
+    {
+      "name": "phone",
+      "claims": [
+        "phone_number",
+        "phone_number_verified"
+      ]
     }
   ]
 }
