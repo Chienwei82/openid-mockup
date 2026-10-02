@@ -143,8 +143,7 @@ public static class TokenEndpoints
         var values = await RequestValues.ReadAsync(request);
 
         return new TokenEndpointRequest(
-            values.GetValueOrDefault("client_id") ?? ReadBasicAuthClientId(request),
-            values.GetValueOrDefault("client_secret") ?? ReadBasicAuthSecret(request),
+            ReadClientCredentials(request, values),
             values.GetValueOrDefault("grant_type"),
             SplitScopes(values.GetValueOrDefault("scope")),
             values.GetValueOrDefault("code"),
@@ -163,37 +162,20 @@ public static class TokenEndpoints
             : scope.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
     /// <summary>
-    /// client_secret_basic viaja en el encabezado Authorization como base64(client_id:secret), y
-    /// client_secret_post en el cuerpo. Se aceptan los dos, como anuncia el discovery.
+    /// El encabezado Authorization tiene prioridad sobre el cuerpo (RFC 6749 2.3.1): si el cliente
+    /// uso client_secret_basic, el client_secret del cuerpo no debe autenticarlo. Sin encabezado se
+    /// anuncia client_secret_post, que es tambien lo que hacen los clientes publicos, que solo se
+    /// identifican por client_id.
     /// </summary>
-    private static (string? ClientId, string? Secret) ReadBasicAuth(HttpRequest request)
-    {
-        var header = request.Headers.Authorization.ToString();
-        const string basicPrefix = "Basic ";
-
-        if (!header.StartsWith(basicPrefix, StringComparison.OrdinalIgnoreCase))
-        {
-            return (null, null);
-        }
-
-        try
-        {
-            var decoded = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(header[basicPrefix.Length..].Trim()));
-            var separator = decoded.IndexOf(':', StringComparison.Ordinal);
-
-            return separator < 0
-                ? (decoded, null)
-                : (decoded[..separator], decoded[(separator + 1)..]);
-        }
-        catch (FormatException)
-        {
-            return (null, null);
-        }
-    }
-
-    private static string? ReadBasicAuthClientId(HttpRequest request) => ReadBasicAuth(request).ClientId;
-
-    private static string? ReadBasicAuthSecret(HttpRequest request) => ReadBasicAuth(request).Secret;
+    private static ClientCredentials ReadClientCredentials(
+        HttpRequest request,
+        IReadOnlyDictionary<string, string> values) =>
+        BasicAuthorizationHeader.TryRead(request, out var fromHeader)
+            ? new ClientCredentials(ClientAuthenticationMethods.ClientSecretBasic, fromHeader.ClientId, fromHeader.Secret)
+            : new ClientCredentials(
+                ClientAuthenticationMethods.ClientSecretPost,
+                values.GetValueOrDefault("client_id"),
+                values.GetValueOrDefault("client_secret"));
 
     private static IResult ErrorResponse(Core.Errors.ProtocolError error) =>
         Results.Json(

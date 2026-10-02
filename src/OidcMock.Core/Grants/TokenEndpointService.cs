@@ -10,15 +10,15 @@ namespace OidcMock.Core.Grants;
 /// de modo que el dispatcher no conoce los detalles de ningun grant.
 /// </summary>
 public sealed class TokenEndpointService(
-    IClientStore clientStore,
     IScopeStore scopeStore,
+    ClientAuthenticator clientAuthenticator,
     GrantHandlerRegistry handlers) : ITokenEndpointService
 {
     public async Task<Result<TokenResponse>> IssueTokenAsync(TokenEndpointRequest request, string issuer)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var client = AuthenticateClient(request);
+        var client = clientAuthenticator.Authenticate(request.Credentials);
         if (client is null)
         {
             return Result<TokenResponse>.Fail(
@@ -58,33 +58,6 @@ public sealed class TokenEndpointService(
             request.Password,
             request.DeviceCode));
     }
-
-    /// <summary>
-    /// Cliente publico (sin secreto) es valido: en authorization_code el secreto no viaja y la
-    /// proteccion la da el PKCE, que exige el authorize endpoint.
-    /// </summary>
-    private Client? AuthenticateClient(TokenEndpointRequest request)
-    {
-        if (string.IsNullOrEmpty(request.ClientId))
-        {
-            return null;
-        }
-
-        var client = clientStore.Find(request.ClientId);
-        if (client is null || !client.RequireClientSecret)
-        {
-            return client;
-        }
-
-        return SecretsMatch(client, request.ClientSecret) ? client : null;
-    }
-
-    private static bool SecretsMatch(Client client, string? presentedSecret) =>
-        !string.IsNullOrEmpty(client.ClientSecret) &&
-        !string.IsNullOrEmpty(presentedSecret) &&
-        System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
-            System.Text.Encoding.UTF8.GetBytes(client.ClientSecret),
-            System.Text.Encoding.UTF8.GetBytes(presentedSecret));
 
     private static IReadOnlyList<string>? ResolveScopes(
         Client client,

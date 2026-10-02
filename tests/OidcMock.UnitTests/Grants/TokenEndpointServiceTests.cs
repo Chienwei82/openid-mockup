@@ -18,8 +18,16 @@ public sealed class TokenEndpointServiceTests : GrantHandlerTestBase
             new PasswordGrantHandler(UserStore, RefreshTokens, Tokens, Clock)
         ]);
 
-        _service = new TokenEndpointService(ClientStoreFixture.Create(), ScopeStoreFixture.Create(), registry);
+        _service = ServiceOver(ClientStoreFixture.Create(), registry);
     }
+
+    private static TokenEndpointService ServiceOver(
+        IClientStore clientStore,
+        GrantHandlerRegistry registry) =>
+        new(
+            ScopeStoreFixture.Create(),
+            ClientStoreFixture.AuthenticatorOver(clientStore),
+            registry);
 
     [Fact]
     public async Task EmiteTokensDeClientCredentialsConElSecretoCorrecto()
@@ -38,15 +46,16 @@ public sealed class TokenEndpointServiceTests : GrantHandlerTestBase
             RequireClientSecret = false,
             AllowedGrantTypes = [GrantTypes.Password]
         };
-        var service = new TokenEndpointService(
+        var service = ServiceOver(
             new SingleClientStore(spa),
-            ScopeStoreFixture.Create(),
             new GrantHandlerRegistry([new PasswordGrantHandler(UserStore, RefreshTokens, Tokens, Clock)]));
 
         var response = await service.IssueTokenAsync(
             new TokenEndpointRequest(
-                spa.ClientId,
-                ClientSecret: null,
+                new ClientCredentials(
+                    ClientAuthenticationMethods.ClientSecretPost,
+                    spa.ClientId,
+                    ClientSecret: null),
                 "password",
                 ["openid"],
                 null,
@@ -144,8 +153,10 @@ public sealed class TokenEndpointServiceTests : GrantHandlerTestBase
         string? password = null) =>
         await _service.IssueTokenAsync(
             new TokenEndpointRequest(
-                clientId,
-                clientSecret,
+                new ClientCredentials(
+                    ClientAuthenticationMethods.ClientSecretPost,
+                    clientId,
+                    clientSecret),
                 grantType,
                 scopes ?? ["openid"],
                 null,

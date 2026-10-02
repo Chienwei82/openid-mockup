@@ -1,3 +1,4 @@
+using OidcMock.Core.Clients;
 using OidcMock.Core.Configuration;
 using OidcMock.Core.Scopes;
 
@@ -7,7 +8,7 @@ namespace OidcMock.Core.Discovery;
 /// Construye el documento de discovery announcing unicamente la superficie que el mock implementa.
 /// Los scopes y los claims salen del IScopeStore, el resto son capacidades fijas del mock.
 /// </summary>
-public sealed class DiscoveryDocumentBuilder(IScopeStore scopeStore, OidcMockOptions options)
+public sealed class DiscoveryDocumentBuilder(IScopeStore scopeStore, OidcMockOptions options, ClientAuthenticator clientAuthenticator)
 {
     private static readonly string[] GrantTypes =
     [
@@ -33,8 +34,6 @@ public sealed class DiscoveryDocumentBuilder(IScopeStore scopeStore, OidcMockOpt
 
     private static readonly string[] ResponseModes = ["form_post", "query", "fragment"];
 
-    private static readonly string[] ClientAuthenticationMethods = ["client_secret_basic", "client_secret_post"];
-
     private static readonly string[] PromptValues = ["none", "login", "consent", "select_account"];
 
     private static readonly string[] CodeChallengeMethods = ["plain", "S256"];
@@ -45,6 +44,10 @@ public sealed class DiscoveryDocumentBuilder(IScopeStore scopeStore, OidcMockOpt
 
         var normalizedIssuer = EndpointUri.NormalizeIssuer(issuer);
         var scopes = scopeStore.List();
+
+        // Los metodos de autenticacion se anuncian desde los autenticadores registrados, para que el
+        // discovery no pueda quedar por detras de lo que el token endpoint acepta de verdad.
+        IReadOnlyList<string> authMethods = clientAuthenticator.SupportedMethods;
 
         return new DiscoveryDocument
         {
@@ -66,9 +69,9 @@ public sealed class DiscoveryDocumentBuilder(IScopeStore scopeStore, OidcMockOpt
             GrantTypesSupported = GrantTypes,
             ResponseTypesSupported = ResponseTypes,
             ResponseModesSupported = ResponseModes,
-            TokenEndpointAuthMethodsSupported = ClientAuthenticationMethods,
-            RevocationEndpointAuthMethodsSupported = ClientAuthenticationMethods,
-            IntrospectionEndpointAuthMethodsSupported = ClientAuthenticationMethods,
+            TokenEndpointAuthMethodsSupported = authMethods,
+            RevocationEndpointAuthMethodsSupported = authMethods,
+            IntrospectionEndpointAuthMethodsSupported = authMethods,
             IdTokenSigningAlgValuesSupported = DiscoveryCapabilities.SigningAlgorithms,
             SubjectTypesSupported = DiscoveryCapabilities.SubjectTypes,
             CodeChallengeMethodsSupported = CodeChallengeMethods,

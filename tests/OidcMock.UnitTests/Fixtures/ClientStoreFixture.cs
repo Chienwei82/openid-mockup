@@ -3,7 +3,7 @@ using OidcMock.Core.Clients;
 namespace OidcMock.UnitTests.Fixtures;
 
 /// <summary>
-/// ClientStore en memoria con clientes de ejemplo, para que los tests de dominio no dependan de
+/// ClienteStore en memoria con clientes de ejemplo, para que los tests de dominio no dependan de
 /// leer config/clients.json del disco.
 /// </summary>
 public sealed class ClientStoreFixture
@@ -12,6 +12,10 @@ public sealed class ClientStoreFixture
     public const string ServiceClientId = "backend-service";
 
     public static IClientStore Create() => new InMemoryClientStore([Spa(), Service()]);
+
+    /// <summary>Coordinador con los dos metodos de autenticacion que el token endpoint admite.</summary>
+    public static ClientAuthenticator AuthenticatorOver(IClientStore clientStore) =>
+        new(clientStore, [new ClientSecretBasicAuthenticator(), new ClientSecretPostAuthenticator()]);
 
     public static Client Spa() => new(
         SpaClientId,

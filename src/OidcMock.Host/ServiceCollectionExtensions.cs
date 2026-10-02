@@ -102,6 +102,12 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAuthorizationInteraction, AuthorizationInteraction>();
         services.AddSingleton<GrantHandlerRegistry>();
         services.AddSingleton<ITokenEndpointService, TokenEndpointService>();
+
+        // La autenticacion de cliente es una estrategia por metodo, y el coordinador elige. Agregar
+        // un metodo (private_key_jwt, mTLS) es registrar otra linea aqui.
+        services.AddSingleton<IClientAuthenticator, ClientSecretBasicAuthenticator>();
+        services.AddSingleton<IClientAuthenticator, ClientSecretPostAuthenticator>();
+        services.AddSingleton<ClientAuthenticator>();
         services.AddSingleton<IUserInfoClaimsSource, ProjectedUserInfoClaimsSource>();
         services.AddSingleton<IUserInfoService, UserInfoService>();
         services.AddSingleton<IIntrospectionService, IntrospectionService>();

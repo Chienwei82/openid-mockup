@@ -8,8 +8,7 @@ namespace OidcMock.Core.Grants;
 /// Peticion del token endpoint tal como llega, con el cliente todavia sin autenticar.
 /// </summary>
 public sealed record TokenEndpointRequest(
-    string? ClientId,
-    string? ClientSecret,
+    ClientCredentials Credentials,
     string? GrantType,
     IReadOnlyList<string> Scopes,
     string? Code,

@@ -2,6 +2,7 @@ using System.Text.Json;
 using OidcMock.Core.Configuration;
 using OidcMock.Core.Discovery;
 using OidcMock.Core.Scopes;
+using OidcMock.UnitTests.Fixtures;
 
 namespace OidcMock.UnitTests.Discovery;
 
@@ -124,7 +125,11 @@ public sealed class DiscoveryDocumentBuilderTests
             new("roles", ["role"])
         ]);
 
-        return new DiscoveryDocumentBuilder(scopeStore, new OidcMockOptions()).Build(issuer ?? Issuer);
+        return new DiscoveryDocumentBuilder(
+                scopeStore,
+                new OidcMockOptions(),
+                ClientStoreFixture.AuthenticatorOver(ClientStoreFixture.Create()))
+            .Build(issuer ?? Issuer);
     }
 
     private static string[] FieldNames(DiscoveryDocument document) =>
