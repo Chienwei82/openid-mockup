@@ -512,10 +512,91 @@ Revertir `sessions.Close` (por `Expire`) = 1 fallo unitario; revertir el iframe 
 1 fallo de integración. El test de cierre real de sesión se apoya en el flujo completo
 (`SignInAsync` → authorize `prompt=none` con code → `endsession` → `prompt=none` con `login_required`).
 
+## Etapa 10 — temas transversales: errores, CORS, logging, opciones, HTTPS y publicación
+
+### Decisiones
+
+- **`ProblemDetails` solo para lo no previsto.** `UnexpectedErrorHandler` (un `IExceptionHandler`) traduce
+  cualquier excepción que nadie capturó a `application/problem+json` con `status`, `title`, `instance` y
+  `traceId`. Los errores de protocolo **no pasan por ahí**: los endpoints los forman con el cuerpo OAuth de
+  RFC 6749 5.2 (`error` + `error_description`, `application/json`). Un cliente que espera `invalid_grant`
+  no puede encontrarlo dentro de un `ProblemDetails`, y al revés: un 500 del mock no debe parecer un
+  rechazo del servidor real. `WriteAsJsonAsync` sobrescribe el `Content-Type`, así que el media type
+  `application/problem+json` se pasa como argumento explícito en vez de fijar la cabecera a mano.
+- **El detalle de la excepción nunca sale al cliente**, solo al log. La respuesta lleva el `traceId`, que
+  es lo que permite correlacionar el fallo del servidor con el del cliente.
+- **CORS con `ICorsPolicyProvider` propio, no con `AddPolicy` de `AddCors`.** Los orígenes salen de
+  `OidcMockOptions`, que solo existe en la DI ya construida; con `AddPolicy` habría que fijarlos al
+  registrar, antes de que la configuración esté enlazada y validada. El provider construye la política
+  por petición desde `IOptions`, así que manda la configuración.
+- **La política se aplica endpoint a endpoint (`RequireCors`), no con `UseCors` global.** El discovery,
+  el JWKS, el token y el userinfo los consume un navegador desde otra página; el authorize con su
+  formulario, el introspect y el revocation son de backends y quedan fuera. Un `UseCors` global expondría
+  de más.
+- **`AllowCredentials` sin comodín.** El token endpoint admite credenciales de cliente, y
+  `Access-Control-Allow-Origin: *` con credenciales es inválido en los navegadores. El validador rechaza
+  el `*` explícitamente y obliga a enumerar orígenes. Por defecto: `localhost:4200`, `5173` y `3000`.
+- **`AllowedCorsOrigins` nace vacía y los valores por defecto se aplican en un `PostConfigure`.** El
+  enlace de configuración **añade** elementos a una lista ya poblada en vez de reemplazarla, así que
+  dejar el valor por defecto en el inicializador hacía que un origen configurado acabara en el índice 3 y
+  los tres por defecto siguieran activos. Con la lista vacía + `PostConfigure`, configurar sustituye de
+  verdad y no configurar conserva los valores por defecto.
+- **El log no contiene tokens ni secretos, nunca.** `OidcMockLog` (source generator de `LoggerMessage`)
+  emite un evento por operación con `EventId` y nivel: se registra el grant, el `client_id`, la caducidad y
+  si se emitió refresh token; no el token, el código, el refresh token ni el `client_secret`. Un log de
+  desarrollo acaba en consolas, en el pipe de CI y en archivos compartidos, y un token completo ahí es una
+  credencial viva. Los tests lo comprueban contra los valores reales emitidos.
+- **Los tests de log ignoran las entradas del framework.** ASP.NET registra el `RedirectResult` del
+  authorize con la URL completa, que lleva el código dentro. Es comportamiento suyo y no del mock, así
+  que la aserción se limita a los eventos propios; silenciarlo sería mentir sobre lo que hace el host.
+- **`OidcMockOptionsValidator` vive en Core y es estática**, sin referencia a ASP.NET, para poder
+  probarse como dominio puro; el adaptador `IValidateOptions` en el Host la conecta con `ValidateOnStart`.
+  Devuelve **todos** los problemas, no el primero: un arranque con la configuración rota dice todo lo que
+  está mal de una vez.
+- **`ServingOptions` es una subsección (`OidcMock:Serving`)**, y eso importa: leer la sección `OidcMock`
+  entera devolvía los valores por defecto, así que el contenedor acababa sirviendo HTTPS con el
+  certificado de desarrollo en lugar de HTTP plano. El bug se detectó ejecutando el binario publicado, no
+  en los tests, y quedó cubierto por un test de binding.
+- **Sin certificado de desarrollo en ruta absoluta.** `UseHttps()` sin argumentos deja que Kestrel
+  resuelva el certificado de `dotnet dev-certs https`; apuntar a un PFX en `~/.dotnet/corefx` a mano
+  depende de una ruta interna del SDK.
+- **El mock sigue firmando aunque no pueda persistir la clave.** Un `config` montado en solo lectura
+  (Docker con usuario no-root) es un caso normal, no un fallo: antes el JWKS devolvía 500 con
+  `UnauthorizedAccessException`. Ahora genera la clave en memoria y avisa por log de que el `kid` cambiará
+  en cada reinicio. Persistir el `kid` es una comodidad; servir, no.
+- **Publicación autocontenida y de un solo archivo solo en el proyecto Host, y solo si hay RID.** Poner
+  `SelfContained` en `Directory.Build.props` arrastraba a los proyectos de test, que no lo quieren.
+  `scripts/publish.sh` publica `linux-x64` y `win-x64`; el `Dockerfile` es multi-stage con el SDK para
+  compilar y `aspnet` para ejecutar.
+- **Los JSON de config se copian a `/app/config` en el contenedor, aparte.** Con single-file acaban en el
+  directorio de extracción (`~/.net/...`), que no es un sitio donde buscar ni sobreescribir
+  configuración. Con `OidcMock__ConfigDirectory=/app/config` el config se puede montar encima con `-v`.
+
+### Bugs reales encontrados y corregidos de paso
+
+- **La clave de firma se liberaba en el endpoint del JWKS.** `using var signingKey = ...GetSigningKey()`
+  liberaba la instancia **cacheada** del proveedor: todo token emitido después fallaba con
+  `ObjectDisposedException`. La clave la posee y libera el proveedor, no el endpoint. Nadie lo notaba
+  porque el fallo solo salía si un test pedía el JWKS y luego firmaba.
+- **La cache de firma de IdentityModel cruzaba hosts.** `CryptoProviderFactory` cachea el proveedor de
+  firma por `kid`, así que dos instancias del mock con la misma clave (dos `WebApplicationFactory`) se
+  pisaban la RSA: al liberar la primera, la segunda fallaba al firmar. Se desactivó la cache
+  (`CacheSignatureProviders = false`) con una factory propia. El caso se reprodujo aislado, fuera del
+  repositorio, antes de tocar código.
+
+### Verificación
+
+`dotnet build` en verde (0 warnings) y **507/507 tests** (330 unit + 177 integration), con la suite de
+integración repetida varias veces porque los dos bugs de clave se manifestaban de forma intermitente. La
+imagen se construyó y se levantó de verdad: discovery y JWKS 200, `client_credentials` emitiendo tokens,
+CORS presente y el aviso de clave no persistida apareciendo en el log.
+
 ## Comandos
 
-- `dotnet build` en verde (0 warnings) y **454/454 tests** (307 unit + 147 integration).
-- Commits: `test:` tests primero, `feat:` implementación, `refactor:` extracción del validador,
+- `dotnet build` en verde (0 warnings) y **507/507 tests** (330 unit + 177 integration).
+- `scripts/publish.sh` genera los ejecutables autocontenidos de `linux-x64` y `win-x64`;
+  `docker build .` produce una imagen que sirve por HTTP plano en el puerto 8080.
+- Commits: `test:` tests primero, `feat:` implementación, `fix:` bugs hallados al verificar,
   `docs:` estas decisiones.
 
 ### Formato de los archivos
