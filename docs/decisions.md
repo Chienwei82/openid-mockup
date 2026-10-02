@@ -42,6 +42,34 @@
 - El grant `refresh_token` **no reemite `id_token`** en el mock; `IGrantHandler.IssuesIdToken` decide
   caso por caso en lugar de asumirlo en la fabrica comun.
 
+### `AccessTokenRequest.IssuedAt` era un campo muerto
+
+- `AccessTokenRequest` declaraba `IssuedAt`, pero `JsonWebTokenFactory` lo **ignoraba**: tomaba el
+  instante de su propio `TimeProvider` (`Now()`) y de ahi derivaba `iat`, `nbf` y `exp`. El campo viajaba
+  en el request y se descartaba en silencio, que es la peor forma de API: un llamador que creyera
+  estar fijando la emision firmaba el intervalo del cliente creyendo que si.
+- **Decision (D-020)**: quitar el campo en vez de hacerlo cumplir. El factory es la unica fuente del
+  instante de emision, coherente con la regla de que el reloj sale siempre del `TimeProvider` y con el
+  refactor previo que unifico `iat`/`nbf`/`exp` en una sola lectura. Un segundo reloj en el request
+  permitiria emitir un token cuyo `iat` contradiga a su `exp`.
+- Con el campo fuera, `ClientCredentialsGrantHandler` ya no necesita `TimeProvider` y se le quito del
+  constructor: el compilador (CS9113) aviso del parametro sin uso.
+
+### Cobertura de los bugs encontrados
+
+Los tres escaparon durante la implementacion. Lo que los detecta hoy:
+
+| Bug | Detección |
+|---|---|
+| El codigo de autorizacion no guardaba el `redirect_uri` | Test: `ElCodigoGuardaElRedirectUriDeLaPeticionAprobada` |
+| `AccessTokenReader` validaba la vida util contra el reloj del proceso | **Estructural**: CS9113 + CA1822 impiden reintroducirlo |
+| `Deny` no limpiaba la aprobacion previa | Test: `DenegarlaImpideElCanjede` |
+
+Verificado revirtiendo cada correccion: el bug 1 produce un fallo de test, y el bug 2 ni siquiera
+compila. `AuthorizationService` no tenia ningun test propio, que es justo por lo que el bug 1 paso
+desapercibido; ahora tiene `AuthorizationServiceTests` (credenciales, emision del codigo y todo lo que
+el canje posterior necesita).
+
 ### `AccessTokenReader`
 - UserInfo, introspect y revocation leen el token por un unico `IAccessTokenReader`, que valida firma,
   issuer y vida util contra el JWKS. Validar a mano en cada endpoint habria dispersado la firma.
