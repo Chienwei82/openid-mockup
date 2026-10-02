@@ -19,15 +19,19 @@ public sealed class AuthorizationService(ICodeStore codeStore, IUserStore userSt
 
         var user = userStore.FindByUserName(request.UserName);
 
-        if (user is null || !CredentialsMatch(user, request.Password))
-        {
-            return Result<AuthorizationGranted>.Fail(AuthorizationErrors.AccessDenied(InvalidCredentials));
-        }
+        return user is null || !CredentialsMatch(user, request.Password)
+            ? Result<AuthorizationGranted>.Fail(AuthorizationErrors.AccessDenied(InvalidCredentials))
+            : Approve(new AuthorizationApproval(user.UserName, request.Authorization));
+    }
 
-        var authorization = request.Authorization;
+    public Result<AuthorizationGranted> Approve(AuthorizationApproval approval)
+    {
+        ArgumentNullException.ThrowIfNull(approval);
+
+        var authorization = approval.Authorization;
         var code = codeStore.Issue(new AuthorizationCodeRequest(
             authorization.Client.ClientId,
-            user.UserName,
+            approval.UserName,
             authorization.Scopes,
             authorization.Nonce,
             authorization.State,

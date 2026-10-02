@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Encodings.Web;
 using System.Web;
 using OidcMock.Core.Authorization;
 using OidcMock.Core.Discovery;
@@ -252,7 +253,7 @@ public sealed class AuthorizeEndpointTests
         using var response = await client.GetAsync(AuthorizeUrl(), TestContext.Current.CancellationToken);
         var html = await ReadBodyAsync(response);
 
-        Assert.Contains("OidcMock - Persona Física", html, StringComparison.Ordinal);
+        Assert.Contains(HtmlEncoder.Default.Encode("OidcMock - Persona Física"), html, StringComparison.Ordinal);
         Assert.Contains("/assets/logo-mock.svg", html, StringComparison.Ordinal);
         Assert.Contains("#00695C", html, StringComparison.Ordinal);
     }

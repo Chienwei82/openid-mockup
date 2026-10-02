@@ -2,6 +2,8 @@ using System.Net;
 using System.Text.Json;
 using System.Web;
 using Microsoft.AspNetCore.Mvc.Testing;
+using OidcMock.Core.Authorization;
+using OidcMock.Core.Codes;
 using OidcMock.Core.Crypto;
 using OidcMock.Core.Discovery;
 using OidcMock.Core.Grants;
@@ -32,38 +34,30 @@ public static class OidcTestClient
             .CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
 
     public static string AuthorizeUrl() =>
-        BuildAuthorizeUrl([]);
+        BuildAuthorizeUrl(DefaultParameters());
 
     /// <summary>
-    /// URL de authorize con los parametros por defecto del cliente de pruebas, sobrescribiendo los
-    /// que se pasen. Asi cada test declara solo lo que cambia respecto al caso bueno.
+    /// URL de authorize con exactamente los parametros que se le pasan. No rellena los ausentes:
+    /// un test que quita el code_challenge tiene que poder quitarlo de verdad.
     /// </summary>
     public static string BuildAuthorizeUrl(Dictionary<string, string?> parameters) =>
-        $"{PathBase}/{EndpointPaths.Authorize}?{QueryString(DefaultParameters(), parameters)}";
+        $"{PathBase}/{EndpointPaths.Authorize}?{QueryString(parameters)}";
 
-    private static IEnumerable<KeyValuePair<string, string?>> DefaultParameters() =>
-    [
-        new("client_id", ClientId),
-        new("redirect_uri", RedirectUri),
-        new("response_type", "code"),
-        new("scope", "openid email"),
-        new("state", "st-1"),
-        new("nonce", "n-1"),
-        new("code_challenge", Sha256Base64Url(CodeVerifier)),
-        new("code_challenge_method", "S256")
-    ];
-
-    private static string QueryString(
-        IEnumerable<KeyValuePair<string, string?>> defaults,
-        Dictionary<string, string?> overrides)
+    public static Dictionary<string, string?> DefaultParameters() => new()
     {
-        var values = defaults
-            .Where(parameter => !overrides.ContainsKey(parameter.Key))
-            .Concat(overrides)
-            .Select(parameter => $"{parameter.Key}={Uri.EscapeDataString(parameter.Value ?? string.Empty)}");
+        ["client_id"] = ClientId,
+        ["redirect_uri"] = RedirectUri,
+        ["response_type"] = ResponseTypeNames.Code,
+        ["scope"] = "openid email",
+        ["state"] = "st-1",
+        ["nonce"] = "n-1",
+        ["code_challenge"] = Sha256Base64Url(CodeVerifier),
+        ["code_challenge_method"] = PkceCodeChallengeMethods.Sha256
+    };
 
-        return string.Join('&', values);
-    }
+    private static string QueryString(IEnumerable<KeyValuePair<string, string?>> parameters) =>
+        string.Join('&', parameters.Select(
+            parameter => $"{parameter.Key}={Uri.EscapeDataString(parameter.Value ?? string.Empty)}"));
 
     public static string Sha256Base64Url(string verifier) =>
         Base64Url.Encode(System.Security.Cryptography.SHA256.HashData(

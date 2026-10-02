@@ -19,11 +19,14 @@ public static class AuthorizationResponder
     /// client_id o el redirect_uri no son validos se responde en el endpoint, para no mandar a la
     /// aplicacion a una URL que el mock no ha verificado.
     /// </summary>
-    public static IResult RespondToError(AuthorizationValidationResult validation, string issuer)
+    public static IResult RespondToError(
+        AuthorizationValidationResult validation,
+        string issuer,
+        string responseMode = ResponseModes.Query)
     {
         if (validation.CanRedirect)
         {
-            return BuildResponse(validation.RedirectUri!, validation.State, ResponseModes.Query, issuer, parameters =>
+            return BuildResponse(validation.RedirectUri!, validation.State, responseMode, issuer, parameters =>
             {
                 parameters["error"] = validation.Error!.Code;
                 parameters["error_description"] = validation.Error!.Description;

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Encodings.Web;
 using OidcMock.Core.Authorization;
+using OidcMock.Core.Clients;
 using OidcMock.Core.Users;
 
 namespace OidcMock.Host.Endpoints;
@@ -11,11 +12,15 @@ namespace OidcMock.Host.Endpoints;
 /// </summary>
 public static class LoginPage
 {
+    private const string UserListId = "oidc-mock-users";
+
+
     public static string Render(ValidatedAuthorizationRequest authorization, IReadOnlyList<User> users, AuthorizationRequest request)
     {
         var branding = authorization.Client.Branding;
         var hiddenFields = HiddenFields(authorization, request);
         var userOptions = UserOptions(users);
+        var logo = Logo(branding);
 
         return $$"""
             <!DOCTYPE html>
@@ -30,6 +35,8 @@ public static class LoginPage
                 .card { max-width: 26rem; margin: 0 auto; background: #fff; border-radius: 12px; padding: 2rem;
                         box-shadow: 0 1px 3px rgba(0,0,0,.16); }
                 header { border-bottom: 4px solid var(--primary); margin: -2rem -2rem 1.5rem; padding: 1.25rem 2rem; }
+                header .identity { display: flex; align-items: center; gap: .75rem; }
+                header img { height: 2rem; }
                 h1 { font-size: 1.1rem; margin: 0; color: var(--primary); }
                 .mock { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; color: #6b7280; }
                 label { display: block; font-size: .85rem; margin: 1rem 0 .25rem; }
@@ -46,15 +53,19 @@ public static class LoginPage
               <div class="card">
                 <header>
                   <div class="mock">OidcMock</div>
-                  <h1>{{Escape(branding.DisplayName)}}</h1>
+                  <div class="identity">
+                    {{logo}}
+                    <h1>{{Escape(branding.DisplayName)}}</h1>
+                  </div>
                 </header>
                 <p>La aplicacion <strong>{{Escape(authorization.Client.ClientId)}}</strong> solicita acceso a tu cuenta.</p>
                 <form method="post" action="">
                   {{hiddenFields}}
-                  <label for="username">Usuario</label>
-                  <select id="username" name="username">{{userOptions}}</select>
+                  <label for="user">Usuario</label>
+                  <input id="user" name="{{LoginFormFields.User}}" list="{{UserListId}}" autocomplete="username" required />
+                  <datalist id="{{UserListId}}">{{userOptions}}</datalist>
                   <label for="password">Contrasena</label>
-                  <input id="password" name="password" type="password" autocomplete="current-password" required />
+                  <input id="password" name="{{LoginFormFields.Password}}" type="password" autocomplete="current-password" required />
                   <div class="scopes">Scopes solicitados: {{Escape(string.Join(" ", authorization.Scopes))}}</div>
                   <div class="actions">
                     <button class="accept" type="submit" name="action" value="accept">Aceptar</button>
@@ -95,10 +106,20 @@ public static class LoginPage
                 .Select(field => $"<input type=\"hidden\" name=\"{Escape(field.Key)}\" value=\"{Escape(field.Value!)}\" />"));
     }
 
+    /// <summary>
+    /// El campo de usuario es un input con datalist: el desplegable ofrece los usuarios de
+    /// users.json, pero el mismo campo admite escribir cualquiera. Sin JavaScript, que es lo que
+    /// pide un mock que se usa en desarrollo.
+    /// </summary>
     private static string UserOptions(IReadOnlyList<User> users) =>
         string.Join(
             Environment.NewLine,
-            users.Select(user => $"<option value=\"{Escape(user.UserName)}\">{Escape(user.UserName)}</option>"));
+            users.Select(user => $"<option value=\"{Escape(user.UserName)}\"></option>"));
+
+    private static string Logo(Branding branding) =>
+        string.IsNullOrEmpty(branding.LogoUrl)
+            ? string.Empty
+            : $"<img src=\"{Escape(branding.LogoUrl)}\" alt=\"{Escape(branding.DisplayName)}\" />";
 
     private static string Escape(string value) => HtmlEncoder.Default.Encode(value);
 }
