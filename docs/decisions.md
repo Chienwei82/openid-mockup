@@ -476,6 +476,48 @@ dotnet test tests/OidcMock.IntegrationTests/OidcMock.IntegrationTests.csproj
   (el `config/` del repositorio) y `<BaseDirectory>/config` (publicación). Así editar `config/*.json`
   afecta al ejecutar con `dotnet run` sin recompilar, y el binario publicado sigue siendo autónomo.
 
+## Etapa 9 — /connect/endsession con cierre de sesión y frontchannel logout
+
+### Decisiones
+
+- **`EndSessionService` (Core) es el caso de uso, no el endpoint**. El orden es deliberado: resolver
+  cliente → validar `post_logout_redirect_uri` → **después** cerrar sesión. Validar primero evita que una
+  petición inválida (un hint manipulado, un redirect ajeno) tire la sesión de un navegador que solo
+  está probando una URL. La cookie, en cambio, se borra siempre en el endpoint: es lo que el navegador
+  necesita para no reenviar una sesión que el mock ya rechazó cerrar.
+- **El `id_token_hint` manda sobre el `client_id`**: es el único de los dos que va firmado, así que su
+  `aud` es el cliente contra el que se valida el redirect. Si vienen los dos y no coinciden, es
+  `invalid_request` en vez de dar prioridad en silencio: si no, un `client_id` de otro cliente bastaria
+  para intentar redirigir fuera de su propia lista.
+- **`id_token_hint` inválido es `invalid_request` 400**, no se ignora como "opcional". Si se aceptara,
+  un hint manipulado sería indistinguible de uno ausente y el redirect quedaría validado contra otro
+  cliente. El servidor real puede ignorar hints caducados; el mock prioriza no abrir la redirección.
+- **Sin `client_id` ni hint, el `post_logout_redirect_uri` se busca en la lista de todos los clientes**.
+  Antes se hacía así y algunos clientes reales no mandan `client_id`. Sigue impidiendo el open redirect:
+  si ningún cliente lo tiene registrado, se rechaza.
+- **El `sid` del aviso de frontchannel es el de la sesión que se acaba de cerrar**, no un claim `sid`
+  del id_token: emitirlo exigiría propagar el identificador de sesión desde el authorize hasta el
+  token endpoint (code → grant → `IdTokenRequest`), que es otro cambio de alcance propio. Con la
+  decisión actual el aviso lleva el `sid` real de la sesión cerrada, y vacío si no había cookie.
+- **`SignedTokenValidator` extraído de `AccessTokenReader`**: access token e id token se validan igual
+  (firma, issuer, vigencia contra `TimeProvider`) y solo cambia la política de audiencia. Tenerlo en dos
+  sitios era copiar la parte que más bugs dio (la clave del host liberada con `using`).
+- **`Client.FrontchannelLogoutUri` es opcional** (`= null`) para no romper los constructores
+  posicionales existentes, y el discovery ahora anuncia `frontchannel_logout_supported: true`, que es lo
+  que hace el servidor real.
+
+### Verificación
+
+Revertir `sessions.Close` (por `Expire`) = 1 fallo unitario; revertir el iframe de la página de cierre =
+1 fallo de integración. El test de cierre real de sesión se apoya en el flujo completo
+(`SignInAsync` → authorize `prompt=none` con code → `endsession` → `prompt=none` con `login_required`).
+
+## Comandos
+
+- `dotnet build` en verde (0 warnings) y **454/454 tests** (307 unit + 147 integration).
+- Commits: `test:` tests primero, `feat:` implementación, `refactor:` extracción del validador,
+  `docs:` estas decisiones.
+
 ### Formato de los archivos
 - Raíz con clave: `{"clients": [...]}`, `{"users": [...]}`, `{"scopes": [...]}` (permite agregar
   metadatos futuros sin romper el formato).
