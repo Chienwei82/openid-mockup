@@ -1,5 +1,59 @@
 # Decisiones de diseño
 
+## Prompt 5 — GET/POST /connect/authorize, cadena de validadores y sesion
+
+### La cadena son clases, no delegados
+- Cada comprobacion es un `IAuthorizeRequestValidator` con **una sola regla**, registrada en DI y
+  aplicada en orden con el primer fallo. Antes eran delegados (`AuthorizationRule`) dentro del
+  validador: con una regla por clase, cada una tiene su test con nombre propio y se puede probar
+  sin montar la cadena entera. La lista es el **orden de registro** en DI.
+- La regla declara `ErrorIsRedirectable`. **Solo `ClientExistsValidator` y `RedirectUriValidator`
+  devuelven `false`**: antes de verificar `client_id` y `redirect_uri` no hay una URL de confianza,
+  y redirigir ahi seria un *open redirect*. La regla de seguridad queda en la regla que la aplica,
+  no en un condicional del endpoint.
+- `KnownScopesValidator` (existe en `scopes.json`) se separo de `AllowedScopesValidator` (permitido
+  para el cliente): son dos reglas con dos repositorios distintos, y un token con un scope que el
+  mock no sabe proyectar a claims es un fallo distinto de un scope no autorizado.
+- **`openid` es obligatorio**: sin el, `/connect/authorize` seria un OAuth plano y el `id_token` no
+  tendria sentido. Se aplica sobre `AuthorizationRequest.EffectiveScopes`, que sustituye al
+  `openid` implicito cuando la peticion no trae `scope` (compatibilidad con el comportamiento previo).
+- Un `code_challenge_method` **en blanco** cuenta como ausente, igual que un `prompt` en blanco: un
+  formulario reenvia vacios los campos que el cliente no relleno, y `plain` es el default de RFC 7636.
+- `PromptValues` y `ResponseModes.Supported` son la unica fuente de los valores admitidos, y los
+  comparten el validador y el documento de discovery.
+
+### Sesion, prompts y pantallas
+- `IAuthSessionStore` guarda `AuthSession` en memoria con expiracion por `TimeProvider`; la cookie
+  es propia del mock (`oidc_mock_session`, `HttpOnly`, `SameSite=Lax`, `Path` = `PathBase`) y no la
+  de ASP.NET, porque el unico estado que hace falta es "este navegador ya se autentico como
+  alguien" y una cookie firmada obligaria a configurar autenticacion completa para un mock.
+  `Close()` y no `End()`: **CA1716** prohibe `End` como miembro de interfaz (palabra reservada en VB).
+- `AuthorizationInteraction.Decide` es un caso de uso aparte del endpoint: decide `Login`,
+  `Consent`, `Grant` o `Error` a partir del prompt y de la sesion. El endpoint solo traduce la
+  decision a una pantalla o a una redireccion.
+  - `prompt=none` **prohibe cualquier pantalla**: sin sesion devuelve `login_required` y con sesion
+    concede en silencio. `prompt=login` se comprueba **antes** de mirar si hay sesion, porque su
+    efecto es precisamente olvidarse de ella. `prompt=consent` con sesion muestra la pantalla de
+    consentimiento; sin sesion cae en login, porque consentirse no autentica a nadie.
+  - El POST de consentimiento **exige sesion vigente**: si caduco, `login_required` en vez de
+    conceder. La pantalla de consentimiento no es un factor de autenticacion.
+- `AuthorizationService.Approve` emite el codigo a nombre de un usuario ya autenticado y `SignIn`
+  acaba delegando en el, de modo que el codigo se emite **en un solo sitio** tanto si el usuario
+  tecleo contrasena como si venia de la sesion.
+- `AuthorizationFlow` (Host) encapsula las dependencias de una peticion para que los metodos del
+  endpoint no lleven ocho parametros; `AuthorizationEndpoints` solo mapea las rutas.
+
+### Login y consentimiento
+- HTML **sin JavaScript**, como se pidio. El campo de usuario es un `<input list=...>` con
+  `<datalist>` alimentado de `users.json`: ofrece el desplegable y admite escribir, en un solo
+  campo. El endpoint acepta `user` (desplegable) y `username` (texto) y **prefiere el tecleado**.
+- Los errores que viajan por el `redirect_uri` **respetan el `response_mode`**, tambien en
+  `form_post`. Antes se forzaban por query: el cliente que pidió `form_post` recibia un 302 con el
+  error, que es justo lo que `form_post` existe para evitar.
+- El branding del cliente (display name, logo y color) se renderiza en las dos pantallas. Los tests
+  comparan el display name **codificado con `HtmlEncoder`**, porque el HTML que produce el mock lo
+  escapa y comparar el texto en crudo pasaria por un bug de renderizado.
+
 ## Prompt 4 — Authorization Code, token endpoint y endpoints protegidos
 
 ### Estructura del dominio
