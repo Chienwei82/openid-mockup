@@ -1,0 +1,48 @@
+<!--
+  Compatibilidad con clientes reales. A diferencia de IntegrationTests, este proyecto no usa el
+  TestServer: el handler OpenIdConnect del cliente habla con el mock por HTTP real (discovery,
+  JWKS y canje del codigo), asi que el mock tiene que escuchar en un puerto de verdad. Por eso el
+  SDK es Microsoft.NET.Sdk.Web y el host se levanta con WebApplicationFactory + UseKestrel.
+
+  Los handlers OpenIdConnect y JwtBearer vienen del framework (Microsoft.AspNetCore.App), no de un
+  paquete de terceros: son los mismos que usaria una aplicacion real.
+-->
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>OidcMock.ClientCompatibilityTests</RootNamespace>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <!--
+      El punto de entrada lo genera xunit v3; el Web SDK anade el suyo propio y chocarian.
+      Test projects no publican ni se autoextraen, asi que se anula aqui lo que el Web SDK
+      arrastra y que el Host ya decide por su cuenta.
+    -->
+    <GenerateProgramFile>false</GenerateProgramFile>
+    <PublishSingleFile>false</PublishSingleFile>
+    <SelfContained>false</SelfContained>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Los handlers de OpenID Connect y JWT Bearer no vienen en el shared framework: son los mismos
+      paquetes que usa una aplicacion real, y son justamente los que hay que poner a prueba.
+    -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\OidcMock.Core\OidcMock.Core.csproj" />
+    <ProjectReference Include="..\..\src\OidcMock.Host\OidcMock.Host.csproj" />
+  </ItemGroup>
+
+</Project>
