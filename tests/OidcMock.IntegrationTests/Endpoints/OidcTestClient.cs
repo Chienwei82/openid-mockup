@@ -135,6 +135,18 @@ public static class OidcTestClient
         ["code_verifier"] = CodeVerifier
     };
 
+    /// <summary>
+    /// Decodifica el payload de un JWT para leer sus claims, sin verificar la firma. Permite
+    /// comprobar el contenido de un token emitido sin montar un validador con la clave publica.
+    /// </summary>
+    public static JsonElement ReadJwtPayload(string jwt)
+    {
+        var payload = jwt.Split('.')[1].Replace('-', '+').Replace('_', '/');
+        var padded = payload.PadRight(payload.Length + ((4 - (payload.Length % 4)) % 4), '=');
+
+        return JsonDocument.Parse(Convert.FromBase64String(padded)).RootElement;
+    }
+
     /// <summary>POST al token endpoint con las credenciales en el encabezado Authorization.</summary>
     public static Task<HttpResponseMessage> PostWithBasicAuthAsync(
         HttpClient client,

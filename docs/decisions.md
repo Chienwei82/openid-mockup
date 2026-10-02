@@ -1,5 +1,38 @@
 # Decisiones de diseño
 
+## Prompt 7 — Grants refresh_token y client_credentials
+
+### Familias de refresh token y deteccion de reutilizacion
+- Cada refresh token lleva un `FamilyId`. El canje emite un token nuevo **de la misma familia**, de
+  modo que la rotacion no rompe la linea de descendencia.
+- `InMemoryRefreshTokenStore` recuerda los tokens ya canjeados en un diccionario aparte (`_rotated`).
+  Si uno vuelve a presentarse, revoca la familia completa y devuelve `invalid_grant`: un refresh
+  token robado que se reutiliza delata a que alguien copio la cadena entera, y la respuesta
+  conservative es cortar esa cadena. Sin este registro, el token ya canjeado era sencillamente
+  "desconocido" y el robo pasaba desapercibido.
+- Los registros de `_rotated` caducan con el `ExpiresAt` del token que recuerdan, en el mismo
+  `Expire()` que limpia los vivos, para que el store no crezca sin limite.
+- `RevokeFamily` es parte de `IRefreshTokenStore` porque la revocacion en cascada es politica del
+  almacen, no del handler: el handler solo informa de que hubo reutilizacion.
+
+### El scope de un refresh token solo puede reducirse
+- RFC 6749 6: pedir un scope que el token original no concede es `invalid_scope`. El handler
+  compara los scopes solicitados contra los concedidos; reducir es valido, ampliar no.
+- **Esto exigio una distincion que no existia**: `TokenEndpointService` inyecta `openid` como scope
+  por defecto cuando el cliente no pide ninguno, asi que el handler recibia `["openid"]` en ambos
+  casos y no podia distinguir "no me interesa el scope" de "quiero solo openid". Se aniadio
+  `TokenRequest.ScopesRequested` para que la peticion sin scope conserve el concedido y la peticion
+  con scope se compare. Sin ese campo, una peticion sin scope habria reducido los tokens a `openid`
+  en silencio tras cada rotacion.
+
+### client_credentials solo para clientes confidenciales
+- Un cliente publico (`require_client_secret=false`) no tiene secreto con el que autenticarse, asi
+  que no puede probarse su identidad en este grant: se rechaza con `invalid_client`.
+- El rechazo va en el handler, no en el servicio, porque la regla es del grant. El servicio ya
+  valida `allowed_grant_types`; esta es una restriccion adicional de confidencialidad.
+- `sub` es el `client_id` y no se emiten `id_token` ni `refresh_token`: no hay usuario detras, y por
+  eso el access token no proyecta claims de usuario aunque se pida `email` o `profile`.
+
 ## Prompt 6 — POST /connect/token, registro de grants y autenticacion de cliente
 
 ### El token endpoint es un registro de estrategias
