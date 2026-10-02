@@ -48,7 +48,8 @@ public static class OidcTestClient
         ["client_id"] = ClientId,
         ["redirect_uri"] = RedirectUri,
         ["response_type"] = ResponseTypeNames.Code,
-        ["scope"] = "openid email",
+        // offline_access va de serie: es lo que hace que el token endpoint emita refresh_token.
+        ["scope"] = "openid email offline_access",
         ["state"] = "st-1",
         ["nonce"] = "n-1",
         ["code_challenge"] = Sha256Base64Url(CodeVerifier),

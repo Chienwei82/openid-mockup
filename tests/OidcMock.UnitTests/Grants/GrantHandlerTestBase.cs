@@ -79,11 +79,12 @@ public abstract class GrantHandlerTestBase
         string clientId = "web-app-spa",
         string userName = "jperez",
         string? nonce = null,
-        bool withChallenge = false) =>
+        bool withChallenge = false,
+        IReadOnlyList<string>? scopes = null) =>
         codeStore.Issue(new AuthorizationCodeRequest(
             clientId,
             userName,
-            ["openid", "email"],
+            scopes ?? ["openid", "email"],
             nonce,
             "st-1",
             withChallenge ? Sha256Base64Url(Verifier) : null,

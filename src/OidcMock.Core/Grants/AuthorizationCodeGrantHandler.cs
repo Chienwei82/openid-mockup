@@ -1,5 +1,7 @@
+using OidcMock.Core.Clients;
 using OidcMock.Core.Codes;
 using OidcMock.Core.Errors;
+using OidcMock.Core.Scopes;
 using OidcMock.Core.Tokens;
 using OidcMock.Core.Users;
 
@@ -65,9 +67,25 @@ public sealed class AuthorizationCodeGrantHandler(
             code.AuthenticatedAt,
             code.Nonce,
             null,
-            includeIdToken: IssuesIdToken,
-            includeRefreshToken: true);
+            includeIdToken: IssuesIdToken && GrantsIdToken(code.Scopes),
+            includeRefreshToken: GrantsRefreshToken(request.Client, code.Scopes));
     }
+
+    /// <summary>
+    /// El id_token solo tiene sentido con el scope openid (OpenID Connect Core 3.1.3.6), que ademas
+    /// el authorize endpoint exige siempre, asi que en la practica esta comprobacion es una red de
+    /// seguridad para un code emitido por otra via.
+    /// </summary>
+    private static bool GrantsIdToken(IReadOnlyList<string> scopes) =>
+        scopes.Contains(ScopeNames.OpenId, StringComparer.Ordinal);
+
+    /// <summary>
+    /// Un refresh token solo si el cliente lo pidio con offline_access y su configuracion se lo
+    /// permite (OpenID Connect Core 11). Sin ese scope no se emite, aunque el grant lo soporte.
+    /// </summary>
+    private static bool GrantsRefreshToken(Client client, IReadOnlyList<string> scopes) =>
+        scopes.Contains(ScopeNames.OfflineAccess, StringComparer.Ordinal) &&
+        client.AllowsScope(ScopeNames.OfflineAccess);
 
     private static bool MatchesClientAndRedirectUri(AuthorizationCode code, TokenRequest request) =>
         string.Equals(code.ClientId, request.Client.ClientId, StringComparison.Ordinal) &&

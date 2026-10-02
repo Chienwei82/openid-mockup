@@ -47,7 +47,9 @@ public sealed class AuthorizationCodeGrantHandlerTests : GrantHandlerTestBase
     [Fact]
     public async Task EmiteUnRefreshTokenQueSePuedeCanjear()
     {
-        var response = await HandleAsync(IssueCode(CodeStore));
+        var response = await HandleAsync(IssueCode(CodeStore, scopes: ["openid", "offline_access"]));
+
+        Assert.NotNull(response.Value?.RefreshToken);
 
         var refreshed = RefreshTokens.Redeem(response.Value!.RefreshToken!);
 
@@ -128,6 +130,84 @@ public sealed class AuthorizationCodeGrantHandlerTests : GrantHandlerTestBase
         var response = await HandleAsync(IssueCode(CodeStore, clientId: "backend-service"));
 
         Assert.Equal("invalid_grant", response.Error?.Code);
+    }
+
+    [Fact]
+    public async Task ElCodigoSeConsumeAunqueFallelaValidacionPosterior()
+    {
+        var code = IssueCode(CodeStore, withChallenge: true);
+
+        var rejected = await HandleAsync(code, codeVerifier: "verificador-que-no-corresponde-XXXXXXXXXXX");
+
+        Assert.Equal("invalid_grant", rejected.Error?.Code);
+        Assert.Equal("invalid_grant", (await HandleAsync(code, codeVerifier: Verifier)).Error?.Code);
+    }
+
+    [Fact]
+    public async Task ElCodigoSeConsumeAunqueElRedirectUriNoCoincida()
+    {
+        var code = IssueCode(CodeStore);
+
+        var rejected = await HandleAsync(code, redirectUri: "https://localhost:5173/otro");
+
+        Assert.Equal("invalid_grant", rejected.Error?.Code);
+        Assert.Equal("invalid_grant", (await HandleAsync(code)).Error?.Code);
+    }
+
+    [Fact]
+    public async Task RechazaUnCodigoCaducado()
+    {
+        var code = IssueCode(CodeStore);
+
+        Clock.Advance(TimeSpan.FromMinutes(6));
+
+        Assert.Equal("invalid_grant", (await HandleAsync(code)).Error?.Code);
+    }
+
+    [Fact]
+    public async Task AceptaUnCodigoQueVenceDentroDeSuVigencia()
+    {
+        var code = IssueCode(CodeStore);
+
+        Clock.Advance(TimeSpan.FromMinutes(4));
+
+        Assert.True((await HandleAsync(code)).Succeeded);
+    }
+
+    [Fact]
+    public async Task EmiteRefreshTokenSoloSiSePidioOfflineAccess()
+    {
+        var code = IssueCode(CodeStore, scopes: ["openid", "email"]);
+
+        var response = await HandleAsync(code);
+
+        Assert.Null(response.Value?.RefreshToken);
+    }
+
+    [Fact]
+    public async Task EmiteRefreshTokenCuandoSePidioOfflineAccess()
+    {
+        var code = IssueCode(CodeStore, scopes: ["openid", "offline_access"]);
+
+        var response = await HandleAsync(code);
+
+        Assert.NotNull(response.Value?.RefreshToken);
+    }
+
+    [Fact]
+    public async Task EmiteIdTokenPorqueElCodeLevaElScopeOpenid()
+    {
+        var response = await HandleAsync(IssueCode(CodeStore, scopes: ["openid", "email"]));
+
+        Assert.NotNull(response.Value?.IdToken);
+    }
+
+    [Fact]
+    public async Task NoEmiteIdTokenSiElCodeNoLlevaOpenid()
+    {
+        var response = await HandleAsync(IssueCode(CodeStore, scopes: ["email"]));
+
+        Assert.Null(response.Value?.IdToken);
     }
 
     private async Task<Result<TokenResponse>> HandleAsync(

@@ -22,7 +22,8 @@
         "profile",
         "email",
         "nombre",
-        "documentofva"
+        "documentofva",
+        "offline_access"
       ],
       "require_pkce": true,
       "require_client_secret": false,
