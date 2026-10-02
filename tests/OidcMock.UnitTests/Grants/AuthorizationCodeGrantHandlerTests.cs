@@ -30,7 +30,7 @@ public sealed class AuthorizationCodeGrantHandlerTests : GrantHandlerTestBase
     {
         var response = await HandleAsync(IssueCode(CodeStore));
 
-        var result = Validator.Validate(response.Value!.AccessToken, Issuer, [ClientId]);
+        var result = Validator.Validate(response.Value!.AccessToken, Issuer, [ClientId], Clock);
 
         Assert.True(result.IsValid, result.Exception?.Message);
         Assert.Equal("user-1", TokenTestValidator.ReadClaim(response.Value.AccessToken, "sub").GetString());

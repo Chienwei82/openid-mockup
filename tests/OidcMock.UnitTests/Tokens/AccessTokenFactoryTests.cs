@@ -37,7 +37,7 @@ public sealed class AccessTokenFactoryTests
     {
         var token = CreateAccessToken();
 
-        var result = _validator.Validate(token, Issuer, [ClientId]);
+        var result = _validator.Validate(token, Issuer, [ClientId], _clock);
         var header = TokenTestValidator.ReadHeader(token);
 
         Assert.True(result.IsValid, result.Exception?.Message);
@@ -75,7 +75,7 @@ public sealed class AccessTokenFactoryTests
     {
         var token = _factory.CreateAccessToken(Request(["https://api.bccr.fi.cr/centralenlinea"]));
 
-        var result = _validator.Validate(token, Issuer, ["https://api.bccr.fi.cr/centralenlinea"]);
+        var result = _validator.Validate(token, Issuer, ["https://api.bccr.fi.cr/centralenlinea"], _clock);
 
         Assert.True(result.IsValid, result.Exception?.Message);
         Assert.Equal("https://api.bccr.fi.cr/centralenlinea", TokenTestValidator.ReadClaim(token, "aud").GetString());
@@ -88,7 +88,7 @@ public sealed class AccessTokenFactoryTests
 
         var token = _factory.CreateAccessToken(Request(audiences));
 
-        var result = _validator.Validate(token, Issuer, audiences);
+        var result = _validator.Validate(token, Issuer, audiences, _clock);
 
         Assert.True(result.IsValid, result.Exception?.Message);
         Assert.Equal(audiences.Length, TokenTestValidator.ReadClaim(token, "aud").GetArrayLength());
@@ -139,7 +139,7 @@ public sealed class AccessTokenFactoryTests
     {
         using var impostorKey = RSA.Create(SigningKeySizes.KeySizeInBits);
         var impostorValidator = new TokenTestValidator(impostorKey);
-        var result = impostorValidator.Validate(CreateAccessToken(), Issuer, [ClientId]);
+        var result = impostorValidator.Validate(CreateAccessToken(), Issuer, [ClientId], _clock);
 
         Assert.False(result.IsValid);
     }

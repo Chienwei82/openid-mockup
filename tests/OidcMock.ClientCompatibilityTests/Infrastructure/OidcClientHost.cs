@@ -157,13 +157,25 @@ public sealed class OidcClientHost : IAsyncDisposable
     }
 }
 
-/// <summary>Entradas de log del host, para poder ver por que fallo una peticion.</summary>
+/// <summary>
+/// Entradas de log del host, para poder ver por que fallo una peticion.
+/// </summary>
+/// <remarks>
+/// Son un almacen global y compartido a proposito: el diagnostico aparece en varios tests y con un
+/// almacen por host habia que saber cual. A cambio, el ensamblado no puede paralelizar (ver
+/// <c>AssemblyInfo.cs</c>) y el volcado se limita a las entradas posteriores a <see cref="Clear"/>, para
+/// que un test no diagnostique con el log de otro.
+/// </remarks>
 public static class CollectingLoggerProvider
 {
     private static readonly List<string> Entries = [];
 
     public static IReadOnlyList<string> Logged => Entries;
 
+    /// <summary>
+    /// Descarta lo collected hasta ahora. Lo llama el arnes al empezar cada test, de modo que
+    /// <see cref="Dump"/> solo muestre lo de ese test.
+    /// </summary>
     public static void Clear() => Entries.Clear();
 
     public static string Dump() => string.Join(Environment.NewLine, Entries);

@@ -37,7 +37,7 @@ public sealed class IdTokenFactoryTests
     {
         var token = CreateIdToken();
 
-        var result = _validator.Validate(token, Issuer, [ClientId]);
+        var result = _validator.Validate(token, Issuer, [ClientId], _clock);
 
         Assert.True(result.IsValid, result.Exception?.Message);
     }
@@ -57,7 +57,7 @@ public sealed class IdTokenFactoryTests
     {
         var token = CreateIdToken();
 
-        var result = _validator.Validate(token, Issuer, [ClientId]);
+        var result = _validator.Validate(token, Issuer, [ClientId], _clock);
 
         Assert.True(result.IsValid, result.Exception?.Message);
         Assert.Equal(Issuer, TokenTestValidator.ReadClaim(token, "iss").GetString());
@@ -188,7 +188,7 @@ public sealed class IdTokenFactoryTests
     {
         var token = CreateIdToken();
 
-        var result = _validator.Validate(token, Issuer, ["otro-cliente"]);
+        var result = _validator.Validate(token, Issuer, ["otro-cliente"], _clock);
 
         Assert.False(result.IsValid);
     }
@@ -198,7 +198,7 @@ public sealed class IdTokenFactoryTests
     {
         var token = CreateIdToken();
 
-        var result = _validator.Validate(token, "https://otro-issuer.example/", [ClientId]);
+        var result = _validator.Validate(token, "https://otro-issuer.example/", [ClientId], _clock);
 
         Assert.False(result.IsValid);
     }
@@ -209,7 +209,7 @@ public sealed class IdTokenFactoryTests
         using var impostorKey = RSA.Create(SigningKeySizes.KeySizeInBits);
         var impostorValidator = new TokenTestValidator(impostorKey);
 
-        var result = impostorValidator.Validate(CreateIdToken(), Issuer, [ClientId]);
+        var result = impostorValidator.Validate(CreateIdToken(), Issuer, [ClientId], _clock);
 
         Assert.False(result.IsValid);
     }

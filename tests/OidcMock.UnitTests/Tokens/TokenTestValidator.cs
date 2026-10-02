@@ -26,12 +26,28 @@ public sealed class TokenTestValidator
 
     public string KeyId => SigningKeyId.FromPublicKey(_signingKey);
 
+    /// <summary>
+    /// Valida el token y ademas comprueba su vigencia contra <paramref name="timeProvider"/>.
+    /// </summary>
+    /// <remarks>
+    /// El reloj es obligatorio a proposito. Antes era opcional y, al omitirlo, se desactivaba la
+    /// comprobacion de <c>exp</c> sin avisar: un test que solo queria mirar el <c>iss</c> pasaba
+    /// igual con un token caducado, y el fallo aparecia en produccion. Ahora el reloj se pasa siempre
+    /// y omitirlo es un <see cref="ArgumentException"/> en la primera linea.
+    /// </remarks>
     public TokenValidationResult Validate(
         string token,
         string expectedIssuer,
         IEnumerable<string> expectedAudiences,
-        TimeProvider? timeProvider = null) =>
-        Handler.ValidateTokenAsync(token, BuildParameters(expectedIssuer, expectedAudiences, timeProvider)).GetAwaiter().GetResult();
+        TimeProvider timeProvider)
+    {
+        ArgumentNullException.ThrowIfNull(timeProvider);
+
+        return Handler
+            .ValidateTokenAsync(token, BuildParameters(expectedIssuer, expectedAudiences, timeProvider))
+            .GetAwaiter()
+            .GetResult();
+    }
 
     public static JsonElement ReadPayload(string token) => ReadSegment(token, JwtTokenSegment.Payload);
 
@@ -41,8 +57,12 @@ public sealed class TokenTestValidator
         string token,
         string expectedIssuer,
         IEnumerable<string> expectedAudiences,
-        TimeProvider? timeProvider = null) =>
-        await Handler.ValidateTokenAsync(token, BuildParameters(expectedIssuer, expectedAudiences, timeProvider));
+        TimeProvider timeProvider)
+    {
+        ArgumentNullException.ThrowIfNull(timeProvider);
+
+        return await Handler.ValidateTokenAsync(token, BuildParameters(expectedIssuer, expectedAudiences, timeProvider));
+    }
 
     public static JsonElement ReadClaim(string token, string claimName)
     {
@@ -61,17 +81,16 @@ public sealed class TokenTestValidator
     private TokenValidationParameters BuildParameters(
         string expectedIssuer,
         IEnumerable<string> expectedAudiences,
-        TimeProvider? timeProvider) =>
+        TimeProvider timeProvider) =>
         new()
         {
             IssuerSigningKeys = _publishedKeys.Keys,
             ValidAlgorithms = [SecurityAlgorithms.RsaSha256],
             ValidIssuer = expectedIssuer,
             ValidAudiences = expectedAudiences,
-            ValidateLifetime = timeProvider is not null,
-            LifetimeValidator = timeProvider is null
-                ? null
-                : (notBefore, expires, _, _) => IsWithinLifetime(notBefore, expires, timeProvider.GetUtcNow().UtcDateTime)
+            ValidateLifetime = true,
+            LifetimeValidator = (notBefore, expires, _, _) =>
+                IsWithinLifetime(notBefore, expires, timeProvider.GetUtcNow().UtcDateTime)
         };
 
     private static bool IsWithinLifetime(DateTime? notBefore, DateTime? expires, DateTime utcNow) =>

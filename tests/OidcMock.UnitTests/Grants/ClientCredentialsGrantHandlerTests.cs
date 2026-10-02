@@ -35,7 +35,8 @@ public sealed class ClientCredentialsGrantHandlerTests : GrantHandlerTestBase
         var result = Validator.Validate(
             response.Value!.AccessToken,
             Issuer,
-            [ClientStoreFixture.ServiceClientId]);
+            [ClientStoreFixture.ServiceClientId],
+            Clock);
 
         Assert.True(result.IsValid, result.Exception?.Message);
     }
@@ -84,13 +85,18 @@ public sealed class ClientCredentialsGrantHandlerTests : GrantHandlerTestBase
         Assert.Equal("invalid_client", response.Error?.Code);
     }
 
+    /// <summary>
+    /// El caso feliz de la prueba, con el cliente confidencial de <c>clients.json</c>. Lo que se
+    /// comprueba es el resultado del handler, no que la fixture tenga un secreto: afirmar sobre la
+    /// fixture pasaria igual si el handler aceptara cualquier secreto.
+    /// </summary>
     [Fact]
     public async Task AceptaUnClienteConfidencialQueTieneSecreto()
     {
         var response = await HandleAsync();
 
         Assert.True(response.Succeeded, response.Error?.ToString());
-        Assert.NotNull(ClientStoreFixture.Service().ClientSecret);
+        Assert.False(string.IsNullOrWhiteSpace(response.Value?.AccessToken));
     }
 
     private async Task<Result<TokenResponse>> HandleAsync(Client? client = null, IReadOnlyList<string>? scopes = null) =>

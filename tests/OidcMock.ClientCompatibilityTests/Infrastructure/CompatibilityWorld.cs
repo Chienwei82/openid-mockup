@@ -56,6 +56,11 @@ public sealed class CompatibilityWorld : IAsyncDisposable
 
     public static async Task<CompatibilityWorld> StartAsync()
     {
+        // El log del host es un almacen global (CollectingLoggerProvider) y este es el unico punto por
+        // el que pasan todos los tests: limpiandolo aqui, un volcado diagnostico muestra lo de este
+        // test y no el de los que se ejecutaron antes.
+        CollectingLoggerProvider.Clear();
+
         // Los puertos se reservan antes de escribir la configuracion: el redirect_uri del cliente
         // va en clients.json y el mock lo lee al arrancar.
         var clientAddress = LoopbackAddress.Reserve();
