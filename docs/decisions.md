@@ -771,3 +771,32 @@ el runner in-process de xunit v3, y la extension de cobertura de Microsoft.Testi
 version con `Microsoft.Testing.Platform` 2.4. Medirlo exige anadir un paquete de test, que es una
 decision del proyecto, no una medicion. La cifra por proyecto que se reporta es **estimada por analisis
 estatico** (que tipos/nombres aparecen en las pruebas), no instrumentada.
+
+## Etapa 13 (2026-10-02): cerrar los huecos de pruebas de Core
+
+Solo pruebas: **no se anadio funcionalidad ni dependencias**. **611 tests** (405 unit + 184 integration +
+22 compatibilidad).
+
+### El bug que aparecio al escribir las pruebas
+
+Al probar `TokenResponseFactory` se vio que **dos de los cuatro grants que emiten tokens no aplicaban
+la regla del `openid`**:
+
+- `PasswordGrantHandler` y `PollGrantHandler` pasaban `includeIdToken: IssuesIdToken` sin mirar los
+  scopes, mientras que `AuthorizationCodeGrantHandler` y `RefreshTokenGrantHandler` si hacian
+  `&& IdTokenRules.GrantsIdToken(...)`.
+
+Es alcanzable de verdad: el token endpoint acepta `scope=email` (el cliente lo permite y el scope existe),
+y el canje devolvia un `id_token` en un flujo que nunca pidio `openid` — es decir, **emitia una identidad
+sin que nadie la pidiera**. Es exactamente lo que OpenID Connect Core 3.1.3.6 prohibe.
+
+Por que no lo habia cazado nadie: `IdTokenRules` no tenia pruebas propias, y un grant que olvida
+llamarla no se parece en nada a uno que la llama mal. **La regla estaba escrita y simplemente dos
+invocaciones no la aplicaban.**
+
+Arreglo: los dos grants consultan `IdTokenRules`, como los otros dos. Los dos tests fallan antes del
+cambio (devolvian un token firmado) y pasan despues.
+
+**Leccion que deja esto:** la regla no estaba mal, estaba duplicada por el codigo de cada llamador. Un
+`TokenResponseFactory` que decidiera el `id_token` por si mismo, en vez de delegar, habria hecho imposible
+este forget.
