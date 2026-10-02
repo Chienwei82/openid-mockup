@@ -166,6 +166,53 @@ public sealed class PollEndpointTests
         Assert.False(string.IsNullOrWhiteSpace(body.GetProperty("verification_uri").GetString()));
     }
 
+    /// <summary>
+    /// RFC 8628 3.1 y el contrato de los demás endpoints de cliente (token, PAR, introspect,
+    /// revocation): un cliente confidencial tiene que autenticarse. Device authorization es la vía por
+    /// la que un atacante pide un device code a nombre de otro cliente sin conocer su secreto.
+    /// </summary>
+    [Fact]
+    public async Task DeviceAuthorizationRechazaSecretoIncorrectoConInvalidClient()
+    {
+        using var client = Create();
+
+        using var response = await PostFormAsync(
+            client,
+            EndpointPaths.DeviceAuthorization,
+            new Dictionary<string, string>
+            {
+                ["client_id"] = ServiceClientId,
+                ["client_secret"] = "secreto-malo",
+                ["scope"] = "openid"
+            });
+        var body = await ReadJsonAsync(response);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal("invalid_client", body.RootElement.GetProperty("error").GetString());
+    }
+
+    /// <summary>CIBA se inicia desde el backend del cliente, asi que la credencial es igual de necesaria.</summary>
+    [Fact]
+    public async Task CibaRechazaSecretoIncorrectoConInvalidClient()
+    {
+        using var client = Create();
+
+        using var response = await PostFormAsync(
+            client,
+            EndpointPaths.Ciba,
+            new Dictionary<string, string>
+            {
+                ["client_id"] = ServiceClientId,
+                ["client_secret"] = "secreto-malo",
+                ["login_hint"] = UserName,
+                ["scope"] = "openid"
+            });
+        var body = await ReadJsonAsync(response);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal("invalid_client", body.RootElement.GetProperty("error").GetString());
+    }
+
     /// <summary>Sin pedirlo, la respuesta se queda en lo minimo: el codigo es opcional.</summary>
     [Fact]
     public async Task CibaNoDevuelveUserCodeSiElClienteNoLoPide()
