@@ -709,3 +709,65 @@ fallo aparece en la primera peticion que alguien hace.
 Ademas, el discovery anunciaba `backchannel_user_code_parameter_supported: true` y la respuesta de CIBA
 no traia `user_code` ni `verification_uri`. Ahora los devuelve cuando el cliente declara que los admite
 con `user_code_parameter_supported`, y no si no.
+
+## Etapa 12 (2026-10-02): segunda revision critica y cobertura
+
+### Revision critica aplicada (solo los ALTO)
+
+Una revision externa sobre el codigo de la etapa 11 dejo 20 hallazgos. Se aplicaron los de prioridad
+alta, cada uno con su test primero. **541 tests en verde** (335 unit + 184 integration + 22
+compatibilidad).
+
+- **Device authorization y CIBA no autenticaban al cliente.**：`PollEndpoints` hacia
+  `clientStore.Find(client_id)` directo del cuerpo, sin `ClientAuthenticator`, mientras que PAR, token,
+  introspect y revocation si lo hacian. Un cliente confidencial podia pedir un device code con un
+  secreto equivocado: es la via por la que un atacante pide una autorizacion en nombre de otro cliente.
+  Ahora `IPollAuthorizationService` recibe `ClientCredentials` y autentica con el mismo coordinador que
+  el token endpoint. Tests: `DeviceAuthorizationRechazaSecretoIncorrectoConInvalidClient` y su gemelo de
+  CIBA (fallaban antes del arreglo).
+- **La caducidad de CIBA la fijaba `DateTimeOffset.UtcNow` dentro del Host**, contra la regla de que
+  todo el reloj pasa por `TimeProvider` inyectado. Ningun test podia comprobar la expiracion de una
+  peticion CIBA porque no habia forma de mover el reloj. `PollAuthorizationService` lo recibe inyectado.
+  **La logica de negocio de CIBA (handle, caducidad, peticion validada, aprobacion por `login_hint`)
+  estaba en el endpoint**, duplicando lo que hacia `DeviceAuthorizationService`. Los dos viven ahora en
+  el mismo servicio de Core: son familia de verdad, comparten store, reloj y ciclo de sondeo.
+- **`PendingAuthorizationRequest.Issuer` era un campo muerto**: lo escribian tres sitios y no lo leia
+  nadie (el grant usa el issuer del token endpoint). Ademas era la via por la que PAR guardaba
+  `options.Issuer ?? string.Empty`, o sea **el issuer vacio** cuando este se deduce del host, con una
+  segunda regla de escritura distinta de la de CIBA. Un campo que se escribe de dos maneras y no se lee
+  no puede quedarse: se borro, y `Push` dejo de recibir el issuer.
+- **`TokenTestValidator.Validate` desactivaba la vigencia en silencio** si no se pasaba reloj
+  (`ValidateLifetime = timeProvider is not null`). Seis asserts pasaban con un token caducado hace años.
+  Ahora el reloj es obligatorio: al hacerlo, el compilador senalo los diez call sites afectados, que
+  era exactamente la lista de comprobaciones debiles.
+- **La suite de compatibilidad compartia el log global sin desactivar el paralelismo**, y `Clear()`
+  no lo llamaba nadie: un volcado diagnostico mezclaba el log de todos los tests vivos. Ahora el
+  ensamblado no paraleliza y `CompatibilityWorld.StartAsync` limpia el almacen, que es el unico punto
+  por el que pasan todos los tests.
+- **`AuthorizationService.Deny` no denegaba nada**: devolvia un `Fail` fijo y no tocaba ningun store.
+  Solo lo usaba un test. Se borro en vez de renombrarlo: un nombre que promete un efecto que no tiene
+  hace que quien lo lea asuma estado que cambia.
+- **`ClientCredentialsReader` vivia dentro de `BearerChallengeResults`**, y el token endpoint tenia su
+  propia copia de la lectura de credenciales. Tres sitios decidiendo como se presenta un cliente.
+- **Los mensajes de error de los flujos por sondeo decian "codigo de autorizacion"**, donde lo que el
+  cliente presenta es un `device_code` o un `auth_req_id`. El mensaje es superficie observable del
+  mock y el cliente lo muestra.
+- **`SplitScopes` estaba copiado cuatro veces** con las cuatro decidiendo por su cuenta. Ahora es
+  `ScopeNames.Split`.
+
+### Lo que NO se aplico, y por que
+
+Los MEDIO y BAJO restantes (partir `TokenEndpoints` en cinco clases, partir las clases de DI,
+`TokenRequest` con banderas posicionales, `PollGrantHandler.HandleFrom` identico en ambas subclases,
+`"OidcMock"` duplicado en el validador de opciones) son reorganizacion o estilo: tocan mucho codigo sin
+corregir un defecto observable. Se dejan anotados para cuando se toquen esos archivos.
+
+### Cobertura: no se pudo medir de verdad
+
+No hay herramienta de cobertura en el repositorio y anadirla incumpliria la regla de dependencias
+minimas sin autorizacion. Se probo `coverlet.collector` y `Microsoft.Testing.Extensions.CodeCoverage`
+**de forma temporal y revertida**, sin tocar el grafo de proyectos: `coverlet.collector` no lo suporta
+el runner in-process de xunit v3, y la extension de cobertura de Microsoft.Testing.Platform choca por
+version con `Microsoft.Testing.Platform` 2.4. Medirlo exige anadir un paquete de test, que es una
+decision del proyecto, no una medicion. La cifra por proyecto que se reporta es **estimada por analisis
+estatico** (que tipos/nombres aparecen en las pruebas), no instrumentada.
