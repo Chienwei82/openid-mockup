@@ -55,7 +55,8 @@ public sealed class TokenEndpointService(
             request.CodeVerifier,
             request.RefreshToken,
             request.UserName,
-            request.Password));
+            request.Password,
+            request.DeviceCode));
     }
 
     /// <summary>

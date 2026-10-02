@@ -152,7 +152,9 @@ public static class TokenEndpoints
             values.GetValueOrDefault("code_verifier"),
             values.GetValueOrDefault("refresh_token"),
             values.GetValueOrDefault("username"),
-            values.GetValueOrDefault("password"));
+            values.GetValueOrDefault("password"),
+            // Los flujos por sondeo usan device_code (RFC 8628) o auth_req_id (CIBA) como handle.
+            values.GetValueOrDefault("device_code") ?? values.GetValueOrDefault("auth_req_id"));
     }
 
     private static string[] SplitScopes(string? scope) =>

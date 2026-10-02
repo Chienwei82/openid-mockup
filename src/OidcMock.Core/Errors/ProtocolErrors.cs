@@ -38,6 +38,18 @@ public static class ProtocolErrors
     public static ProtocolError InvalidToken(string description) =>
         new("invalid_token", description, Unauthorized);
 
+    /// <summary>El usuario aun no ha aprobado: el cliente debe seguir sondeando (RFC 8628 3.5).</summary>
+    public static ProtocolError AuthorizationPending(string description) =>
+        new("authorization_pending", description, BadRequest);
+
+    /// <summary>El codigo de device o de CIBA caduco antes de que el usuario respondiera.</summary>
+    public static ProtocolError ExpiredToken(string description) =>
+        new("expired_token", description, BadRequest);
+
+    /// <summary>El cliente esta sondeando demasiado rapido y debe espaciar los intentos.</summary>
+    public static ProtocolError SlowDown(string description) =>
+        new("slow_down", description, BadRequest);
+
     /// <summary>El cliente no tiene permitido el scope pedido (RFC 6749 5.2, authorization server).</summary>
     public static ProtocolError UnauthorizedClient(string description) =>
         new("unauthorized_client", description, BadRequest);

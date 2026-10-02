@@ -15,7 +15,9 @@ public sealed class DiscoveryDocumentBuilder(IScopeStore scopeStore, OidcMockOpt
         "client_credentials",
         "refresh_token",
         "implicit",
-        "password"
+        "password",
+        "urn:ietf:params:oauth:grant-type:device_code",
+        "urn:openid:params:grant-type:ciba"
     ];
 
     private static readonly string[] ResponseTypes =

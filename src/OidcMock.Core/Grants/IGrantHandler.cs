@@ -17,7 +17,8 @@ public sealed record TokenRequest(
     string? CodeVerifier,
     string? RefreshToken,
     string? UserName,
-    string? Password);
+    string? Password,
+    string? DeviceCode = null);
 
 /// <summary>
 /// Estrategia de un grant type del token endpoint. Cada grant sabe autenticarse por su cuenta y

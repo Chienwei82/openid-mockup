@@ -6,8 +6,11 @@ using OidcMock.Core.Codes;
 using OidcMock.Core.Configuration;
 using OidcMock.Core.Crypto;
 using OidcMock.Core.Discovery;
+using OidcMock.Core.DeviceAuthorization;
 using OidcMock.Core.Grants;
 using OidcMock.Core.Introspection;
+using OidcMock.Core.PendingRequests;
+using OidcMock.Core.PushedRequests;
 using OidcMock.Core.Revocation;
 using OidcMock.Core.Scopes;
 using OidcMock.Core.Tokens;
@@ -85,6 +88,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IUserInfoService, UserInfoService>();
         services.AddSingleton<IIntrospectionService, IntrospectionService>();
         services.AddSingleton<ITokenRevocationService, TokenRevocationService>();
+        services.AddSingleton<IPendingAuthorizationStore, InMemoryPendingAuthorizationStore>();
+        services.AddSingleton<IPushedAuthorizationService, PushedAuthorizationService>();
+        services.AddSingleton<IDeviceAuthorizationService, DeviceAuthorizationService>();
 
         // Cada grant es una estrategia y la DI la resuelve por su constructor. Agregar un grant nuevo
         // es registrar una linea mas, sin tocar el dispatcher del token endpoint.
@@ -92,6 +98,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IGrantHandler, RefreshTokenGrantHandler>();
         services.AddSingleton<IGrantHandler, ClientCredentialsGrantHandler>();
         services.AddSingleton<IGrantHandler, PasswordGrantHandler>();
+        services.AddSingleton<IGrantHandler, DeviceCodeGrantHandler>();
+        services.AddSingleton<IGrantHandler, CibaGrantHandler>();
 
         return services;
     }

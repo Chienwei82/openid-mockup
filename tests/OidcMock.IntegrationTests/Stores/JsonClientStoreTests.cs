@@ -8,6 +8,8 @@ public sealed class JsonClientStoreTests
     private const string SampleClientId = "web-app-spa";
     private const string UnknownClientId = "no-existe";
     private const string ClientsFileName = "clients.json";
+    private const string DeviceCodeGrant = "urn:ietf:params:oauth:grant-type:device_code";
+    private const string CibaGrant = "urn:openid:params:grant-type:ciba";
 
     [Fact]
     public void CargaElClienteConfiguradoConTodosSusDatos()
@@ -20,7 +22,9 @@ public sealed class JsonClientStoreTests
         Assert.Null(client.ClientSecret);
         Assert.Contains("http://localhost:5173/callback", client.RedirectUris);
         Assert.Contains("http://localhost:5173/", client.PostLogoutRedirectUris);
-        Assert.Equal(["authorization_code", "refresh_token"], client.AllowedGrantTypes);
+        Assert.Equal(
+            ["authorization_code", "refresh_token", DeviceCodeGrant, CibaGrant],
+            client.AllowedGrantTypes);
         Assert.Contains("openid", client.AllowedScopes);
         Assert.True(client.RequirePkce);
         Assert.False(client.RequireClientSecret);

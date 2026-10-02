@@ -17,7 +17,8 @@ public sealed record TokenEndpointRequest(
     string? CodeVerifier,
     string? RefreshToken,
     string? UserName,
-    string? Password);
+    string? Password,
+    string? DeviceCode = null);
 
 /// <summary>
 /// Autentica al cliente del token endpoint (client_secret_basic y client_secret_post) y despacha la

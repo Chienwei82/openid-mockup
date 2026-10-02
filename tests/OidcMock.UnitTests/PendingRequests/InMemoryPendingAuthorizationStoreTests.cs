@@ -1,0 +1,106 @@
+using Microsoft.Extensions.Time.Testing;
+using OidcMock.Core.Authorization;
+using OidcMock.Core.Clients;
+using OidcMock.Core.PendingRequests;
+
+namespace OidcMock.UnitTests.PendingRequests;
+
+public sealed class InMemoryPendingAuthorizationStoreTests
+{
+    private static readonly DateTimeOffset Now = new(2026, 3, 1, 12, 0, 0, TimeSpan.Zero);
+    private static readonly TimeSpan Lifetime = TimeSpan.FromMinutes(5);
+
+    private readonly FakeTimeProvider _clock = new(Now);
+    private readonly InMemoryPendingAuthorizationStore _store = null!;
+
+    public InMemoryPendingAuthorizationStoreTests() => _store = new InMemoryPendingAuthorizationStore(_clock);
+
+    [Fact]
+    public void EmiteUnaPeticionQueSePuedeConsultar()
+    {
+        var issued = Issue();
+
+        Assert.True(_store.Find(issued.Handle).Succeeded);
+    }
+
+    [Fact]
+    public void UnaPeticionPendienteNoSePuedeCanjear()
+    {
+        var issued = Issue();
+
+        Assert.False(_store.Redeem(issued.Handle).Succeeded);
+    }
+
+    [Fact]
+    public void TrasAprobarSePuedeCanjear()
+    {
+        var issued = Issue();
+        _store.Approve(issued.Handle, "jperez", "user-1", Now);
+
+        var redeemed = _store.Redeem(issued.Handle);
+
+        Assert.True(redeemed.Succeeded);
+        Assert.Equal("user-1", redeemed.Value?.Subject);
+    }
+
+    [Fact]
+    public void ElCanjedeEsDeUnSoloUso()
+    {
+        var issued = Issue();
+        _store.Approve(issued.Handle, "jperez", "user-1", Now);
+
+        Assert.True(_store.Redeem(issued.Handle).Succeeded);
+        Assert.False(_store.Redeem(issued.Handle).Succeeded);
+    }
+
+    [Fact]
+    public void DenegarlaImpideElCanjede()
+    {
+        var issued = Issue();
+        _store.Approve(issued.Handle, "jperez", "user-1", Now);
+        _store.Deny(issued.Handle);
+
+        Assert.False(_store.Redeem(issued.Handle).Succeeded);
+    }
+
+    [Fact]
+    public void UnaPeticionCaducadaDesaparece()
+    {
+        Issue();
+
+        _clock.Advance(Lifetime + TimeSpan.FromSeconds(1));
+
+        Assert.Empty(_store.List());
+    }
+
+    [Fact]
+    public void UnHandleDesconocidoNoSeEncuentra()
+    {
+        Assert.False(_store.Find("inventado").Succeeded);
+    }
+
+    private PendingAuthorizationRequest Issue() =>
+        _store.Issue(new PendingAuthorizationRequest(
+            "handle-1",
+            "web-app-spa",
+            ["openid"],
+            Authorization(),
+            "https://localhost/personafisica/",
+            Now + Lifetime,
+            TimeSpan.FromSeconds(5)));
+
+    private static ValidatedAuthorizationRequest Authorization() =>
+        new(
+            new Client("web-app-spa", null, [], [], ["authorization_code"], ["openid"], true, false,
+                new TokenLifetimes(TimeSpan.FromMinutes(30), TimeSpan.FromMinutes(30), TimeSpan.FromHours(8), Lifetime),
+                new Branding("OidcMock", null, null)),
+            "https://localhost:5173/callback",
+            ["openid"],
+            "code",
+            "query",
+            null,
+            "st-1",
+            null,
+            null,
+            null);
+}
