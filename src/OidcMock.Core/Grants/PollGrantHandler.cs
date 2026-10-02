@@ -76,7 +76,7 @@ public abstract class PollGrantHandler(
             pending.AuthenticatedAt ?? timeProvider.GetUtcNow(),
             null,
             null,
-            includeIdToken: IssuesIdToken,
+            includeIdToken: IssuesIdToken && IdTokenRules.GrantsIdToken(pending.Scopes),
             includeRefreshToken: true);
     }
 

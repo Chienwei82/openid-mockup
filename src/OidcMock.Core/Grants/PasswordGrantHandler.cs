@@ -49,7 +49,9 @@ public sealed class PasswordGrantHandler(
             timeProvider.GetUtcNow(),
             null,
             null,
-            includeIdToken: IssuesIdToken,
+            // El id_token solo existe con el scope openid (OpenID Connect Core 3.1.3.6): un canje con
+            // scope=email llega aqui sin el, y devolver una identidad seria inventarla.
+            includeIdToken: IssuesIdToken && IdTokenRules.GrantsIdToken(request.Scopes),
             includeRefreshToken: true);
     }
 
