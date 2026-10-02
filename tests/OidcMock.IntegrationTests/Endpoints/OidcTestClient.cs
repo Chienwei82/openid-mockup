@@ -1,4 +1,6 @@
 using System.Net;
+using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using System.Web;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -20,6 +22,13 @@ public static class OidcTestClient
     public const string ClientId = "web-app-spa";
     public const string ServiceClientId = "backend-service";
     public const string ServiceSecret = "super-secret-backend";
+
+    /// <summary>
+    /// Segundo cliente web con authorization_code y secreto: sirve para comprobar que un codigo
+    /// emitido para otro cliente no se canjea, sin que la respuesta sea unsupported_grant_type.
+    /// </summary>
+    public const string ConfidentialClientId = "web-app-confidencial";
+    public const string ConfidentialSecret = "super-secreto-web";
     public const string RedirectUri = "https://localhost:5173/callback";
     public const string UserName = "jperez";
     public const string Password = "Passw0rd!";
@@ -105,6 +114,44 @@ public static class OidcTestClient
             $"{PathBase}/{path}",
             new FormUrlEncodedContent(values),
             TestContext.Current.CancellationToken);
+
+    /// <summary>POST al token endpoint con el formulario tal cual, sin exito garantizado.</summary>
+    public static Task<HttpResponseMessage> PostTokenAsync(
+        HttpClient client,
+        IReadOnlyDictionary<string, string> values) =>
+        PostFormAsync(client, EndpointPaths.Token, values);
+
+    /// <summary>
+    /// Formulario del canje de un authorization code, con el redirect_uri y el code_verifier que
+    /// corresponden al authorize que lo emitio. Es mutable para que cada test pueda romper una sola
+    /// cosa (el verifier, el redirect_uri, el cliente) sin reescribir el resto.
+    /// </summary>
+    public static Dictionary<string, string> AuthorizationCodeForm(string code) => new()
+    {
+        ["grant_type"] = GrantTypes.AuthorizationCode,
+        ["client_id"] = ClientId,
+        ["code"] = code,
+        ["redirect_uri"] = RedirectUri,
+        ["code_verifier"] = CodeVerifier
+    };
+
+    /// <summary>POST al token endpoint con las credenciales en el encabezado Authorization.</summary>
+    public static Task<HttpResponseMessage> PostWithBasicAuthAsync(
+        HttpClient client,
+        IReadOnlyDictionary<string, string> values,
+        string clientId,
+        string clientSecret)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{PathBase}/{EndpointPaths.Token}")
+        {
+            Content = new FormUrlEncodedContent(values)
+        };
+
+        var pair = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{clientId}:{clientSecret}"));
+        request.Headers.Authorization = new AuthenticationHeaderValue("Basic", pair);
+
+        return client.SendAsync(request, TestContext.Current.CancellationToken);
+    }
 
     private static HttpRequestMessage BuildSignInForm(string html)
     {

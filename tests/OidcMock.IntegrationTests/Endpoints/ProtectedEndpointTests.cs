@@ -163,6 +163,115 @@ public sealed class ProtectedEndpointTests
     }
 
     [Fact]
+    public async Task LaRespuestaDelTokenEndpointNoSeGuardaEnNingunaCache()
+    {
+        using var client = Create();
+
+        using var response = await PostTokenAsync(client, AuthorizationCodeForm(await SignInAsync(client)));
+
+        Assert.True(response.Headers.CacheControl?.NoStore);
+        Assert.True(response.Headers.CacheControl?.NoCache is true);
+        Assert.Contains(response.Headers.Pragma, value => value.Name == "no-cache");
+    }
+
+    [Fact]
+    public async Task ElErrorDelTokenEndpointTampocoSeGuardaEnCache()
+    {
+        using var client = Create();
+
+        using var response = await PostFormAsync(
+            client,
+            EndpointPaths.Token,
+            new Dictionary<string, string>
+            {
+                ["grant_type"] = GrantTypes.ClientCredentials,
+                ["client_id"] = ServiceClientId,
+                ["client_secret"] = "secreto-incorrecto"
+            });
+
+        Assert.True(response.Headers.CacheControl?.NoStore);
+        Assert.Contains(response.Headers.Pragma, value => value.Name == "no-cache");
+    }
+
+    [Fact]
+    public async Task ElCodigoNoSePuedeReutilizar()
+    {
+        using var client = Create();
+        var code = await SignInAsync(client);
+
+        using var first = await PostTokenAsync(client, AuthorizationCodeForm(code));
+        using var replay = await PostTokenAsync(client, AuthorizationCodeForm(code));
+
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, replay.StatusCode);
+        Assert.Equal("invalid_grant", (await ReadJsonAsync(replay)).RootElement.GetProperty("error").GetString());
+    }
+
+    [Fact]
+    public async Task UnCodeVerifierIncorrectoDaInvalidGrantYConsumeElCodigo()
+    {
+        using var client = Create();
+        var code = await SignInAsync(client);
+        var form = AuthorizationCodeForm(code);
+        form["code_verifier"] = "verificador-que-no-corresponde-al-code-challenge-000000";
+
+        using var rejected = await PostTokenAsync(client, form);
+        using var replay = await PostTokenAsync(client, AuthorizationCodeForm(code));
+        var body = await ReadJsonAsync(rejected);
+
+        Assert.Equal(HttpStatusCode.BadRequest, rejected.StatusCode);
+        Assert.Equal("invalid_grant", body.RootElement.GetProperty("error").GetString());
+        Assert.Equal(HttpStatusCode.BadRequest, replay.StatusCode);
+    }
+
+    [Fact]
+    public async Task UnRedirectUriDistintoDaInvalidGrant()
+    {
+        using var client = Create();
+        var form = AuthorizationCodeForm(await SignInAsync(client));
+        form["redirect_uri"] = "https://localhost:5173/otro";
+
+        using var response = await PostTokenAsync(client, form);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("invalid_grant", (await ReadJsonAsync(response)).RootElement.GetProperty("error").GetString());
+    }
+
+    [Fact]
+    public async Task UnCodigoDeOtroClienteDaInvalidGrant()
+    {
+        using var client = Create();
+        var form = AuthorizationCodeForm(await SignInAsync(client));
+        form["client_id"] = ConfidentialClientId;
+        form["client_secret"] = ConfidentialSecret;
+
+        using var response = await PostTokenAsync(client, form);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("invalid_grant", (await ReadJsonAsync(response)).RootElement.GetProperty("error").GetString());
+    }
+
+    [Fact]
+    public async Task ElErrorDeProtocoloEsJsonConErrorYErrorDescription()
+    {
+        using var client = Create();
+
+        using var response = await PostFormAsync(
+            client,
+            EndpointPaths.Token,
+            new Dictionary<string, string>
+            {
+                ["grant_type"] = "grant_inventado",
+                ["client_id"] = ClientId
+            });
+        var body = await ReadJsonAsync(response);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("unsupported_grant_type", body.RootElement.GetProperty("error").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(body.RootElement.GetProperty("error_description").GetString()));
+    }
+
+    [Fact]
     public async Task ElRefreshTokenCanjeableEmiteTokensNuevosYRotaElToken()
     {
         using var client = Create();

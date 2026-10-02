@@ -42,8 +42,22 @@ public static class TokenEndpoints
             IssuerResolver.Resolve(context.Request, discoveryBuilder, options));
 
         return result.Succeeded
-            ? Results.Json(result.Value, TokenResponse.SerializerOptions)
-            : ErrorResponse(result.Error!);
+            ? TokenResponseWithoutCaching(context, Results.Json(result.Value, TokenResponse.SerializerOptions))
+            : TokenResponseWithoutCaching(context, ErrorResponse(result.Error!));
+    }
+
+    /// <summary>
+    /// Ninguna respuesta del token endpoint se guarda en cache: RFC 6749 5.1 lo exige para el access
+    /// token, el id_token y el refresh_token. El error tambien, para que un 401 por secreto
+    /// equivocado no quede cacheado por un proxy. Pragma: no-cache es el equivalente para los caches
+    /// HTTP/1.0.
+    /// </summary>
+    private static IResult TokenResponseWithoutCaching(HttpContext context, IResult result)
+    {
+        context.Response.Headers.CacheControl = "no-store, no-cache";
+        context.Response.Headers.Pragma = "no-cache";
+
+        return result;
     }
 
     private static IResult DescribeUserInfo(

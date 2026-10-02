@@ -55,11 +55,12 @@ public sealed class JsonClientStoreTests
     }
 
     [Fact]
-    public void CargaLosDosClientesDeEjemplo()
+    public void CargaLosClientesDeEjemplo()
     {
         var store = CreateStoreOverExampleConfig();
 
-        Assert.Equal(2, store.List().Count);
+        Assert.Contains(store.List(), client => client.ClientId == "web-app-spa");
+        Assert.Contains(store.List(), client => client.ClientId == "backend-service");
     }
 
     [Fact]

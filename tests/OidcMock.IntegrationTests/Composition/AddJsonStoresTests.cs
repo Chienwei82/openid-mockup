@@ -32,7 +32,7 @@ public sealed class AddJsonStoresTests
         var userStore = provider.GetRequiredService<IUserStore>();
         var scopeStore = provider.GetRequiredService<IScopeStore>();
 
-        Assert.Equal(2, clientStore.List().Count);
+        Assert.Contains(clientStore.List(), client => client.ClientId == "web-app-spa");
         Assert.Equal(3, userStore.List().Count);
         Assert.NotNull(scopeStore.Find("openid"));
     }
