@@ -108,12 +108,12 @@ public sealed class AuthorizationServiceTests
     }
 
     [Fact]
-    public void DenegarDevuelveAccessDeniedYNoEmiteCodigo()
+    public void CredencialesInvalidasNoEmitenCodigo()
     {
-        var denied = _service.Deny(ValidAuthorization());
+        var failed = SignIn(password: "clave-incorrecta");
 
-        Assert.False(denied.Succeeded);
-        Assert.Equal("access_denied", denied.Error?.Code);
+        Assert.False(failed.Succeeded);
+        Assert.Equal("access_denied", failed.Error?.Code);
     }
 
     private Core.Errors.Result<AuthorizationGranted> SignIn(

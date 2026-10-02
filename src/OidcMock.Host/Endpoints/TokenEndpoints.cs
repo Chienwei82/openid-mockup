@@ -6,6 +6,7 @@ using OidcMock.Host.Logging;
 using OidcMock.Core.Grants;
 using OidcMock.Core.Introspection;
 using OidcMock.Core.Revocation;
+using OidcMock.Core.Scopes;
 using OidcMock.Core.UserInfo;
 using OidcMock.Host.Cors;
 
@@ -212,9 +213,13 @@ public static class TokenEndpoints
         var values = await RequestValues.ReadAsync(request);
 
         return new TokenEndpointRequest(
-            ReadClientCredentials(request, values),
+            // El encabezado Authorization tiene prioridad sobre el cuerpo (RFC 6749 2.3.1): si el
+            // cliente uso client_secret_basic, el client_secret del cuerpo no debe autenticarlo. Sin
+            // encabezado se anuncia client_secret_post, que es tambien lo que hacen los clientes
+            // publicos, que solo se identifican por client_id.
+            ClientCredentialsReader.Read(request, values),
             values.GetValueOrDefault("grant_type"),
-            SplitScopes(values.GetValueOrDefault("scope")),
+            ScopeNames.Split(values.GetValueOrDefault("scope")),
             values.GetValueOrDefault("code"),
             values.GetValueOrDefault("redirect_uri"),
             values.GetValueOrDefault("code_verifier"),
@@ -224,27 +229,6 @@ public static class TokenEndpoints
             // Los flujos por sondeo usan device_code (RFC 8628) o auth_req_id (CIBA) como handle.
             values.GetValueOrDefault("device_code") ?? values.GetValueOrDefault("auth_req_id"));
     }
-
-    private static string[] SplitScopes(string? scope) =>
-        string.IsNullOrWhiteSpace(scope)
-            ? []
-            : scope.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-    /// <summary>
-    /// El encabezado Authorization tiene prioridad sobre el cuerpo (RFC 6749 2.3.1): si el cliente
-    /// uso client_secret_basic, el client_secret del cuerpo no debe autenticarlo. Sin encabezado se
-    /// anuncia client_secret_post, que es tambien lo que hacen los clientes publicos, que solo se
-    /// identifican por client_id.
-    /// </summary>
-    private static ClientCredentials ReadClientCredentials(
-        HttpRequest request,
-        IReadOnlyDictionary<string, string> values) =>
-        BasicAuthorizationHeader.TryRead(request, out var fromHeader)
-            ? new ClientCredentials(ClientAuthenticationMethods.ClientSecretBasic, fromHeader.ClientId, fromHeader.Secret)
-            : new ClientCredentials(
-                ClientAuthenticationMethods.ClientSecretPost,
-                values.GetValueOrDefault("client_id"),
-                values.GetValueOrDefault("client_secret"));
 
     private static IResult ErrorResponse(Core.Errors.ProtocolError error) =>
         Results.Json(

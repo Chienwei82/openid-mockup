@@ -32,8 +32,11 @@ public abstract class PollGrantHandler(
         var found = pendingRequests.Find(HandleFrom(request));
         if (found.Failed)
         {
+            // El handle de un flujo por sondeo es un device_code o un auth_req_id, nunca un codigo de
+            // autorizacion: el mensaje forma parte de la superficie observable del mock y el cliente
+            // lo muestra, asi que tiene que nombrar lo que el cliente realmente presento.
             return Result<TokenResponse>.Fail(ProtocolErrors.InvalidGrant(
-                "El codigo de autorizacion es invalido o ya caduco."));
+                "El handle es invalido o ya caduco."));
         }
 
         var pending = found.Value!;
@@ -46,7 +49,7 @@ public abstract class PollGrantHandler(
         if (!string.Equals(pending.ClientId, request.Client.ClientId, StringComparison.Ordinal))
         {
             return Result<TokenResponse>.Fail(ProtocolErrors.InvalidGrant(
-                "El codigo de autorizacion no fue emitido para este cliente."));
+                "El handle no fue emitido para este cliente."));
         }
 
         var user = userStore.FindBySubject(pending.Subject!);

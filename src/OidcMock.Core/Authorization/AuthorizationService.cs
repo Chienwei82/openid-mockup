@@ -43,14 +43,6 @@ public sealed class AuthorizationService(ICodeStore codeStore, IUserStore userSt
         return Result<AuthorizationGranted>.Ok(new AuthorizationGranted(code));
     }
 
-    public Result<AuthorizationGranted> Deny(ValidatedAuthorizationRequest request)
-    {
-        ArgumentNullException.ThrowIfNull(request);
-
-        return Result<AuthorizationGranted>.Fail(
-            AuthorizationErrors.AccessDenied("El usuario denego la autorizacion en la pantalla de login."));
-    }
-
     private static bool CredentialsMatch(User user, string password) =>
         System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
             System.Text.Encoding.UTF8.GetBytes(user.Password),

@@ -1,5 +1,6 @@
 using OidcMock.Core.Authorization;
 using OidcMock.Core.Grants;
+using OidcMock.Core.Scopes;
 
 namespace OidcMock.Host.Endpoints;
 
@@ -18,7 +19,7 @@ public static class AuthorizationRequestBinder
             values.GetValueOrDefault("client_id"),
             values.GetValueOrDefault("redirect_uri"),
             values.GetValueOrDefault("response_type"),
-            SplitScopes(values.GetValueOrDefault("scope")),
+            ScopeNames.Split(values.GetValueOrDefault("scope")),
             values.GetValueOrDefault("nonce"),
             values.GetValueOrDefault("state"),
             values.GetValueOrDefault("code_challenge"),
@@ -31,10 +32,4 @@ public static class AuthorizationRequestBinder
 
     /// <summary>Nombre del parametro con la peticion empujada (RFC 9126 2).</summary>
     public const string RequestUriField = "request_uri";
-
-    private static string[] SplitScopes(string? scope) =>
-        string.IsNullOrWhiteSpace(scope)
-            ? []
-            : scope.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
 }
