@@ -5,8 +5,11 @@ using OidcMock.Core.Users;
 namespace OidcMock.Core.Grants;
 
 /// <summary>
-/// Grant refresh_token (RFC 6749 6): canjea el refresh token por tokens nuevos. El token canjeado se
-/// consume y se rota, de modo que un refresh token robado sirve para un unico uso.
+/// Grant refresh_token (RFC 6749 6): canjea el refresh token por tokens nuevos. La rotacion es
+/// obligatoria, cada canje emite un token nuevo de la misma familia y el canjeado queda inutilizable.
+/// El scope puede solo reducirse (RFC 6749 6): pedir uno que no estaba en el token original es
+/// invalid_scope. La reutilizacion de un token ya rotado revoca la familia completa, porque un token
+/// robado que reaparece indica que alguien copio la cadena.
 /// </summary>
 public sealed class RefreshTokenGrantHandler(
     IRefreshTokenStore refreshTokenStore,
@@ -38,6 +41,13 @@ public sealed class RefreshTokenGrantHandler(
                 "El refresh token no fue emitido para este cliente."));
         }
 
+        var scopes = NarrowScopes(refreshToken.Scopes, request);
+        if (scopes is null)
+        {
+            return Result<TokenResponse>.Fail(ProtocolErrors.InvalidScope(
+                "El refresh token no concede los scopes solicitados; solo admite reducirlos."));
+        }
+
         var user = userStore.FindBySubject(refreshToken.Subject);
         if (user is null)
         {
@@ -52,11 +62,28 @@ public sealed class RefreshTokenGrantHandler(
             request.Issuer,
             request.Client,
             user,
-            refreshToken.Scopes,
+            scopes,
             timeProvider.GetUtcNow(),
             null,
             null,
             includeIdToken: IssuesIdToken,
-            includeRefreshToken: true);
+            includeRefreshToken: true,
+            refreshTokenFamilyId: refreshToken.FamilyId);
+    }
+
+    /// <summary>
+    /// Devuelve el scope efectivo del canje, o null si se pidio uno que el token original no concede.
+    /// Pedir menos esta permitido; pedir mas es una ampliacion y se rechaza.
+    /// </summary>
+    private static IReadOnlyList<string>? NarrowScopes(
+        IReadOnlyList<string> grantedScopes,
+        TokenRequest request)
+    {
+        if (!request.ScopesRequested)
+        {
+            return grantedScopes;
+        }
+
+        return request.Scopes.All(grantedScopes.Contains) ? request.Scopes : null;
     }
 }

@@ -6,7 +6,9 @@ namespace OidcMock.Core.Grants;
 
 /// <summary>
 /// Peticion del token endpoint ya autenticada como cliente y deserializada. Cada grant decide que
-/// campos necesita; los que no usa se ignoran.
+/// campos necesita; los que no usa se ignoran. <paramref name="ScopesRequested"/> distingue una
+/// peticion sin scope de una que pide exactamente los scopes que trae: el grant refresh_token lo
+/// necesita, porque sin scope debe conservar el concedido y con scope solo puede reducirlo.
 /// </summary>
 public sealed record TokenRequest(
     Client Client,
@@ -18,7 +20,8 @@ public sealed record TokenRequest(
     string? RefreshToken,
     string? UserName,
     string? Password,
-    string? DeviceCode = null);
+    string? DeviceCode = null,
+    bool ScopesRequested = true);
 
 /// <summary>
 /// Estrategia de un grant type del token endpoint. Cada grant sabe autenticarse por su cuenta y

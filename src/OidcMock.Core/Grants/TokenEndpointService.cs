@@ -56,7 +56,8 @@ public sealed class TokenEndpointService(
             request.RefreshToken,
             request.UserName,
             request.Password,
-            request.DeviceCode));
+            request.DeviceCode,
+            request.Scopes.Count > 0));
     }
 
     private static IReadOnlyList<string>? ResolveScopes(

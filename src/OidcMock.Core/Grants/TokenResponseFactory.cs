@@ -25,7 +25,8 @@ public static class TokenResponseFactory
         string? nonce,
         string? authorizationCode,
         bool includeIdToken,
-        bool includeRefreshToken)
+        bool includeRefreshToken,
+        string? refreshTokenFamilyId = null)
     {
         ArgumentNullException.ThrowIfNull(tokenFactory);
         ArgumentNullException.ThrowIfNull(refreshTokenStore);
@@ -57,7 +58,7 @@ public static class TokenResponseFactory
             : null;
 
         var refreshToken = includeRefreshToken
-            ? IssueRefreshToken(refreshTokenStore, client, user, scopes)
+            ? IssueRefreshToken(refreshTokenStore, client, user, scopes, refreshTokenFamilyId)
             : null;
 
         return Result<TokenResponse>.Ok(new TokenResponse
@@ -74,10 +75,12 @@ public static class TokenResponseFactory
         IRefreshTokenStore refreshTokenStore,
         Client client,
         User user,
-        IReadOnlyList<string> scopes) =>
+        IReadOnlyList<string> scopes,
+        string? familyId) =>
         refreshTokenStore.Issue(new RefreshTokenRequest(
             client.ClientId,
             user.Subject,
             scopes,
-            client.TokenLifetimes.RefreshToken)).Token;
+            client.TokenLifetimes.RefreshToken,
+            familyId)).Token;
 }
