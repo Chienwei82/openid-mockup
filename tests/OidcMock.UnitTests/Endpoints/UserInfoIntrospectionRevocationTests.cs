@@ -26,17 +26,17 @@ public sealed class UserInfoIntrospectionRevocationTests : GrantHandlerTestBase
     public UserInfoIntrospectionRevocationTests()
     {
         _userInfo = new UserInfoService(
-            new AccessTokenReader(SigningKeyProvider, Clock),
+            new AccessTokenReader(new SignedTokenValidator(SigningKeyProvider, Clock)),
             new ProjectedUserInfoClaimsSource(new Core.Claims.ScopesClaimsProjector(ScopeStoreFixture.Create())),
             UserStore,
             Revocations);
         _introspection = new IntrospectionService(
-            new AccessTokenReader(SigningKeyProvider, Clock),
+            new AccessTokenReader(new SignedTokenValidator(SigningKeyProvider, Clock)),
             RefreshTokens,
             Clock,
             Revocations);
         _revocation = new TokenRevocationService(
-            new AccessTokenReader(SigningKeyProvider, Clock),
+            new AccessTokenReader(new SignedTokenValidator(SigningKeyProvider, Clock)),
             RefreshTokens,
             Revocations);
     }

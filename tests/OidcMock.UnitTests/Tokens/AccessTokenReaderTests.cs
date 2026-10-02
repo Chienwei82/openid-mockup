@@ -179,7 +179,7 @@ public sealed class AccessTokenReaderTests : GrantHandlerTestBase
         }
     }
 
-    private AccessTokenReader Reader() => new(SigningKeyProvider, Clock);
+    private AccessTokenReader Reader() => new(new SignedTokenValidator(SigningKeyProvider, Clock));
 
     /// <summary>Mina un JWT con la clave del fixture, para los casos que el factory no puede expresar.</summary>
     private static string MintToken(SecurityTokenDescriptor descriptor) =>
