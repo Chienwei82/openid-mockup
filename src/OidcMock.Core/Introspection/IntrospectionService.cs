@@ -1,17 +1,19 @@
 using OidcMock.Core.Errors;
 using OidcMock.Core.Grants;
+using OidcMock.Core.Revocation;
 using OidcMock.Core.Tokens;
 
 namespace OidcMock.Core.Introspection;
 
 /// <summary>
-/// Introspecciona access tokens y refresh tokens. Un token desconocido, caducado o de otro cliente se
-/// responde como inactive en lugar de con un error, tal como pide RFC 7662 seccion 2.2.
+/// Introspecciona access tokens y refresh tokens. Un token desconocido, caducado, revocado o de otro
+/// cliente se responde como inactive en lugar de con un error, tal como pide RFC 7662 seccion 2.2.
 /// </summary>
 public sealed class IntrospectionService(
     IAccessTokenReader accessTokenReader,
     IRefreshTokenStore refreshTokenStore,
-    TimeProvider timeProvider) : IIntrospectionService
+    TimeProvider timeProvider,
+    ITokenRevocationStore revocations) : IIntrospectionService
 {
     public Result<IntrospectionResponse> Introspect(
         string token,
@@ -41,7 +43,7 @@ public sealed class IntrospectionService(
             ? null
             : new IntrospectionResponse
             {
-                Active = !active.IsExpiredAt(timeProvider.GetUtcNow()),
+                Active = IsUsable(active),
                 ClientId = active.ClientId,
                 Subject = active.Subject,
                 Scope = string.Join(' ', active.Scopes),
@@ -64,7 +66,8 @@ public sealed class IntrospectionService(
         }
 
         var claims = read.Value!;
-        if (!string.Equals(claims.ClientId, requestingClientId, StringComparison.Ordinal))
+        if (!string.Equals(claims.ClientId, requestingClientId, StringComparison.Ordinal) ||
+            revocations.IsAccessTokenRevoked(claims.TokenId))
         {
             return null;
         }
@@ -79,6 +82,14 @@ public sealed class IntrospectionService(
             ExpiresAt = claims.ExpiresAt.ToUnixTimeSeconds()
         };
     }
+
+    /// <summary>
+    /// Un refresh token solo sigue activo si no ha caducado y su familia no ha sido revocada: la
+    /// revocacion en cascada es lo que impide renovar una sesion que el cliente ya cerro.
+    /// </summary>
+    private bool IsUsable(RefreshToken refreshToken) =>
+        !refreshToken.IsExpiredAt(timeProvider.GetUtcNow()) &&
+        !revocations.IsRefreshTokenFamilyRevoked(refreshToken.FamilyId);
 
     private static IntrospectionResponse Inactive() => new() { Active = false };
 

@@ -79,6 +79,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ICodeStore, InMemoryCodeStore>();
         services.AddSingleton<IAuthSessionStore, InMemoryAuthSessionStore>();
         services.AddSingleton<IRefreshTokenStore, InMemoryRefreshTokenStore>();
+        services.AddSingleton<ITokenRevocationStore, InMemoryTokenRevocationStore>();
         services.AddSingleton<ITokenFactory, JsonWebTokenFactory>();
         services.AddSingleton<IAccessTokenReader, AccessTokenReader>();
         services.AddSingleton<IClaimsProjector, ScopesClaimsProjector>();

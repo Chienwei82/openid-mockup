@@ -5,6 +5,7 @@ using OidcMock.Core.Codes;
 using OidcMock.Core.Crypto;
 using OidcMock.Core.Errors;
 using OidcMock.Core.Grants;
+using OidcMock.Core.Revocation;
 using OidcMock.Core.Tokens;
 using OidcMock.Core.Users;
 using OidcMock.UnitTests.Fixtures;
@@ -39,6 +40,7 @@ public abstract class GrantHandlerTestBase
         Clock = new FakeTimeProvider(Now);
         CodeStore = new InMemoryCodeStore(Clock);
         RefreshTokens = new InMemoryRefreshTokenStore(Clock);
+        Revocations = new InMemoryTokenRevocationStore(Clock);
         UserStore = new InMemoryUserStore(SampleUser());
         Validator = new TokenTestValidator(_signingKey);
         _signingKeyProvider = new TestSigningKeyProvider(new SigningKey(_signingKey));
@@ -53,6 +55,8 @@ public abstract class GrantHandlerTestBase
     protected ICodeStore CodeStore { get; }
 
     protected IRefreshTokenStore RefreshTokens { get; }
+
+    protected ITokenRevocationStore Revocations { get; }
 
     protected IUserStore UserStore { get; }
 

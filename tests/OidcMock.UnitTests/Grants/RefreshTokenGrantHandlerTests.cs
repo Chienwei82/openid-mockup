@@ -14,7 +14,33 @@ public sealed class RefreshTokenGrantHandlerTests : GrantHandlerTestBase
     private readonly RefreshTokenGrantHandler _handler;
 
     public RefreshTokenGrantHandlerTests() =>
-        _handler = new RefreshTokenGrantHandler(RefreshTokens, UserStore, Tokens, Clock);
+        _handler = new RefreshTokenGrantHandler(RefreshTokens, UserStore, Tokens, Clock, Revocations);
+
+    /// <summary>
+    /// El store de revocaciones es la memoria compartida de "este token ya no vale": aunque el token
+    /// siguiera en el store de refresh tokens, una familia revocada no se puede canjear.
+    /// </summary>
+    [Fact]
+    public async Task RechazaUnRefreshTokenDeUnaFamiliaRevocada()
+    {
+        var token = IssueRefreshToken();
+        Revocations.RevokeRefreshTokenFamily(token.FamilyId, Clock.GetUtcNow().AddHours(8));
+
+        var response = await HandleAsync(token.Token);
+
+        Assert.Equal("invalid_grant", response.Error?.Code);
+    }
+
+    [Fact]
+    public async Task LaRevocacionDeUnaFamiliaNoAfectaAOtra()
+    {
+        var revocada = IssueRefreshToken();
+        var vigente = IssueRefreshToken();
+        Revocations.RevokeRefreshTokenFamily(revocada.FamilyId, Clock.GetUtcNow().AddHours(8));
+
+        Assert.Equal("invalid_grant", (await HandleAsync(revocada.Token)).Error?.Code);
+        Assert.True((await HandleAsync(vigente.Token)).Succeeded);
+    }
 
     [Fact]
     public async Task CanjeaUnRefreshTokenValidoYEmiteTokensNuevos()

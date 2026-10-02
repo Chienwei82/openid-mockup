@@ -27,7 +27,10 @@ public sealed class AccessTokenReader(ISigningKeyProvider signingKeyProvider, Ti
             return Result<AccessTokenClaims>.Fail(ProtocolErrors.InvalidToken(InvalidTokenDescription));
         }
 
-        using var signingKey = signingKeyProvider.GetSigningKey();
+        // La clave NO se libera aqui: ISigningKeyProvider la entrega por referencia y es del host
+        // (PemSigningKeyProvider la cachea entre peticiones). Hacerla disposable con `using` dejaba al
+        // proceso sin clave de firma en la segunda lectura de token, y userinfo o revocation fallaban.
+        var signingKey = signingKeyProvider.GetSigningKey();
         var result = Handler.ValidateTokenAsync(
             accessToken,
             BuildParameters(signingKey, issuer, audiences)).GetAwaiter().GetResult();

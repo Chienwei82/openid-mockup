@@ -10,24 +10,35 @@ using OidcMock.UnitTests.Grants;
 
 namespace OidcMock.UnitTests.Endpoints;
 
+/// <summary>
+/// Los tres endpoints que consumen un token ya emitido (userinfo, introspect y revocation) sobre el
+/// mismo store de revocaciones: lo que uno revoca, los demas lo ven.
+/// </summary>
 public sealed class UserInfoIntrospectionRevocationTests : GrantHandlerTestBase
 {
     private const string ClientId = "web-app-spa";
+    private const string OtherClientId = "backend-service";
 
-    private readonly IAccessTokenReader _reader;
     private readonly UserInfoService _userInfo;
     private readonly IntrospectionService _introspection;
     private readonly TokenRevocationService _revocation;
 
     public UserInfoIntrospectionRevocationTests()
     {
-        _reader = new AccessTokenReader(SigningKeyProvider, Clock);
         _userInfo = new UserInfoService(
-            _reader,
+            new AccessTokenReader(SigningKeyProvider, Clock),
             new ProjectedUserInfoClaimsSource(new Core.Claims.ScopesClaimsProjector(ScopeStoreFixture.Create())),
-            UserStore);
-        _introspection = new IntrospectionService(_reader, RefreshTokens, Clock);
-        _revocation = new TokenRevocationService(_reader, RefreshTokens);
+            UserStore,
+            Revocations);
+        _introspection = new IntrospectionService(
+            new AccessTokenReader(SigningKeyProvider, Clock),
+            RefreshTokens,
+            Clock,
+            Revocations);
+        _revocation = new TokenRevocationService(
+            new AccessTokenReader(SigningKeyProvider, Clock),
+            RefreshTokens,
+            Revocations);
     }
 
     [Fact]
@@ -56,6 +67,28 @@ public sealed class UserInfoIntrospectionRevocationTests : GrantHandlerTestBase
     }
 
     [Fact]
+    public void UserInfoRechazaUnTokenCaducadoConInvalidToken()
+    {
+        var token = IssueAccessToken();
+        Clock.Advance(TimeSpan.FromMinutes(31));
+
+        Assert.Equal("invalid_token", DescribeUserInfo(token).Error?.Code);
+    }
+
+    /// <summary>
+    /// El access token es un JWT sin estado: sin el registro de revocaciones, seguiria sirviendo en
+    /// /userinfo hasta que caducara por si solo.
+    /// </summary>
+    [Fact]
+    public void UserInfoRechazaUnAccessTokenRevocadoConInvalidToken()
+    {
+        var token = IssueAccessToken();
+        Revoke(token);
+
+        Assert.Equal("invalid_token", DescribeUserInfo(token).Error?.Code);
+    }
+
+    [Fact]
     public void IntrospeccionDeUnAccessTokenValidoInformaQueEstaActivo()
     {
         var response = Introspect(IssueAccessToken());
@@ -75,10 +108,39 @@ public sealed class UserInfoIntrospectionRevocationTests : GrantHandlerTestBase
     }
 
     [Fact]
+    public void IntrospeccionDeUnAccessTokenRevocadoRespondeInactive()
+    {
+        var token = IssueAccessToken();
+        Revoke(token);
+
+        Assert.False(Introspect(token).Value?.Active);
+    }
+
+    [Fact]
+    public void IntrospeccionDeUnAccessTokenCaducadoRespondeInactive()
+    {
+        var token = IssueAccessToken();
+        Clock.Advance(TimeSpan.FromMinutes(31));
+
+        Assert.False(Introspect(token).Value?.Active);
+    }
+
+    /// <summary>
+    /// /introspect no revela tokens de otro cliente: el token es valido, pero no es de quien pregunta,
+    /// asi que la unica respuesta honesta es "no se nada de ese token" (active=false).
+    /// </summary>
+    [Fact]
+    public void IntrospeccionDeUnAccessTokenDeOtroClienteRespondeInactive()
+    {
+        var token = IssueAccessToken(clientId: OtherClientId);
+
+        Assert.False(Introspect(token).Value?.Active);
+    }
+
+    [Fact]
     public void IntrospeccionDeUnRefreshTokenInformaSuVigencia()
     {
-        var refreshToken = RefreshTokens.Issue(new RefreshTokenRequest(
-            ClientId, "user-1", ["openid", "email"], TimeSpan.FromHours(1)));
+        var refreshToken = IssueRefreshToken();
 
         var response = Introspect(refreshToken.Token);
 
@@ -90,8 +152,7 @@ public sealed class UserInfoIntrospectionRevocationTests : GrantHandlerTestBase
     [Fact]
     public void IntrospeccionNoRevelaTokensDeOtroCliente()
     {
-        var refreshToken = RefreshTokens.Issue(new RefreshTokenRequest(
-            "backend-service", "user-1", ["openid"], TimeSpan.FromHours(1)));
+        var refreshToken = IssueRefreshToken(OtherClientId);
 
         var response = Introspect(refreshToken.Token, requestingClientId: ClientId);
 
@@ -99,10 +160,18 @@ public sealed class UserInfoIntrospectionRevocationTests : GrantHandlerTestBase
     }
 
     [Fact]
+    public void IntrospeccionDeUnRefreshTokenCaducadoRespondeInactive()
+    {
+        var refreshToken = IssueRefreshToken();
+        Clock.Advance(TimeSpan.FromHours(2));
+
+        Assert.False(Introspect(refreshToken.Token).Value?.Active);
+    }
+
+    [Fact]
     public void RevocarUnRefreshTokenLoDejaInactivo()
     {
-        var refreshToken = RefreshTokens.Issue(new RefreshTokenRequest(
-            ClientId, "user-1", ["openid"], TimeSpan.FromHours(1)));
+        var refreshToken = IssueRefreshToken();
 
         var revoked = Revoke(refreshToken.Token);
         var introspected = Introspect(refreshToken.Token);
@@ -110,6 +179,54 @@ public sealed class UserInfoIntrospectionRevocationTests : GrantHandlerTestBase
         Assert.True(revoked.Succeeded);
         Assert.True(revoked.Value);
         Assert.False(introspected.Value?.Active);
+    }
+
+    [Fact]
+    public void RevocarUnAccessTokenLoDejaInactivo()
+    {
+        var token = IssueAccessToken();
+
+        var revoked = Revoke(token);
+
+        Assert.True(revoked.Succeeded);
+        Assert.True(revoked.Value);
+        Assert.False(Introspect(token).Value?.Active);
+    }
+
+    /// <summary>
+    /// RFC 7009: revocar un refresh token no deja vivo al siguiente de la rotacion, porque el canje
+    /// emite un token nuevo **de la misma familia**. Sin la cascada, un cliente que rota y luego
+    /// revoca seguiria pudiendo renovar su sesion.
+    /// </summary>
+    [Fact]
+    public void RevocarUnRefreshTokenInvalidaSuFamilia()
+    {
+        var original = IssueRefreshToken();
+        var rotado = RefreshTokens.Redeem(original.Token).Value!;
+        var siguiente = RefreshTokens.Issue(new RefreshTokenRequest(
+            ClientId, "user-1", ["openid", "email"], TimeSpan.FromHours(1), rotado.FamilyId));
+
+        Revoke(siguiente.Token);
+
+        Assert.True(Revocations.IsRefreshTokenFamilyRevoked(siguiente.FamilyId));
+        Assert.False(Introspect(siguiente.Token).Value?.Active);
+    }
+
+    /// <summary>
+    /// Solo el cliente propietario revoca: presentado el token de otro cliente, la respuesta es 200
+    /// (RFC 7009 2.2, no se revela si existo) pero el token sigue sirviendo para quien es dueno.
+    /// </summary>
+    [Fact]
+    public void RevocarElTokenDeOtroClienteNoLoRevoca()
+    {
+        var token = IssueAccessToken(clientId: OtherClientId);
+
+        var revoked = Revoke(token, requestingClientId: ClientId);
+        var introspected = Introspect(token, requestingClientId: OtherClientId);
+
+        Assert.True(revoked.Succeeded);
+        Assert.False(revoked.Value);
+        Assert.True(introspected.Value?.Active);
     }
 
     [Fact]
@@ -124,8 +241,7 @@ public sealed class UserInfoIntrospectionRevocationTests : GrantHandlerTestBase
     [Fact]
     public void RevocarElRefreshTokenLoEliminaDelStore()
     {
-        var refreshToken = RefreshTokens.Issue(new RefreshTokenRequest(
-            ClientId, "user-1", ["openid"], TimeSpan.FromHours(1)));
+        var refreshToken = IssueRefreshToken();
 
         Revoke(refreshToken.Token);
 
@@ -136,16 +252,21 @@ public sealed class UserInfoIntrospectionRevocationTests : GrantHandlerTestBase
         _userInfo.Describe(token, Issuer, [ClientId]);
 
     private Result<IntrospectionResponse> Introspect(string token, string requestingClientId = ClientId) =>
-        _introspection.Introspect(token, Issuer, [ClientId], requestingClientId);
+        _introspection.Introspect(token, Issuer, [requestingClientId], requestingClientId);
 
-    private Result<bool> Revoke(string token) => _revocation.Revoke(token, Issuer, [ClientId], ClientId);
+    private Result<bool> Revoke(string token, string requestingClientId = ClientId) =>
+        _revocation.Revoke(token, Issuer, [requestingClientId], requestingClientId);
 
-    private string IssueAccessToken(IReadOnlyList<string>? scopes = null) =>
+    private RefreshToken IssueRefreshToken(string clientId = ClientId) =>
+        RefreshTokens.Issue(new RefreshTokenRequest(
+            clientId, "user-1", ["openid", "email"], TimeSpan.FromHours(1)));
+
+    private string IssueAccessToken(IReadOnlyList<string>? scopes = null, string clientId = ClientId) =>
         Tokens.CreateAccessToken(new AccessTokenRequest(
             Issuer,
-            ClientId,
+            clientId,
             scopes ?? ["openid"],
-            [ClientId],
+            [clientId],
             "user-1",
             SampleUser(),
             TimeSpan.FromMinutes(30)));

@@ -160,6 +160,25 @@ public sealed class AccessTokenReaderTests : GrantHandlerTestBase
         Assert.False(string.IsNullOrWhiteSpace(read.Value?.TokenId));
     }
 
+    /// <summary>
+    /// Regresion: el lector hacia <c>using</c> sobre la clave que le entrega el proveedor, que es del
+    /// host y esta cacheada entre peticiones. En el proceso real eso dejaba al mock sin clave de firma
+    /// para la **segunda** lectura: /userinfo, /introspect y /revocation respondian 500 desde el
+    /// segundo token en adelante. Con el mismo lector se releen varios tokens seguidos.
+    /// </summary>
+    [Fact]
+    public void LeeVariosTokensSeguidosConLaMismaClaveDelProveedor()
+    {
+        var reader = Reader();
+
+        for (var intento = 0; intento < 3; intento++)
+        {
+            var read = reader.Read(IssueToken(), Issuer, [Audience]);
+
+            Assert.True(read.Succeeded, $"El intento {intento} fallo: {read.Error}");
+        }
+    }
+
     private AccessTokenReader Reader() => new(SigningKeyProvider, Clock);
 
     /// <summary>Mina un JWT con la clave del fixture, para los casos que el factory no puede expresar.</summary>

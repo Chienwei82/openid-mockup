@@ -1,4 +1,5 @@
 using OidcMock.Core.Errors;
+using OidcMock.Core.Revocation;
 using OidcMock.Core.Tokens;
 using OidcMock.Core.Users;
 
@@ -15,7 +16,8 @@ public sealed class RefreshTokenGrantHandler(
     IRefreshTokenStore refreshTokenStore,
     IUserStore userStore,
     ITokenFactory tokenFactory,
-    TimeProvider timeProvider) : IGrantHandler
+    TimeProvider timeProvider,
+    ITokenRevocationStore revocations) : IGrantHandler
 {
     public string GrantType => GrantTypes.RefreshToken;
 
@@ -39,6 +41,14 @@ public sealed class RefreshTokenGrantHandler(
         {
             return Result<TokenResponse>.Fail(ProtocolErrors.InvalidGrant(
                 "El refresh token no fue emitido para este cliente."));
+        }
+
+        // Segunda puerta, ya con la familia conocida: aunque el token se hubiera colado en el store,
+        // una familia revocada no se renueva. Asi el store de revocaciones manda sobre cualquier otro.
+        if (revocations.IsRefreshTokenFamilyRevoked(refreshToken.FamilyId))
+        {
+            return Result<TokenResponse>.Fail(ProtocolErrors.InvalidGrant(
+                "La familia del refresh token fue revocada."));
         }
 
         var scopes = NarrowScopes(refreshToken.Scopes, request);

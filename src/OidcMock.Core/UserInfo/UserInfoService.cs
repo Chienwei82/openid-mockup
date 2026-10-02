@@ -1,6 +1,7 @@
 using System.Text.Json;
 using OidcMock.Core.Claims;
 using OidcMock.Core.Errors;
+using OidcMock.Core.Revocation;
 using OidcMock.Core.Tokens;
 using OidcMock.Core.Users;
 
@@ -13,7 +14,8 @@ namespace OidcMock.Core.UserInfo;
 public sealed class UserInfoService(
     IAccessTokenReader accessTokenReader,
     IUserInfoClaimsSource claimsSource,
-    IUserStore userStore) : IUserInfoService
+    IUserStore userStore,
+    ITokenRevocationStore revocations) : IUserInfoService
 {
     public Result<IReadOnlyDictionary<string, JsonElement>> Describe(
         string accessToken,
@@ -24,6 +26,12 @@ public sealed class UserInfoService(
         if (token.Failed)
         {
             return Result<IReadOnlyDictionary<string, JsonElement>>.Fail(token.Error!);
+        }
+
+        if (revocations.IsAccessTokenRevoked(token.Value!.TokenId))
+        {
+            return Result<IReadOnlyDictionary<string, JsonElement>>.Fail(ProtocolErrors.InvalidToken(
+                "El access token fue revocado."));
         }
 
         var user = userStore.FindBySubject(token.Value!.Subject);
