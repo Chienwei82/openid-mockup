@@ -129,8 +129,7 @@ public sealed class AccessTokenFactoryTests
             [ClientId],
             "user-1",
             null,
-            IssuedAt,
-            TimeSpan.FromMinutes(AccessTokenLifetimeInMinutes)));
+                        TimeSpan.FromMinutes(AccessTokenLifetimeInMinutes)));
 
         Assert.DoesNotContain("full_name", TokenTestValidator.ReadClaimNames(token));
     }
@@ -154,8 +153,7 @@ public sealed class AccessTokenFactoryTests
         audiences,
         "user-1",
         SampleUser(),
-        IssuedAt,
-        TimeSpan.FromMinutes(AccessTokenLifetimeInMinutes));
+                TimeSpan.FromMinutes(AccessTokenLifetimeInMinutes));
 
     private static InMemoryScopeStore Scopes() =>
         new InMemoryScopeStore(
@@ -196,8 +194,7 @@ public sealed class AccessTokenFactoryTests
             [ClientId],
             "user-1",
             SampleUser(),
-            IssuedAt,
-            TimeSpan.FromMinutes(AccessTokenLifetimeInMinutes)));
+                        TimeSpan.FromMinutes(AccessTokenLifetimeInMinutes)));
 
         var issuedAt = TokenTestValidator.ReadClaim(token, "iat").GetInt64();
         var notBefore = TokenTestValidator.ReadClaim(token, "nbf").GetInt64();

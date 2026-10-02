@@ -11,7 +11,7 @@ public sealed class ClientCredentialsGrantHandlerTests : GrantHandlerTestBase
 
     private readonly ClientCredentialsGrantHandler _handler;
 
-    public ClientCredentialsGrantHandlerTests() => _handler = new(Tokens, Clock);
+    public ClientCredentialsGrantHandlerTests() => _handler = new(Tokens);
 
     [Fact]
     public void EmiteAccessTokenParaElPropioCliente()

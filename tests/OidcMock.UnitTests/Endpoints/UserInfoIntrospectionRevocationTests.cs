@@ -148,6 +148,5 @@ public sealed class UserInfoIntrospectionRevocationTests : GrantHandlerTestBase
             [ClientId],
             "user-1",
             SampleUser(),
-            Now,
             TimeSpan.FromMinutes(30)));
 }

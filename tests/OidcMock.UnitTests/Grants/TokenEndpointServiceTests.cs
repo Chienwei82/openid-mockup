@@ -14,7 +14,7 @@ public sealed class TokenEndpointServiceTests : GrantHandlerTestBase
     {
         var registry = new GrantHandlerRegistry(
         [
-            new ClientCredentialsGrantHandler(Tokens, Clock),
+            new ClientCredentialsGrantHandler(Tokens),
             new PasswordGrantHandler(UserStore, RefreshTokens, Tokens, Clock)
         ]);
 

@@ -41,7 +41,6 @@ public static class TokenResponseFactory
             [client.ClientId],
             user.Subject,
             user,
-            timeProvider.GetUtcNow(),
             client.TokenLifetimes.AccessToken));
 
         var idToken = includeIdToken

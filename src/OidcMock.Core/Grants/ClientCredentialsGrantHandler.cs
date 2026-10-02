@@ -6,9 +6,9 @@ namespace OidcMock.Core.Grants;
 /// <summary>
 /// Grant client_credentials (RFC 6749 4.4): el cliente se autentica con su propio secreto y no hay
 /// usuario detrás, así que el subject es el client_id y no se emiten id_token ni refresh token.
+/// No necesita <c>TimeProvider</c>: el reloj lo usa el token factory al firmar.
 /// </summary>
-public sealed class ClientCredentialsGrantHandler(ITokenFactory tokenFactory, TimeProvider timeProvider)
-    : IGrantHandler
+public sealed class ClientCredentialsGrantHandler(ITokenFactory tokenFactory) : IGrantHandler
 {
     public string GrantType => GrantTypes.ClientCredentials;
 
@@ -25,7 +25,6 @@ public sealed class ClientCredentialsGrantHandler(ITokenFactory tokenFactory, Ti
             [request.Client.ClientId],
             request.Client.ClientId,
             null,
-            timeProvider.GetUtcNow(),
             request.Client.TokenLifetimes.AccessToken));
 
         return Result<TokenResponse>.Ok(new TokenResponse
