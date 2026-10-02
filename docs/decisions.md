@@ -800,3 +800,32 @@ cambio (devolvian un token firmado) y pasan despues.
 **Leccion que deja esto:** la regla no estaba mal, estaba duplicada por el codigo de cada llamador. Un
 `TokenResponseFactory` que decidiera el `id_token` por si mismo, en vez de delegar, habria hecho imposible
 este forget.
+
+## `prompt=select_account`: se anuncia a proposito y sin implementar
+
+**Decision: se deja como esta. No es un olvido.**
+
+`DiscoveryDocumentBuilder` anuncia `select_account` en `prompt_values_supported`, igual que la referencia
+del BCCR, y `ResponseModes.SelectAccount` define el valor. Pero ningun camino del authorize lo trata de
+forma especial: el flujo es el mismo que sin el.
+
+**Por que se anuncia igual.**
+
+1. **El discovery tiene que coincidir con la referencia.** El objetivo del mock es que una app apunte a
+   `https://oauth2.bccr.fi.cr/personafisica/` o al mock sin cambios de codigo. Una app que valida el
+   discovery contra el de la referencia rechazaria el mock si le falta un valor. Annunciar de menos rompe el
+   proposito del proyecto; anunciar de mas no, porque el valor es opcional en la practica.
+2. **El valor se acepta, no se rechaza.** Un cliente que envie `prompt=select_account` no recibe un error:
+   completa el flujo como si no lo hubiera pedido. Un mock que devolviera `invalid_request` seria peor.
+
+**Por que no se implementa ahora.** Es funcionalidad nueva, y el alcance de esta etapa era cerrar huecos de
+pruebas sin anadir comportamiento OIDC. Ademas, `select_account` solo tiene sentido con varios usuarios en
+el mismo `sub` en el store, que el modelo actual de `users.json` no representa (un usuario por
+`client_id`). Anadirlo bien es un cambio de modelo, no un `if`.
+
+**Lo que si se hizo:** el README lo declara como **"anunciado, no implementado"**, para que nadie depure
+creyendo que el cambio de cuenta deberia funcionar. Esa tabla es la mitigacion: el comportamiento observable
+es el de la referencia y la limitacion esta escrita.
+
+Si algun dia se implementa, el orden seria: permitir varios usuarios por `client_id` en el store, y luego
+un selector en la pantalla de autorizacion que fije el `sub` de la sesion.
