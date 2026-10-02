@@ -32,5 +32,5 @@ public interface IGrantHandler
     /// <summary>Grants que no emiten id_token (client_credentials) lo declaran aqui.</summary>
     bool IssuesIdToken { get; }
 
-    Result<TokenResponse> Handle(TokenRequest request);
+    Task<Result<TokenResponse>> HandleAsync(TokenRequest request);
 }

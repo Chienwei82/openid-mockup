@@ -14,18 +14,18 @@ public sealed class ClientCredentialsGrantHandlerTests : GrantHandlerTestBase
     public ClientCredentialsGrantHandlerTests() => _handler = new(Tokens);
 
     [Fact]
-    public void EmiteAccessTokenParaElPropioCliente()
+    public async Task EmiteAccessTokenParaElPropioCliente()
     {
-        var response = Handle();
+        var response = await HandleAsync();
 
         Assert.True(response.Succeeded, response.Error?.ToString());
         Assert.Equal(ClientId, TokenTestValidator.ReadClaim(response.Value!.AccessToken, "sub").GetString());
     }
 
     [Fact]
-    public void ElAccessTokenEsValidoContraElJwks()
+    public async Task ElAccessTokenEsValidoContraElJwks()
     {
-        var response = Handle();
+        var response = await HandleAsync();
 
         var result = Validator.Validate(response.Value!.AccessToken, Issuer, [ClientId]);
 
@@ -33,18 +33,18 @@ public sealed class ClientCredentialsGrantHandlerTests : GrantHandlerTestBase
     }
 
     [Fact]
-    public void NoEmiteIdTokenNiRefreshToken()
+    public async Task NoEmiteIdTokenNiRefreshToken()
     {
-        var response = Handle();
+        var response = await HandleAsync();
 
         Assert.Null(response.Value?.IdToken);
         Assert.Null(response.Value?.RefreshToken);
     }
 
     [Fact]
-    public void SinUsuarioDetrasNoProyectaClaimsDeUsuario()
+    public async Task SinUsuarioDetrasNoProyectaClaimsDeUsuario()
     {
-        var response = Handle(scopes: ["openid", "custom.profile"]);
+        var response = await HandleAsync(scopes: ["openid", "custom.profile"]);
 
         var claims = TokenTestValidator.ReadClaimNames(response.Value!.AccessToken).ToList();
 
@@ -53,8 +53,8 @@ public sealed class ClientCredentialsGrantHandlerTests : GrantHandlerTestBase
         Assert.Equal("backend-service", TokenTestValidator.ReadClaim(response.Value.AccessToken, "sub").GetString());
     }
 
-    private Result<TokenResponse> Handle(IReadOnlyList<string>? scopes = null) =>
-        _handler.Handle(new TokenRequest(
+    private async Task<Result<TokenResponse>> HandleAsync(IReadOnlyList<string>? scopes = null) =>
+        await _handler.HandleAsync(new TokenRequest(
             ClientStoreFixture.Service(),
             Issuer,
             scopes ?? ["openid"],
@@ -74,9 +74,9 @@ public sealed class PasswordGrantHandlerTests : GrantHandlerTestBase
         _handler = new PasswordGrantHandler(UserStore, RefreshTokens, Tokens, Clock);
 
     [Fact]
-    public void EmiteTokensConCredencialesCorrectas()
+    public async Task EmiteTokensConCredencialesCorrectas()
     {
-        var response = Handle("jperez", "clave");
+        var response = await HandleAsync("jperez", "clave");
 
         Assert.True(response.Succeeded, response.Error?.ToString());
         Assert.NotNull(response.Value?.AccessToken);
@@ -85,34 +85,34 @@ public sealed class PasswordGrantHandlerTests : GrantHandlerTestBase
     }
 
     [Fact]
-    public void ElAccessTokenLlevaElSubjectDelUsuario()
+    public async Task ElAccessTokenLlevaElSubjectDelUsuario()
     {
-        var response = Handle("jperez", "clave");
+        var response = await HandleAsync("jperez", "clave");
 
         Assert.Equal("user-1", TokenTestValidator.ReadClaim(response.Value!.AccessToken, "sub").GetString());
     }
 
     [Fact]
-    public void RechazaUnaContrasenaIncorrecta()
+    public async Task RechazaUnaContrasenaIncorrecta()
     {
-        Assert.Equal("invalid_grant", Handle("jperez", "clave-incorrecta").Error?.Code);
+        Assert.Equal("invalid_grant", (await HandleAsync("jperez", "clave-incorrecta")).Error?.Code);
     }
 
     [Fact]
-    public void RechazaUnUsuarioDesconocido()
+    public async Task RechazaUnUsuarioDesconocido()
     {
-        Assert.Equal("invalid_grant", Handle("nadie", "clave").Error?.Code);
+        Assert.Equal("invalid_grant", (await HandleAsync("nadie", "clave")).Error?.Code);
     }
 
     [Fact]
-    public void ExigeUsuarioYContrasena()
+    public async Task ExigeUsuarioYContrasena()
     {
-        Assert.Equal("invalid_request", Handle(null, "clave").Error?.Code);
-        Assert.Equal("invalid_request", Handle("jperez", null).Error?.Code);
+        Assert.Equal("invalid_request", (await HandleAsync(null, "clave")).Error?.Code);
+        Assert.Equal("invalid_request", (await HandleAsync("jperez", null)).Error?.Code);
     }
 
-    private Result<TokenResponse> Handle(string? userName, string? password) =>
-        _handler.Handle(new TokenRequest(
+    private async Task<Result<TokenResponse>> HandleAsync(string? userName, string? password) =>
+        await _handler.HandleAsync(new TokenRequest(
             ClientStoreFixture.Service(),
             Issuer,
             ["openid"],
@@ -131,49 +131,49 @@ public sealed class RefreshTokenGrantHandlerTests : GrantHandlerTestBase
         _handler = new RefreshTokenGrantHandler(RefreshTokens, UserStore, Tokens, Clock);
 
     [Fact]
-    public void CanjeaUnRefreshTokenValidoYEmiteTokensNuevos()
+    public async Task CanjeaUnRefreshTokenValidoYEmiteTokensNuevos()
     {
-        var response = Handle(IssueRefreshToken().Token);
+        var response = (await HandleAsync(IssueRefreshToken().Token));
 
         Assert.True(response.Succeeded, response.Error?.ToString());
         Assert.NotNull(response.Value?.AccessToken);
     }
 
     [Fact]
-    public void ElRefreshTokenNuevoEsDistintoDelCanjeado()
+    public async Task ElRefreshTokenNuevoEsDistintoDelCanjeado()
     {
         var token = IssueRefreshToken();
 
-        var response = Handle(token.Token);
+        var response = await HandleAsync(token.Token);
 
         Assert.NotEqual(token.Token, response.Value?.RefreshToken);
     }
 
     [Fact]
-    public void ConservaLosScopesConcedidosEnElRefreshTokenOriginal()
+    public async Task ConservaLosScopesConcedidosEnElRefreshTokenOriginal()
     {
-        var response = Handle(IssueRefreshToken(scopes: ["openid", "email"]).Token);
+        var response = await HandleAsync(IssueRefreshToken(scopes: ["openid", "email"]).Token);
 
         Assert.Equal("openid email", response.Value?.Scope);
     }
 
     [Fact]
-    public void RechazaUnRefreshTokenDesconocido()
+    public async Task RechazaUnRefreshTokenDesconocido()
     {
-        Assert.Equal("invalid_grant", Handle("inventado").Error?.Code);
+        Assert.Equal("invalid_grant", (await HandleAsync("inventado")).Error?.Code);
     }
 
     [Fact]
-    public void RechazaUnRefreshTokenYaCanjeado()
+    public async Task RechazaUnRefreshTokenYaCanjeado()
     {
         var token = IssueRefreshToken();
-        Handle(token.Token);
+        await HandleAsync(token.Token);
 
-        Assert.Equal("invalid_grant", Handle(token.Token).Error?.Code);
+        Assert.Equal("invalid_grant", (await HandleAsync(token.Token)).Error?.Code);
     }
 
     [Fact]
-    public void RechazaUnRefreshTokenEmitidoParaOtroCliente()
+    public async Task RechazaUnRefreshTokenEmitidoParaOtroCliente()
     {
         var token = RefreshTokens.Issue(new RefreshTokenRequest(
             "backend-service",
@@ -181,13 +181,13 @@ public sealed class RefreshTokenGrantHandlerTests : GrantHandlerTestBase
             ["openid"],
             TimeSpan.FromHours(1)));
 
-        Assert.Equal("invalid_grant", Handle(token.Token).Error?.Code);
+        Assert.Equal("invalid_grant", (await HandleAsync(token.Token)).Error?.Code);
     }
 
     [Fact]
-    public void ElRefreshNoReemiteIdTokenPorDisenoDelMock()
+    public async Task ElRefreshNoReemiteIdTokenPorDisenoDelMock()
     {
-        var response = Handle(IssueRefreshToken().Token);
+        var response = (await HandleAsync(IssueRefreshToken().Token));
 
         Assert.Null(response.Value?.IdToken);
     }
@@ -199,8 +199,8 @@ public sealed class RefreshTokenGrantHandlerTests : GrantHandlerTestBase
             scopes ?? ["openid"],
             TimeSpan.FromHours(1)));
 
-    private Result<TokenResponse> Handle(string token) =>
-        _handler.Handle(new TokenRequest(
+    private async Task<Result<TokenResponse>> HandleAsync(string token) =>
+        await _handler.HandleAsync(new TokenRequest(
             ClientStoreFixture.Spa(),
             Issuer,
             ["openid"],

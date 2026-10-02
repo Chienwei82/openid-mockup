@@ -37,7 +37,7 @@ public static class TokenEndpoints
         DiscoveryDocumentBuilder discoveryBuilder,
         OidcMockOptions options)
     {
-        var result = tokenEndpoint.IssueToken(
+        var result = await tokenEndpoint.IssueTokenAsync(
             await BindTokenRequestAsync(context.Request),
             IssuerResolver.Resolve(context.Request, discoveryBuilder, options));
 

@@ -18,7 +18,10 @@ public sealed class RefreshTokenGrantHandler(
 
     public bool IssuesIdToken => false;
 
-    public Result<TokenResponse> Handle(TokenRequest request)
+    public Task<Result<TokenResponse>> HandleAsync(TokenRequest request) =>
+        Task.FromResult(Handle(request));
+
+    private Result<TokenResponse> Handle(TokenRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
 

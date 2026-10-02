@@ -16,9 +16,9 @@ public sealed class AuthorizationCodeGrantHandlerTests : GrantHandlerTestBase
         _handler = new AuthorizationCodeGrantHandler(CodeStore, RefreshTokens, UserStore, Tokens, Clock);
 
     [Fact]
-    public void CanjeaUnCodigoValidoYEmiteTokens()
+    public async Task CanjeaUnCodigoValidoYEmiteTokens()
     {
-        var response = Handle(IssueCode(CodeStore));
+        var response = await HandleAsync(IssueCode(CodeStore));
 
         Assert.True(response.Succeeded, response.Error?.ToString());
         Assert.Equal(TokenTypes.Bearer, response.Value?.TokenType);
@@ -26,9 +26,9 @@ public sealed class AuthorizationCodeGrantHandlerTests : GrantHandlerTestBase
     }
 
     [Fact]
-    public void EmiteUnAccessTokenValidoParaElSubjectAutorizado()
+    public async Task EmiteUnAccessTokenValidoParaElSubjectAutorizado()
     {
-        var response = Handle(IssueCode(CodeStore));
+        var response = await HandleAsync(IssueCode(CodeStore));
 
         var result = Validator.Validate(response.Value!.AccessToken, Issuer, [ClientId]);
 
@@ -37,17 +37,17 @@ public sealed class AuthorizationCodeGrantHandlerTests : GrantHandlerTestBase
     }
 
     [Fact]
-    public void EmiteUnIdTokenConElNonceDeLaPeticionOriginal()
+    public async Task EmiteUnIdTokenConElNonceDeLaPeticionOriginal()
     {
-        var response = Handle(IssueCode(CodeStore, nonce: "n-abc"));
+        var response = await HandleAsync(IssueCode(CodeStore, nonce: "n-abc"));
 
         Assert.Equal("n-abc", TokenTestValidator.ReadClaim(response.Value!.IdToken!, "nonce").GetString());
     }
 
     [Fact]
-    public void EmiteUnRefreshTokenQueSePuedeCanjear()
+    public async Task EmiteUnRefreshTokenQueSePuedeCanjear()
     {
-        var response = Handle(IssueCode(CodeStore));
+        var response = await HandleAsync(IssueCode(CodeStore));
 
         var refreshed = RefreshTokens.Redeem(response.Value!.RefreshToken!);
 
@@ -56,50 +56,50 @@ public sealed class AuthorizationCodeGrantHandlerTests : GrantHandlerTestBase
     }
 
     [Fact]
-    public void ElAccessTokenLevaLosScopesConcedidosEnElCodigo()
+    public async Task ElAccessTokenLevaLosScopesConcedidosEnElCodigo()
     {
-        var response = Handle(IssueCode(CodeStore));
+        var response = await HandleAsync(IssueCode(CodeStore));
 
         Assert.Equal("openid email", response.Value?.Scope);
     }
 
     [Fact]
-    public void RechazaUnCodigoDesconocido()
+    public async Task RechazaUnCodigoDesconocido()
     {
-        var response = Handle(codeValue: "codigo-inventado");
+        var response = await HandleAsync(codeValue: "codigo-inventado");
 
         Assert.Equal("invalid_grant", response.Error?.Code);
     }
 
     [Fact]
-    public void RechazaUnCodigoYaCanjeado()
+    public async Task RechazaUnCodigoYaCanjeado()
     {
         var code = IssueCode(CodeStore);
-        Handle(code);
+        await HandleAsync(code);
 
-        Assert.Equal("invalid_grant", Handle(code).Error?.Code);
+        Assert.Equal("invalid_grant", (await HandleAsync(code)).Error?.Code);
     }
 
     [Fact]
-    public void RechazaUnRedirectUriQueNoCoincideConElDelCodigo()
+    public async Task RechazaUnRedirectUriQueNoCoincideConElDelCodigo()
     {
-        var response = Handle(IssueCode(CodeStore), redirectUri: "https://localhost:5173/otro");
+        var response = await HandleAsync(IssueCode(CodeStore), redirectUri: "https://localhost:5173/otro");
 
         Assert.Equal("invalid_grant", response.Error?.Code);
     }
 
     [Fact]
-    public void ExigeElCodeVerifierCuandoElCodigoTieneCodeChallenge()
+    public async Task ExigeElCodeVerifierCuandoElCodigoTieneCodeChallenge()
     {
-        var response = Handle(IssueCode(CodeStore, withChallenge: true), codeVerifier: null);
+        var response = await HandleAsync(IssueCode(CodeStore, withChallenge: true), codeVerifier: null);
 
         Assert.Equal("invalid_grant", response.Error?.Code);
     }
 
     [Fact]
-    public void RechazaUnCodeVerifierQueNoCorrespondeAlChallenge()
+    public async Task RechazaUnCodeVerifierQueNoCorrespondeAlChallenge()
     {
-        var response = Handle(
+        var response = await HandleAsync(
             IssueCode(CodeStore, withChallenge: true),
             codeVerifier: "otro-verificador-que-no-corresponde-al-desafio-XXXXX");
 
@@ -107,35 +107,35 @@ public sealed class AuthorizationCodeGrantHandlerTests : GrantHandlerTestBase
     }
 
     [Fact]
-    public void AceptaElCodeVerifierQueCorrespondeAlChallenge()
+    public async Task AceptaElCodeVerifierQueCorrespondeAlChallenge()
     {
-        var response = Handle(IssueCode(CodeStore, withChallenge: true), codeVerifier: Verifier);
+        var response = await HandleAsync(IssueCode(CodeStore, withChallenge: true), codeVerifier: Verifier);
 
         Assert.True(response.Succeeded, response.Error?.ToString());
     }
 
     [Fact]
-    public void UnCodigoSinPkceNoExigeCodeVerifier()
+    public async Task UnCodigoSinPkceNoExigeCodeVerifier()
     {
-        var response = Handle(IssueCode(CodeStore, withChallenge: false));
+        var response = await HandleAsync(IssueCode(CodeStore, withChallenge: false));
 
         Assert.True(response.Succeeded, response.Error?.ToString());
     }
 
     [Fact]
-    public void RechazaUnCodigoEmitidoParaOtroCliente()
+    public async Task RechazaUnCodigoEmitidoParaOtroCliente()
     {
-        var response = Handle(IssueCode(CodeStore, clientId: "backend-service"));
+        var response = await HandleAsync(IssueCode(CodeStore, clientId: "backend-service"));
 
         Assert.Equal("invalid_grant", response.Error?.Code);
     }
 
-    private Result<TokenResponse> Handle(
+    private async Task<Result<TokenResponse>> HandleAsync(
         AuthorizationCode? code = null,
         string codeValue = "codigo-inventado",
         string? redirectUri = null,
         string? codeVerifier = null) =>
-        _handler.Handle(new TokenRequest(
+        await _handler.HandleAsync(new TokenRequest(
             ClientStoreFixture.Spa(),
             Issuer,
             ["openid", "email"],

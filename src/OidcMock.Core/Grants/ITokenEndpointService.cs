@@ -26,5 +26,5 @@ public sealed record TokenEndpointRequest(
 /// </summary>
 public interface ITokenEndpointService
 {
-    Result<TokenResponse> IssueToken(TokenEndpointRequest request, string issuer);
+    Task<Result<TokenResponse>> IssueTokenAsync(TokenEndpointRequest request, string issuer);
 }

@@ -22,16 +22,16 @@ public sealed class TokenEndpointServiceTests : GrantHandlerTestBase
     }
 
     [Fact]
-    public void EmiteTokensDeClientCredentialsConElSecretoCorrecto()
+    public async Task EmiteTokensDeClientCredentialsConElSecretoCorrecto()
     {
-        var response = Issue(clientId: "backend-service", clientSecret: "super-secret-backend");
+        var response = await IssueAsync(clientId: "backend-service", clientSecret: "super-secret-backend");
 
         Assert.True(response.Succeeded, response.Error?.ToString());
         Assert.NotNull(response.Value?.AccessToken);
     }
 
     [Fact]
-    public void UnClienteSinSecretoNoLoExigeEnElTokenEndpoint()
+    public async Task UnClienteSinSecretoNoLoExigeEnElTokenEndpoint()
     {
         var spa = ClientStoreFixture.Spa() with
         {
@@ -43,7 +43,7 @@ public sealed class TokenEndpointServiceTests : GrantHandlerTestBase
             ScopeStoreFixture.Create(),
             new GrantHandlerRegistry([new PasswordGrantHandler(UserStore, RefreshTokens, Tokens, Clock)]));
 
-        var response = service.IssueToken(
+        var response = await service.IssueTokenAsync(
             new TokenEndpointRequest(
                 spa.ClientId,
                 ClientSecret: null,
@@ -62,42 +62,42 @@ public sealed class TokenEndpointServiceTests : GrantHandlerTestBase
     }
 
     [Fact]
-    public void RechazaUnSecretoIncorrectoConInvalidClientY401()
+    public async Task RechazaUnSecretoIncorrectoConInvalidClientY401()
     {
-        var response = Issue(clientId: "backend-service", clientSecret: "secreto-malo");
+        var response = await IssueAsync(clientId: "backend-service", clientSecret: "secreto-malo");
 
         Assert.Equal("invalid_client", response.Error?.Code);
         Assert.Equal(401, response.Error?.StatusCode);
     }
 
     [Fact]
-    public void RechazaUnClienteDesconocido()
+    public async Task RechazaUnClienteDesconocido()
     {
-        var response = Issue(clientId: "cliente-fantasma", clientSecret: "lo-que-sea");
+        var response = await IssueAsync(clientId: "cliente-fantasma", clientSecret: "lo-que-sea");
 
         Assert.Equal("invalid_client", response.Error?.Code);
     }
 
     [Fact]
-    public void RechazaUnSecretoAusenteEnUnClienteConfidencial()
+    public async Task RechazaUnSecretoAusenteEnUnClienteConfidencial()
     {
-        var response = Issue(clientId: "backend-service", clientSecret: null);
+        var response = await IssueAsync(clientId: "backend-service", clientSecret: null);
 
         Assert.Equal("invalid_client", response.Error?.Code);
     }
 
     [Fact]
-    public void RechazaUnGrantTypeDesconocido()
+    public async Task RechazaUnGrantTypeDesconocido()
     {
-        var response = Issue(clientId: "backend-service", clientSecret: "super-secret-backend", grantType: "inventado");
+        var response = await IssueAsync(clientId: "backend-service", clientSecret: "super-secret-backend", grantType: "inventado");
 
         Assert.Equal("unsupported_grant_type", response.Error?.Code);
     }
 
     [Fact]
-    public void RechazaUnGrantTypeQueElClienteNoTienePermitido()
+    public async Task RechazaUnGrantTypeQueElClienteNoTienePermitido()
     {
-        var response = Issue(
+        var response = await IssueAsync(
             clientId: "backend-service",
             clientSecret: "super-secret-backend",
             grantType: "authorization_code");
@@ -106,9 +106,9 @@ public sealed class TokenEndpointServiceTests : GrantHandlerTestBase
     }
 
     [Fact]
-    public void RechazaUnScopeNoPermitidoParaElCliente()
+    public async Task RechazaUnScopeNoPermitidoParaElCliente()
     {
-        var response = Issue(
+        var response = await IssueAsync(
             clientId: "backend-service",
             clientSecret: "super-secret-backend",
             scopes: ["openid", "documentofva"]);
@@ -117,17 +117,17 @@ public sealed class TokenEndpointServiceTests : GrantHandlerTestBase
     }
 
     [Fact]
-    public void SinScopesUsaOpenid()
+    public async Task SinScopesUsaOpenid()
     {
-        var response = Issue(clientId: "backend-service", clientSecret: "super-secret-backend", scopes: []);
+        var response = await IssueAsync(clientId: "backend-service", clientSecret: "super-secret-backend", scopes: []);
 
         Assert.Equal("openid", response.Value?.Scope);
     }
 
     [Fact]
-    public void LaAutenticacionSeCompruebaAntesDeDespacharAlGrant()
+    public async Task LaAutenticacionSeCompruebaAntesDeDespacharAlGrant()
     {
-        var response = Issue(
+        var response = await IssueAsync(
             clientId: "backend-service",
             clientSecret: "secreto-malo",
             grantType: "grant-inventado-que-tambien-fallaria");
@@ -135,14 +135,14 @@ public sealed class TokenEndpointServiceTests : GrantHandlerTestBase
         Assert.Equal("invalid_client", response.Error?.Code);
     }
 
-    private Result<TokenResponse> Issue(
+    private async Task<Result<TokenResponse>> IssueAsync(
         string? clientId,
         string? clientSecret,
         string grantType = "client_credentials",
         IReadOnlyList<string>? scopes = null,
         string? userName = null,
         string? password = null) =>
-        _service.IssueToken(
+        await _service.IssueTokenAsync(
             new TokenEndpointRequest(
                 clientId,
                 clientSecret,

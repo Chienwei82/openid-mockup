@@ -14,7 +14,7 @@ public sealed class TokenEndpointService(
     IScopeStore scopeStore,
     GrantHandlerRegistry handlers) : ITokenEndpointService
 {
-    public Result<TokenResponse> IssueToken(TokenEndpointRequest request, string issuer)
+    public async Task<Result<TokenResponse>> IssueTokenAsync(TokenEndpointRequest request, string issuer)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -46,7 +46,7 @@ public sealed class TokenEndpointService(
                 ProtocolErrors.InvalidScope("Uno de los scopes solicitados no esta permitido para el cliente."));
         }
 
-        return handler.Handle(new TokenRequest(
+        return await handler.HandleAsync(new TokenRequest(
             client,
             issuer,
             scopes,
