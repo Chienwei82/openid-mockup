@@ -23,6 +23,13 @@ public static partial class OidcMockLog
     public static partial void ServingStarted(ILogger logger, string issuer, string pathBase);
 
     [LoggerMessage(
+        EventId = 1002,
+        Level = LogLevel.Warning,
+        Message = "No se pudo escribir la clave de firma en '{KeyPath}' ({Reason}). El mock sigue " +
+                  "firmando, pero el kid cambiara en cada reinicio y los tokens emitidos antes dejaran de validar.")]
+    public static partial void SigningKeyNotPersisted(ILogger logger, string keyPath, string reason);
+
+    [LoggerMessage(
         EventId = 2000,
         Level = LogLevel.Information,
         Message = "Login correcto del usuario '{Subject}' para el cliente '{ClientId}'")]

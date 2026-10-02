@@ -1,6 +1,8 @@
 using System.Security.Cryptography;
+using Microsoft.Extensions.Logging.Abstractions;
 using OidcMock.Core.Configuration;
 using OidcMock.Core.Crypto;
+using OidcMock.Host.Logging;
 
 namespace OidcMock.Host.Crypto;
 
@@ -12,7 +14,17 @@ public sealed class PemSigningKeyProvider : ISigningKeyProvider, IDisposable
 {
     private readonly Lock _gate = new();
     private readonly string _keyFilePath;
+    private readonly ILogger _logger;
     private SigningKey? _signingKey;
+
+    public PemSigningKeyProvider(string configDirectory, string keyFileName, ILogger? logger = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(configDirectory);
+        ArgumentException.ThrowIfNullOrWhiteSpace(keyFileName);
+
+        _keyFilePath = Path.Combine(configDirectory, keyFileName);
+        _logger = logger ?? NullLogger.Instance;
+    }
 
     public PemSigningKeyProvider(string configDirectory)
         : this(configDirectory, ConfigurationFiles.SigningKey)
@@ -20,11 +32,8 @@ public sealed class PemSigningKeyProvider : ISigningKeyProvider, IDisposable
     }
 
     public PemSigningKeyProvider(string configDirectory, string keyFileName)
+        : this(configDirectory, keyFileName, logger: null)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(configDirectory);
-        ArgumentException.ThrowIfNullOrWhiteSpace(keyFileName);
-
-        _keyFilePath = Path.Combine(configDirectory, keyFileName);
     }
 
     public SigningKey GetSigningKey()
@@ -75,10 +84,23 @@ public sealed class PemSigningKeyProvider : ISigningKeyProvider, IDisposable
             File.WriteAllText(_keyFilePath, key.ExportPkcs8PrivateKeyPem());
             return new SigningKey(key);
         }
+        catch (Exception exception) when (IsPermissionProblem(exception))
+        {
+            // Persistir la clave es una comodidad, no un requisito: sin ella el mock sigue firmando,
+            // solo que el kid cambia en cada reinicio y los tokens emitidos antes dejan de validar.
+            // Un config montado en solo lectura (Docker como usuario no-root) es un caso normal.
+            key.Dispose();
+            OidcMockLog.SigningKeyNotPersisted(_logger, _keyFilePath, exception.Message);
+
+            return new SigningKey(RSA.Create(SigningKeySizes.KeySizeInBits));
+        }
         catch
         {
             key.Dispose();
             throw;
         }
     }
+
+    private static bool IsPermissionProblem(Exception exception) =>
+        exception is UnauthorizedAccessException or IOException;
 }

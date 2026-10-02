@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OidcMock.Core.Authorization;
 using OidcMock.Core.Authorization.Validators;
@@ -76,8 +77,10 @@ public static class ServiceCollectionExtensions
         // El resto del codigo pide OidcMockOptions por su clase; se resuelve el mismo objeto ya validado.
         services.AddSingleton(provider => provider.GetRequiredService<IOptions<OidcMockOptions>>().Value);
         services.AddSingleton<DiscoveryDocumentBuilder>();
-        services.AddSingleton<ISigningKeyProvider>(provider =>
-            new PemSigningKeyProvider(provider.GetRequiredService<JsonStoreOptions>().ConfigDirectory));
+        services.AddSingleton<ISigningKeyProvider>(provider => new PemSigningKeyProvider(
+            provider.GetRequiredService<JsonStoreOptions>().ConfigDirectory,
+            ConfigurationFiles.SigningKey,
+            provider.GetRequiredService<ILoggerFactory>().CreateLogger<PemSigningKeyProvider>()));
 
         return services;
     }

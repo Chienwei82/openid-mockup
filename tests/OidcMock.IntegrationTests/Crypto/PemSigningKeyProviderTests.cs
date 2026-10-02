@@ -54,4 +54,63 @@ public sealed class PemSigningKeyProviderTests
 
         Assert.Contains(SigningKeyFileName, exception.Message, StringComparison.Ordinal);
     }
+
+    /// <summary>
+    /// Montar el config de solo lectura es normal (Docker con usuario no-root, un config en un
+    /// volumen compartido). El mock debe servir igualmente: solo pierde la persistencia del kid.
+    /// </summary>
+    [Fact]
+    public void SirveIgualCuandoNoPuedePersistirLaClavePorFaltaDePermisos()
+    {
+        // Los permisos POSIX son lo que reproduce el caso del contenedor; en Windows el helper no
+        // puede montar un directorio de solo lectura y el escenario no existe.
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        using var readOnly = new ReadOnlyDirectory();
+        using var provider = new PemSigningKeyProvider(readOnly.Path);
+
+        var key = provider.GetSigningKey();
+
+        Assert.Equal(SigningKeySizes.KeySizeInBits, key.KeySize);
+        Assert.NotEmpty(key.KeyId);
+    }
+
+    /// <summary>
+    /// Copia los archivos a un directorio sin permiso de escritura, como el config montado de solo
+    /// lectura. El error real aqui es UnauthorizedAccessException al no poder crear el PEM.
+    /// </summary>
+    private sealed class ReadOnlyDirectory : IDisposable
+    {
+        public ReadOnlyDirectory()
+        {
+            Path = System.IO.Path.Combine(
+                System.IO.Path.GetTempPath(),
+                $"oidc-mock-solo-lectura-{Guid.NewGuid():N}");
+
+            Directory.CreateDirectory(Path);
+
+            if (!OperatingSystem.IsWindows())
+            {
+                File.SetUnixFileMode(Path, UnixFileMode.UserRead | UnixFileMode.UserExecute);
+            }
+        }
+
+        public string Path { get; }
+
+        public void Dispose()
+        {
+            if (!OperatingSystem.IsWindows())
+            {
+                File.SetUnixFileMode(Path, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+            }
+
+            if (Directory.Exists(Path))
+            {
+                Directory.Delete(Path, recursive: true);
+            }
+        }
+    }
 }
