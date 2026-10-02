@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using OidcMock.Core.Authorization;
+using OidcMock.Core.Authorization.Validators;
 using OidcMock.Core.Claims;
 using OidcMock.Core.Clients;
 using OidcMock.Core.Codes;
@@ -81,6 +82,21 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAccessTokenReader, AccessTokenReader>();
         services.AddSingleton<IClaimsProjector, ScopesClaimsProjector>();
         services.AddSingleton<IAuthorizationRequestValidator, AuthorizationRequestValidator>();
+
+        // La cadena de validacion de authorize es una lista de reglas de una sola comprobacion, en
+        // el orden en que se registran. Agregar una comprobacion es una linea mas, sin tocar la
+        // cadena ni el endpoint.
+        services.AddSingleton<IAuthorizeRequestValidator, ClientExistsValidator>();
+        services.AddSingleton<IAuthorizeRequestValidator, RedirectUriValidator>();
+        services.AddSingleton<IAuthorizeRequestValidator, GrantTypeValidator>();
+        services.AddSingleton<IAuthorizeRequestValidator, ResponseTypeValidator>();
+        services.AddSingleton<IAuthorizeRequestValidator, OpenIdScopeValidator>();
+        services.AddSingleton<IAuthorizeRequestValidator, AllowedScopesValidator>();
+        services.AddSingleton<IAuthorizeRequestValidator, KnownScopesValidator>();
+        services.AddSingleton<IAuthorizeRequestValidator, PkceRequiredValidator>();
+        services.AddSingleton<IAuthorizeRequestValidator, CodeChallengeMethodValidator>();
+        services.AddSingleton<IAuthorizeRequestValidator, PromptValidator>();
+        services.AddSingleton<IAuthorizeRequestValidator, ResponseModeValidator>();
         services.AddSingleton<IAuthorizationService, AuthorizationService>();
         services.AddSingleton<GrantHandlerRegistry>();
         services.AddSingleton<ITokenEndpointService, TokenEndpointService>();

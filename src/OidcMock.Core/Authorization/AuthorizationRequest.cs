@@ -14,4 +14,12 @@ public sealed record AuthorizationRequest(
     string? CodeChallengeMethod,
     string? Prompt,
     string? GrantType,
-    string ResponseMode);
+    string ResponseMode)
+{
+    /// <summary>
+    /// Scopes con los que se valida la peticion. Sin scope la peticion se interpreta como la
+    /// minima de OIDC (solo openid), que es lo que hacen los authorization endpoints de verdad.
+    /// </summary>
+    public IReadOnlyList<string> EffectiveScopes =>
+        Scopes.Count > 0 ? Scopes : [Core.Scopes.ScopeNames.OpenId];
+}
