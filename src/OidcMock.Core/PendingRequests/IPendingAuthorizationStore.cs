@@ -29,6 +29,16 @@ public interface IPendingAuthorizationStore
     Result<PendingAuthorizationRequest> Deny(string handle);
 
     /// <summary>
+    /// Busca sin consumir y, a la vez, registra el sondeo para el intervalo de RFC 8628 3.5.
+    ///
+    /// Distingue tres finales del ciclo que <see cref="Find"/> no separa: handle desconocido, handle
+    /// caducado y peticion viva. El sondeo los necesita por separado, porque el primero es
+    /// <c>invalid_grant</c>, el segundo es <c>expired_token</c> y el tercero sigue el ciclo. Un handle
+    /// caducado se devuelve marcado y se descarta, para que no pueda volver a aprobarse.
+    /// </summary>
+    Result<PendingAuthorizationRequest> Poll(string handle);
+
+    /// <summary>
     /// Invalida la peticion sin mas. Lo usa PAR: su <c>request_uri</c> no se canjea por el sondeo, sino
     /// al emitir el codigo de autorizacion, y <see cref="Redeem"/> solo borra lo ya aprobado.
     /// </summary>

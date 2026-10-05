@@ -44,7 +44,7 @@ public static class EndSessionEndpoints
     {
         var values = await RequestValues.ReadAsync(context.Request);
 
-        AuthSessionCookie.Clear(context.Response);
+        AuthSessionCookie.Clear(context.Response, options);
 
         var result = endSession.EndSession(new EndSessionRequest(
             IssuerResolver.Resolve(context.Request, discoveryBuilder, options),

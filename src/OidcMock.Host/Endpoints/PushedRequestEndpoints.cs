@@ -17,14 +17,16 @@ public static class PushedRequestEndpoints
         var options = endpoints.ServiceProvider.GetRequiredService<OidcMockOptions>();
         var group = endpoints.MapGroup(EndpointUri.NormalizePathBase(options.PathBase));
 
-        group.MapPost(EndpointPaths.PushedAuthorizationRequest, Push);
+        group.MapPost(EndpointPaths.PushedAuthorizationRequest, Push).DoNotStore();
 
         return endpoints;
     }
 
     private static async Task<IResult> Push(HttpContext context, IPushedAuthorizationService par)
     {
-        var result = par.Push(ToPushParameters(await RequestValues.ReadAsync(context.Request)));
+        var values = await RequestValues.ReadAsync(context.Request);
+
+        var result = par.Push(ToPushParameters(context.Request, values));
 
         return result.Succeeded
             ? Results.Json(new
@@ -35,10 +37,15 @@ public static class PushedRequestEndpoints
             : ProtocolErrorResults.From(result.Error!);
     }
 
-    private static PushRequestParameters ToPushParameters(IReadOnlyDictionary<string, string> values) =>
+    /// Las credenciales se leen con el lector comun, que da prioridad al encabezado Authorization
+    /// (RFC 6749 2.3.1): PAR tiene que aceptar los mismos metodos que el token endpoint, y no solo el
+    /// <c>client_secret</c> del cuerpo.
+    /// </summary>
+    private static PushRequestParameters ToPushParameters(
+        HttpRequest request,
+        IReadOnlyDictionary<string, string> values) =>
         new(
-            values.GetValueOrDefault("client_id"),
-            values.GetValueOrDefault("client_secret"),
+            ClientCredentialsReader.Read(request, values),
             values.GetValueOrDefault("redirect_uri"),
             values.GetValueOrDefault("response_type"),
             values.GetValueOrDefault("scope"),

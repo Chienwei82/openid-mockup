@@ -17,15 +17,30 @@ public static class AuthSessionCookie
         : null;
 
     public static void Write(HttpResponse response, string sessionId, OidcMockOptions options, TimeSpan lifetime) =>
-        response.Cookies.Append(Name, sessionId, new CookieOptions
+        response.Cookies.Append(Name, sessionId, BuildOptions(options, lifetime));
+
+    /// <summary>
+    /// El borrado declara las mismas opciones que la escritura, sobre todo el <c>path</c>: el
+    /// navegador empareja una cookie por (nombre, dominio, path), asi que borrar sin el <c>path</c> del
+    /// PathBase genera un Set-Cookie que no empareja con la cookie escrita y la sesion sobrevive al
+    /// logout en el navegador.
+    /// </summary>
+    public static void Clear(HttpResponse response, OidcMockOptions options) =>
+        response.Cookies.Delete(Name, BuildOptions(options, lifetime: null));
+
+    /// <summary>
+    /// Opciones de la cookie, unicas para escribir y borrar: cambiar solo una de las dos veces rompe el
+    /// emparejamiento por nombre+path que hace que el borrado sirva de algo.
+    /// </summary>
+    private static CookieOptions BuildOptions(OidcMockOptions options, TimeSpan? lifetime) =>
+        new()
         {
             Path = EndpointUri.NormalizePathBase(options.PathBase),
             HttpOnly = true,
             IsEssential = true,
             SameSite = SameSiteMode.Lax,
-            Expires = DateTimeOffset.UtcNow + lifetime
-        });
-
-    public static void Clear(HttpResponse response) =>
-        response.Cookies.Delete(Name);
+            // Sin caducidad el borrado no pone expires, y es CookieOptions.Delete quien escribe el
+            // expires en el pasado que hace que el navegador descarte la cookie.
+            Expires = lifetime is { } remaining ? DateTimeOffset.UtcNow + remaining : null
+        };
 }

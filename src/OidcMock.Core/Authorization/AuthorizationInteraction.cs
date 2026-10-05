@@ -34,9 +34,14 @@ public sealed class AuthorizationInteraction(IAuthSessionStore sessions) : IAuth
             return AuthorizationDecision.NeedsLogin();
         }
 
+        // prompt=select_account cae aqui y se concede en silencio con el usuario de la sesion.
+        // Es deliberado (D-043): el discovery anuncia el valor por paridad con el servidor real,
+        // pero el mock no tiene pantalla de eleccion de cuenta, asi que no puede hacer lo que el
+        // prompt promete. Reutilizar la pantalla de login daria al usuario una cuenta a elegir sin
+        // indicarle que el prompt no se esta honrando, que es peor que no implementarlo. Los tres
+        // tests SelectAccount* fijan este comportamiento para que cambiarlo sea deliberado.
         return authorization.Prompt == PromptValues.Consent
             ? AuthorizationDecision.NeedsConsent(session.UserName)
             : AuthorizationDecision.Grants(session.UserName);
     }
-
 }

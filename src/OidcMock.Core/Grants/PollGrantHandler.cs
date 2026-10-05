@@ -29,21 +29,21 @@ public abstract class PollGrantHandler(
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var found = pendingRequests.Find(HandleFrom(request));
+        var found = pendingRequests.Poll(HandleFrom(request));
         if (found.Failed)
         {
             // El handle de un flujo por sondeo es un device_code o un auth_req_id, nunca un codigo de
             // autorizacion: el mensaje forma parte de la superficie observable del mock y el cliente
             // lo muestra, asi que tiene que nombrar lo que el cliente realmente presento.
             return Result<TokenResponse>.Fail(ProtocolErrors.InvalidGrant(
-                "El handle es invalido o ya caduco."));
+                "El handle es invalido o ya fue canjeado."));
         }
 
         var pending = found.Value!;
-        var pollingError = PollError(pending);
-        if (pollingError is not null)
+        var lifecycleError = LifecycleError(pending);
+        if (lifecycleError is not null)
         {
-            return Result<TokenResponse>.Fail(pollingError);
+            return Result<TokenResponse>.Fail(lifecycleError);
         }
 
         if (!string.Equals(pending.ClientId, request.Client.ClientId, StringComparison.Ordinal))
@@ -68,7 +68,6 @@ public abstract class PollGrantHandler(
         return TokenResponseFactory.Issue(
             tokenFactory,
             refreshTokenStore,
-            timeProvider,
             request.Issuer,
             request.Client,
             user,
@@ -81,15 +80,31 @@ public abstract class PollGrantHandler(
     }
 
     /// <summary>
-    /// Respuesta al sondeo antes de que el usuario decida. Una peticion denegada se marca dejando el
-    /// subject vacio y el prompt en "deny", que es lo que el usuario eligio en la pantalla.
+    /// Los tres finales del ciclo de sondeo, en el orden en que se comprueban (RFC 8628 3.5). Cada uno
+    /// dice algo distinto al cliente: <c>expired_token</c> que pida un handle nuevo, <c>slow_down</c> que
+    /// espere el intervalo anunciado, y los dos ultimos si el usuario todavia no ha decidido.
     /// </summary>
-    private static ProtocolError? PollError(PendingAuthorizationRequest pending) =>
-        pending.Subject is not null
+    private ProtocolError? LifecycleError(PendingAuthorizationRequest pending)
+    {
+        var now = timeProvider.GetUtcNow();
+
+        if (pending.IsExpiredAt(now))
+        {
+            return ProtocolErrors.ExpiredToken("El handle caduco antes de que el usuario respondiera.");
+        }
+
+        // El intervalo se mira despues de la caducidad: un handle caducado ya no tiene a quien esperar.
+        if (pending.PolledTooSoonAt(now))
+        {
+            return ProtocolErrors.SlowDown("El cliente esta sondeando mas rapido que el intervalo anunciado.");
+        }
+
+        return pending.Subject is not null
             ? null
             : pending.Denied
                 ? ProtocolErrors.AccessDenied("El usuario denego la solicitud.")
                 : ProtocolErrors.AuthorizationPending("El usuario aun no ha aprobado la solicitud.");
+    }
 }
 
 /// <summary>

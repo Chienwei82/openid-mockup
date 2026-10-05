@@ -16,7 +16,7 @@ namespace OidcMock.Core.PushedRequests;
 public sealed class PushedAuthorizationService(
     IPendingAuthorizationStore pendingRequests,
     IAuthorizationRequestValidator validator,
-    IClientStore clientStore,
+    ClientAuthenticator clientAuthenticator,
     TimeProvider timeProvider) : IPushedAuthorizationService
 {
     private static readonly TimeSpan RequestUriLifetime = TimeSpan.FromMinutes(5);
@@ -25,7 +25,10 @@ public sealed class PushedAuthorizationService(
     {
         ArgumentNullException.ThrowIfNull(parameters);
 
-        if (!Authenticates(parameters, clientStore))
+        // Se autentica con el mismo ClientAuthenticator que el token endpoint: asi PAR acepta
+        // client_secret_basic y client_secret_post, y compara el secreto en tiempo constante.
+        var client = clientAuthenticator.Authenticate(parameters.Credentials);
+        if (client is null)
         {
             return Result<PushedAuthorizationResponse>.Fail(
                 ProtocolErrors.InvalidClient("Las credenciales del cliente no son validas."));
@@ -52,27 +55,9 @@ public sealed class PushedAuthorizationService(
             new PushedAuthorizationResponse(handle, (int)RequestUriLifetime.TotalSeconds));
     }
 
-    /// <summary>
-    /// PAR autentica al cliente igual que el token endpoint. Un cliente publico (sin secreto) es
-    /// valido: la proteccion la aporta el PKCE ya registrado.
-    /// </summary>
-    private static bool Authenticates(PushRequestParameters parameters, IClientStore clientStore)
-    {
-        if (string.IsNullOrEmpty(parameters.ClientId))
-        {
-            return false;
-        }
-
-        var client = clientStore.Find(parameters.ClientId);
-
-        return client is not null &&
-            (!client.RequireClientSecret ||
-                string.Equals(client.ClientSecret, parameters.ClientSecret, StringComparison.Ordinal));
-    }
-
     private static AuthorizationRequest ToAuthorizationRequest(PushRequestParameters parameters) =>
         new(
-            parameters.ClientId,
+            parameters.Credentials.ClientId ?? string.Empty,
             parameters.RedirectUri,
             parameters.ResponseType,
             ScopeNames.Split(parameters.Scope),

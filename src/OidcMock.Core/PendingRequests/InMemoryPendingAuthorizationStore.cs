@@ -52,6 +52,29 @@ public sealed class InMemoryPendingAuthorizationStore : IPendingAuthorizationSto
         return Result<PendingAuthorizationRequest>.Ok(request);
     }
 
+    public Result<PendingAuthorizationRequest> Poll(string handle)
+    {
+        var now = _timeProvider.GetUtcNow();
+
+        if (string.IsNullOrEmpty(handle) || !_requests.TryGetValue(handle, out var request))
+        {
+            return Result<PendingAuthorizationRequest>.Fail(ProtocolErrors.InvalidGrant(UnknownRequest));
+        }
+
+        // El caducado se devuelve antes de descartarlo, para que el sondeo pueda responder
+        // expired_token y no el invalid_grant de un handle que nunca existio.
+        if (request.IsExpiredAt(now))
+        {
+            _requests.TryRemove(handle, out _);
+
+            return Result<PendingAuthorizationRequest>.Ok(request);
+        }
+
+        _requests[handle] = request with { LastPolledAt = now };
+
+        return Result<PendingAuthorizationRequest>.Ok(request);
+    }
+
     /// <inheritdoc />
     public void Invalidate(string handle) => _requests.TryRemove(handle, out _);
 

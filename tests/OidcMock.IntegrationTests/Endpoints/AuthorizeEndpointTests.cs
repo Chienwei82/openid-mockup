@@ -74,6 +74,30 @@ public sealed class AuthorizeEndpointTests
         AssertRedirectsWith(response, "unsupported_response_type");
     }
 
+    /// <summary>
+    /// El discovery anuncia combinaciones que el mock no emite. Aceptarlas seria peor que
+    /// rechazarlas: el cliente pediria tokens en el fragmento y recibiria un code que no sabe
+    /// usar, sin ningun error que lo indique.
+    /// </summary>
+    [Theory]
+    [InlineData("id_token")]
+    [InlineData("token")]
+    [InlineData("id_token token")]
+    [InlineData("code id_token")]
+    [InlineData("code token")]
+    [InlineData("code id_token token")]
+    public async Task UnResponseTypeAnunciadoPeroNoEmitidoRedirigeConUnsupportedResponseType(string responseType)
+    {
+        using var client = Create();
+
+        using var response = await client.GetAsync(
+            AuthorizeUrl(responseType: responseType),
+            TestContext.Current.CancellationToken);
+
+        AssertRedirectsWith(response, "unsupported_response_type");
+        Assert.DoesNotContain("code=", response.Headers.Location!.ToString(), StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task UnScopeNoPermitidoParaElClienteRedirigeConInvalidScope()
     {

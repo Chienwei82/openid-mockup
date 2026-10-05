@@ -11,6 +11,7 @@ en memoria. Al reiniciar el proceso, se olvida todo.
 - .NET 10 / C# 14
 - Solo el framework + `Microsoft.IdentityModel.JsonWebTokens`
 - Sin dependencias de terceros en producción
+- **MIT**: úsalo, modifícalo y compártelo sin pedir permiso. Ver [`LICENSE`](LICENSE).
 
 ---
 
@@ -34,11 +35,11 @@ JWKS. Los secretos que hay en `config/` son de ejemplo y están pensados para es
 | `introspect` y `revocation` (RFC 7662 / 7009) | Implementado | Con autenticación de cliente |
 | `end_session` (RP-Initiated Logout) | Implementado | Valida `id_token_hint`, avisa por frontchannel logout |
 | Pushed Authorization Requests (RFC 9126) | Implementado | Se anuncia y **se resuelve**: `request_uri` reconstruye la petición |
-| Device Authorization Grant (RFC 8628) | **Simulado** | Emite `device_code`/`user_code` y responde `authorization_pending`, pero no hay pantalla de identificación |
-| CIBA | **Simulado** | Solo la API de *poll* del token endpoint; sin entrega push ni pantalla de aprobación |
+| Device Authorization Grant (RFC 8628) | **Simulado** | Emite `device_code`/`user_code` y responde `authorization_pending` / `slow_down` / `expired_token` según el RFC 8628 3.5, pero no hay pantalla de identificación |
+| CIBA | **Simulado** | Solo la API de *poll* del token endpoint, con el mismo ciclo de sondeo; sin entrega push ni pantalla de aprobación |
 | `check_session_iframe` | **Simulado** | Se sirve la página, no implementa OPiFrame (RFC 6614) |
-| Implicit (`response_type=id_token token`) | **Anunciado, no implementado** | El authorize lo rechaza; el discovery lo anuncia por paridad con el real |
-| `select_account` | **Anunciado, no implementado** | Se acepta el valor pero el flujo es el mismo que sin él |
+| Implicit (`response_type=id_token token`) | **Anunciado, no implementado** | El discovery lo declara por paridad con el real, pero el authorize responde `unsupported_response_type`: el mock solo emite `code` |
+| `select_account` | **Anunciado, no implementado** | Se acepta el valor pero el flujo es el mismo que sin él: concede con el usuario de la sesión. Ver D-043 |
 | `request` objects firmados, DPoP, mTLS (`ClientCertificate`) | **No implementado** | |
 | Frontchannel logout | Parcial | Se llama al `frontchannel_logout_uri`; no hay aviso de sesión de backchannel |
 | Multitenancy / usuarios reales | Fuera de alcance | Un solo conjunto de clientes, usuarios y scopes, el del `config/` |
@@ -111,11 +112,13 @@ docker run --rm -p 8080:8080 -v "$PWD/config:/app/config" oidcmock
 ### Publicación autocontenida
 
 ```bash
-./scripts/publish.sh
+./scripts/publish.py          # compila, pasa los tests y publica (lo hace todo)
 ```
 
 Deja un binario de un solo archivo, sin necesidad del runtime de .NET, en
-`artifacts/publish/linux-x64` y `artifacts/publish/win-x64`.
+`artifacts/publish/linux-x64` y `artifacts/publish/win-x64`. Si prefieres solo publicar, sin volver a
+probar, `./scripts/publish.py --skip-tests`; el script `scripts/publish.sh` sigue siendo la publicación
+a pelo, sin build ni tests.
 
 ### Entrar
 
@@ -356,7 +359,9 @@ tests/
   OidcMock.ClientCompatibilityTests/  Clientes reales de ASP.NET Core contra el mock sobre Kestrel.
 config/                Configuración por defecto (clientes, usuarios, scopes, clave de firma).
 docs/decisions.md      Historial de decisiones con su porqué.
-scripts/publish.sh     Publicación autocontenida de un solo archivo.
+scripts/publish.py      Compila, prueba y publica, con color y resumen por suite.
+scripts/publish.sh      Publicación autocontenida a pelo, sin build ni tests.
+scripts/test.sh         Build en Release y las tres suites.
 ```
 
 Las tres suites cubren cosas distintas: la unitaria prueba reglas de dominio, la de integración prueba
@@ -365,9 +370,31 @@ el HTTP del host, y la de compatibilidad usa `Microsoft.AspNetCore.Authenticatio
 el mock se aparta del protocolo en algo que un cliente real nota, lo detecta.
 
 ```bash
-dotnet build
-dotnet test
+# Build en Release y las tres suites: lo que hay que ejecutar antes de dar algo por terminado.
+./scripts/test.sh
 ```
+
+El script es el comando de referencia porque compila en **Release**, que es la configuración que se publica
+y donde los analizadores se portan distinto de `Debug`.
+
+### `scripts/publish.py`
+
+Hace los tres pasos de golpe —compilar, probar y publicar— con salida con color y un resumen por suite.
+Si algo falla, dice **qué** falló y enseña las líneas relevantes del log, no el volcado entero:
+
+```bash
+./scripts/publish.py                    # build + tests + publicación (linux-x64 y win-x64)
+./scripts/publish.py --skip-tests       # compilar y publicar sin probar
+./scripts/publish.py --skip-publish     # build y tests, sin publicar
+./scripts/publish.py --runtimes linux-x64
+./scripts/publish.py -c Debug
+```
+
+Los ejecutables quedan en `artifacts/publish/<runtime>/`, autocontenidos y de un solo archivo: no
+necesitan el runtime de .NET en la máquina de destino. Los logs de cada paso quedan en
+`artifacts/publish/logs/`.
+
+`artifacts/` y `publish/` están en `.gitignore`: son binarios generados y no van al repositorio.
 
 ---
 

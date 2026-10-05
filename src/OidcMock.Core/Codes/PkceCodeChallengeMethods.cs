@@ -7,4 +7,6 @@ public static class PkceCodeChallengeMethods
 {
     public const string Plain = "plain";
     public const string Sha256 = "S256";
+
+    public static readonly string[] Supported = [Plain, Sha256];
 }

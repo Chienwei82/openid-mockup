@@ -181,17 +181,11 @@ public sealed class TokenResponseFactoryTests : GrantHandlerTestBase
         _pending.Approve(issued.Handle, "jperez", "user-1", Now);
 
         var granted = await new DeviceCodeGrantHandler(_pending, UserStore, RefreshTokens, Tokens, Clock)
-            .HandleAsync(new TokenRequest(
+            .HandleAsync(TokenRequest.ForPoll(
                 Clients.Find(ClientStoreFixture.SpaClientId)!,
                 Issuer,
                 ["email"],
-                Code: null,
-                RedirectUri: null,
-                CodeVerifier: null,
-                RefreshToken: null,
-                UserName: null,
-                Password: null,
-                DeviceCode: issued.Handle));
+                issued.Handle));
 
         Assert.True(granted.Succeeded, granted.Error?.ToString());
         Assert.Null(granted.Value!.IdToken);
@@ -220,7 +214,6 @@ public sealed class TokenResponseFactoryTests : GrantHandlerTestBase
         TokenResponseFactory.Issue(
             Tokens,
             into ?? RefreshTokens,
-            Clock,
             Issuer,
             forClient ?? Clients.Find(ClientStoreFixture.SpaClientId)!,
             SampleUser(),

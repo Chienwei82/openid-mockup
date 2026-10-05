@@ -11,6 +11,4 @@ public sealed class GrantHandlerRegistry(IEnumerable<IGrantHandler> handlers)
 
     public IGrantHandler? Find(string grantType) =>
         _handlers.GetValueOrDefault(grantType ?? string.Empty);
-
-    public bool Supports(string grantType) => Find(grantType) is not null;
 }

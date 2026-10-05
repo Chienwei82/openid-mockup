@@ -10,6 +10,14 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <!--
+      Publicacion reproducible: sin esto el ensamblado lleva la ruta absoluta de la maquina que
+      compilo, y dos binarios del mismo commit salen distintos. PathMap la sustituye por la ruta
+      logica de /_/, que es la que ve el repositorio. Se activa solo con CI, para no ralentizar la
+      compilacion local.
+    -->
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <PathMap Condition="'$(CI)' == 'true'">$(MSBuildProjectDirectory)=/_/</PathMap>
   </PropertyGroup>
 
 </Project>

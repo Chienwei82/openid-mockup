@@ -100,14 +100,8 @@ public sealed class ClientCredentialsGrantHandlerTests : GrantHandlerTestBase
     }
 
     private async Task<Result<TokenResponse>> HandleAsync(Client? client = null, IReadOnlyList<string>? scopes = null) =>
-        await _handler.HandleAsync(new TokenRequest(
+        await _handler.HandleAsync(TokenRequest.ForClient(
             client ?? ClientStoreFixture.Service(),
             Issuer,
-            scopes ?? ["openid"],
-            null,
-            null,
-            null,
-            null,
-            null,
-            null));
+            scopes ?? ["openid"]));
 }

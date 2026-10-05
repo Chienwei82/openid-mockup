@@ -132,6 +132,44 @@ public sealed class CodeChallengeMethodValidatorTests
             _validator.Validate(Context(codeChallenge: null, codeChallengeMethod: PkceCodeChallengeMethods.Sha256))?.Code);
 }
 
+/// <summary>
+/// Regla: el response_type tiene que ser una combinacion que el endpoint de autorizacion sabe
+/// responder. El discovery anuncia mas combinaciones por paridad con el servidor real, asi que la
+/// lista de lo anunciado no puede ser la lista de lo aceptado: el authorize solo emite codigo, y
+/// prometer un token en el fragmento sin emitirlo deja al cliente con una respuesta inservible.
+/// </summary>
+public sealed class ResponseTypeValidatorTests
+{
+    private readonly ResponseTypeValidator _validator = new();
+
+    [Fact]
+    public void AceptaElFlowDeCodigo() => Assert.Null(_validator.Validate(Context()));
+
+    /// <summary>
+    /// Las combinaciones que el discovery anuncia y el endpoint no emite. Aceptarlas no es
+    /// "ser permisivo": es devolver un code donde el cliente pidio tokens, sin ningun error.
+    /// </summary>
+    [Theory]
+    [InlineData("token")]
+    [InlineData("id_token")]
+    [InlineData("id_token token")]
+    [InlineData("code id_token")]
+    [InlineData("code token")]
+    [InlineData("code id_token token")]
+    public void RechazaLasCombinacionesQueElDiscoveryAnunciaPeroElEndpointNoEmite(string responseType) =>
+        Assert.Equal(
+            "unsupported_response_type",
+            _validator.Validate(Context(responseType: responseType))?.Code);
+
+    [Fact]
+    public void RechazaUnResponseTypeInventado() =>
+        Assert.Equal("unsupported_response_type", _validator.Validate(Context(responseType: "code inventado"))?.Code);
+
+    [Fact]
+    public void SuErrorSeRedirigePorqueElRedirectUriYaEstaVerificado() =>
+        Assert.True(_validator.ErrorIsRedirectable);
+}
+
 /// <summary>Regla: el response_mode solo puede ser query, fragment o form_post.</summary>
 public sealed class ResponseModeValidatorTests
 {

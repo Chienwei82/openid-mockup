@@ -829,3 +829,260 @@ es el de la referencia y la limitacion esta escrita.
 
 Si algun dia se implementa, el orden seria: permitir varios usuarios por `client_id` en el store, y luego
 un selector en la pantalla de autorizacion que fije el `sub` de la sesion.
+
+## Etapa 14 (2026-10-05): deuda tecnica, cuatro bugs reales
+
+Revision de la deuda tecnica con dos agentes de analisis y verificacion manual de cada hallazgo antes de
+tocar nada. Todo lo de aqui son **bugs de protocolo o de seguridad**, no estilo. **637 tests** (419 unit +
+196 integration + 22 compat.).
+
+### D-037 — La cookie de sesion se borraba con un `path` distinto al de escritura
+
+**Bug.** `AuthSessionCookie.Write` emitia la cookie con `Path = /personafisica`; `Clear` la borraba con
+`response.Cookies.Delete(Name)`, que sale **sin atributo `path`**. El navegador empareja una cookie por
+(nombre, dominio, path), asi que el `Set-Cookie` de borrado no emparejaba con la cookie escrita: la sesion se
+cerraba en el servidor pero la credencial seguia en el navegador, en contra de lo que documenta
+`EndSessionEndpoints`.
+
+**Decision.** `Write` y `Clear` comparten una unica factoria de `CookieOptions`. No basta con "pasar el path
+bien": la pareja nombre+path es lo que empareja el borrado, y tocarlas por separado volveria a romperlo.
+
+**El test anterior pasaba en vacio.** `Assert.Contains("expires=")` se cumple tanto si el borrado acierta como
+si no. Ese es el detalle que dejo el bug vivo: un assert de cabecera tiene que comprobar el valor que
+importa, no la presencia de una palabra.
+
+### D-038 — El sondeo no implementaba `expired_token` ni `slow_down`
+
+**Bug.** `ProtocolErrors.ExpiredToken` y `SlowDown` estaban declarados y **no los usaba nadie**. Un
+`device_code` caducado respondia `invalid_grant`, que al cliente le dice "este handle no vale" cuando lo que
+paso es "este handle caduco, pide otro". Y el `interval` que anuncian `deviceauthorization` y CIBA no se
+cumplia.
+
+**Decision.** `IPendingAuthorizationStore` gana `Poll`, que separa los tres finales que `Find` mezclaba:
+desconocido (`invalid_grant`), caducado (`expired_token`) y vivo (el resto del ciclo). `Find` no puede
+servir para esto porque al encontrar un caducado lo descarta en el momento, y sin ese rastro el grant no
+tiene forma de nombrarlo.
+
+**El primer sondeo nunca es `slow_down`.** El cliente no puede respetar un intervalo que aun no conoce, asi
+que frenarlo en el primer intento lo deja sin poder avanzar. El intervalo es por handle: frena a quien sondea
+de mas, no a los demas flujos.
+
+### D-039 — PAR autentica al cliente con una comparacion propia
+
+**Bug.** `PushedAuthorizationService` leia `client_id` y `client_secret` **solo del cuerpo** y comparaba con
+`string.Equals`. Dos desviaciones: era la **unica** comparacion de secreto del repositorio que no pasaba por
+`ClientSecrets` (sin tiempo constante), y no aceptaba `client_secret_basic`, que el propio discovery anuncia:
+un cliente real que manda el secreto en el encabezado `Authorization` recibia `invalid_client`.
+
+**Decision.** `PushRequestParameters` lleva `ClientCredentials` ya resuelto; el endpoint lo lee con el mismo
+`ClientCredentialsReader` que el token endpoint (con la precedencia del encabezado de RFC 6749 2.3.1) y el
+servicio se autentica con el `ClientAuthenticator` de la DI. Se borra la cuarta copia de autenticacion de
+cliente del host.
+
+**Por que en el caso de uso y no en el endpoint.** El endpoint lee HTTP; el caso de uso decide. Duplicar la
+autenticacion en PAR es lo que produjo el bug, y la unica forma de que no vuelva es que no haya dos formas.
+
+### D-040 — `no-store` en un solo endpoint, y a mano
+
+**Bug.** `Cache-Control: no-store` lo ponia un unico metodo privado de `TokenEndpoints`. Lo demas devolvian
+material igual de sensible sin el: el `device_code` y el `user_code`, el `request_uri` de un solo uso, el
+estado de un token de terceros en introspection y los claims de una persona en userinfo.
+
+**Decision.** Filtro `NoStoreFilter` declarado al mapear el endpoint (`.DoNotStore()`), en vez de escribir la
+cabecera a mano en cada handler. El motivo no es solo DRY: escrito a mano, un endpoint nuevo **puede
+olvidarse**; declarado al mapear, hay que escribir la decision al anadirlo.
+
+**La lista de endpoints vive en el test** (`TheoryData`). Anadir uno obliga a decidir si lleva la cabecera,
+que es justo la pregunta que hay que hacer al anadir un endpoint.
+
+### Refactors de la misma etapa (sin cambio de comportamiento)
+
+Todo verificado con `grep` sobre `src` **y** `tests` antes de borrar:
+
+| Que | Por que se va |
+| --- | --- |
+| `PendingAuthorizationRequest.DeviceCode`, `.UserCode`, `.BindingMessage` | Se escribian y nadie los leia: el sondeo usa `Handle`. `BindingMessage` no tenia ni una referencia. |
+| `TokenResponseFactory.Issue(timeProvider, …)` | Solo aparecia en un `ThrowIfNull`. Al quitarlo, CS9113 senalo el mismo parametro muerto en `AuthorizationCodeGrantHandler`. |
+| `AuthorizationRule` (delegate) | Sin un solo uso. El fichero pasa a `AuthorizeRequestValidators.cs`, que es lo que declara. |
+| `GrantHandlerRegistry.Supports`, `User.HasClaim` | Sin llamadores. |
+| Listas literales del `DiscoveryDocumentBuilder` | Repetian como strings los grants, response types, modos, prompts y metodos de PKCE que ya viven como constantes. Un grant nuevo no se anunciaba y nada fallaba. |
+
+**Leccion sobre el compilador como detector de deuda:** con `TreatWarningsAsErrors`, quitar un parametro
+muerto **delata los demas**. CS9113 aparecio solo tras el primer borrado.
+
+### Lo que se decide no hacer
+
+- **Partir `TokenEndpoints`** (MEDIO de la etapa 12): sigue sin hacerse. Es correcto, pero es estructura sin
+  bug detras, y este trabajo se centro en lo que si cambia comportamiento observable.
+- **Flags posicionales de `TokenRequest`** (MEDIO de la etapa 12): sigue abierto. Ver D-024: `ScopesRequested`
+  protege un fallo silencioso real, asi que arreglarlo requiere un value object, no un cambio de firma.
+- **`prompt=select_account`**: fuera de alcance por decision previa (ver la seccion anterior).
+- **Paralelismo de las suites**: se mantiene el serializado. Con 637 tests y puertos Kestrel reservados por
+  test, paralelizar exige rehacer el arnes; el beneficio son ~10 s.
+
+### D-041 — Un comando para la regla 8, y build reproducible
+
+La regla 8 (build y test en verde) se cumplia con dos comandos a mano por proyecto. `scripts/test.sh` la
+cierra en uno y compila en **Release**, que es donde se publica y donde los analizadores se portan distinto
+de Debug.
+
+Dos cosas mas que salen de lo mismo:
+
+- **`global.json` fija el SDK.** Sin el flotaba con el instalado, y dos compilaciones del mismo commit podian
+  dar binarios distintos. `rollForward: latestFeature` deja avanzar de version sin romperse.
+- **`ContinuousIntegrationBuild` y `PathMap`** en el publish y el Dockerfile: sin ellos el ensamblado lleva
+  la ruta absoluta de la maquina que lo compilo. En `Directory.Build.props` se activan **solo con
+  `CI=true`**, para no ralentizar el build local.
+
+**D-011 queda obsoleto.** Decía que `dotnet test` a nivel de solucion abortaba en este entorno
+(`Internal CLR error 0x80131506`). Con .NET 10 y el runner de Testing Platform **funciona** (405 + 184 + 22
+en la comprobacion de esta etapa). Por eso `scripts/test.sh` invoca las tres suites por proyecto de forma
+explicita: no por el fallo, sino porque asi el script dice que corredor ejecuta cada suite.
+
+**Suprimido a proposito:** el paralelismo entre suites y el paquete de cobertura instrumentada siguen fuera
+(razones en la seccion anterior y en `progress.md` de la etapa 12).
+
+## Etapa 15: cierre de brechas
+
+### D-042 — Anunciar no es aceptar: dos listas de response_type
+
+**El bug.** `ResponseTypeValidator` validaba contra `ResponseTypeNames.SupportedCombinations`, que es
+la lista que el discovery **anuncia** por paridad con el BCCR, y no contra la que el endpoint sabe
+**responder**. Como el authorize solo emite codigo de autorizacion, `response_type=id_token token` pasaba
+la validacion, el usuario hacia login, y la respuesta era `code=...` en el fragmento: el cliente pedia
+tokens y recibia un codigo que no sabe usar, **sin ningun error**. Es peor que rechazar, porque nada
+le dice al cliente que fallo.
+
+**Por que nadie lo vio.** La regla no tenia test propio: `ResponseTypeValidator` solo aparecia dentro de
+dos cadenas de validacion, y ninguna pedia una combinacion implicita. Un test de paridad con el
+discovery habria dado el visto bueno, porque las dos listas coincidian. El propio
+`DiscoveryDocumentBuilderTests.LosValoresAnunciadosVienenDeLasConstantesDelDominio` afirmaba esa
+coincidencia como si fuera una propiedad deseable, y era justamente el bug.
+
+**La correccion.** Dos listas con dos nombres que dicen para que son, en `ResponseTypeNames`:
+
+- `EmittedByAuthorizationEndpoint` (`[code]`): lo que el authorize acepta y responde. La usa el validador.
+- `SupportedCombinations` (las 7): lo que el discovery declara. La usa el builder.
+
+Se elimino `Supported`, que era una tercera lista (`[code, token, id_token]`) **sin un solo uso** en `src`
+ni en `tests`: no la consumia ni el validador ni el discovery. Tres listas parcialmente solapadas era
+justo el terreno donde el bug se escondia.
+
+**Decision de alcance.** El discovery **sigue anunciando** las siete combinaciones. Anunciarlas es lo que
+permite que una aplicacion real valide la metadata al arrancar sin fallar, que es el objetivo del
+proyecto; implementarlas es D-019 y sigue fuera de alcance. Lo que cambia es que el endpoint ya no
+**acepta** lo que no puede **emitir**: la paridad se mantiene donde es inocua y se corrige donde miente.
+
+**El criterio, en una frase:** un cliente debe recibir un error honesto antes que una respuesta que no
+puede usar. Reimplementar el flow implicito (D-019) es lo que haria innecesario este rechazo; hasta
+entonces, `unsupported_response_type` es la respuesta correcta.
+
+**Cobertura.** 6 tests en rojo, uno por combinacion implicita, mas 6 de integracion por HTTP que
+comprueban ademas que la redireccion **no** lleva `code=`, y un test que ata que las dos listas sigan
+siendo distintas. Verificado revirtiendo el arreglo: 6 fallos.
+
+### D-043 — `select_account` se anuncia, se acepta y no se hace
+
+`prompt=select_account` aparece en `prompt_values_supported` porque el servidor real lo declara, y el
+validador lo acepta. Pero `AuthorizationInteraction.Decide` no tiene rama para el: cae en la final y
+concede en silencio con el usuario de la sesion. Sin sesion, pide login.
+
+**Por que no se implementa la pantalla de eleccion.** El mock tiene una pantalla de login con un
+`datalist` de `users.json`. Reutilizarla para `select_account` daria al usuario una lista de cuentas
+**sin indicarle que el prompt no se esta honrando**, y el resultado seria peor que no implementarlo:
+parece funcionar y no cumple lo que el cliente pidio. Es el mismo criterio de D-042, al reves: ahi se
+rechaza una peticion que no se puede cumplir; aqui se acepta una que se puede cumplir, pero de otra
+manera.
+
+**Decision.** Se deja como esta, documentado junto al codigo y fijados con tres tests: con sesion
+concede, sin sesion pide login, y el usuario concedido es el de la sesion. Un solo test
+(`SelectAccountSeTrataComoSinPrompt`) fijaba la mitad del comportamiento y dejaba la otra mitad libre.
+Ahora los tres casos estan escritos, de modo que **cambiarlo sea un acto deliberado y no un efecto
+colateral**. Si algun dia se implementa, el punto de entrada es `AuthorizationStep`, que ya distingue
+`Consent` de `Grant` y admite un paso mas sin tocar el endpoint.
+
+### D-044 — Las factorias de `TokenRequest` cierran D-024
+
+D-024 pidio un value object para los once parametros posicionales de `TokenRequest` y dejo constancia de
+que un simple cambio de firma no bastaba. La forma que se elige no es un value object sino **factorias
+con nombre** sobre el mismo record: `ForClient`, `ForAuthorizationCode`, `ForPassword`, `ForRefreshToken`
+y `ForPoll`. Se descarta el value object porque no hace falta un tipo nuevo para eliminar el error que
+D-024 describia.
+
+**El riesgo concreto.** Once parametros, nueve de ellos `string?` contiguos. Transponer `userName` y
+`password`, o `code` y `refreshToken`, **compila sin un solo aviso** y produce un fallo en tiempo de
+ejecucion, en el camino que autentica al usuario. El compilador no puede verlo porque los tipos son
+identicos; solo un test lo ve.
+
+**Por que factorias y no un record por grant.** Un `AuthorizationCodeRequest` y un `PasswordRequest`
+habrian hecho el constructor a prueba de transposiciones, pero cada grant con su tipo propio empuja el
+despacho de `TokenEndpointService` hacia un switch de tipos, y el dispatcher dejaria de ser "no conoce los
+detalles de ningun grant" (D-009). Las factorias conservan un unico record y un unico dispatcher: lo
+que cambian es **como se llama**, no quien decide.
+
+**La caracterizacion primero, y encontro algo.** `TokenRequestMappingTests` fija, campo por campo, que
+cada valor de `TokenEndpointRequest` cae en su slot, con un grant espia que captura la peticion. Al
+escribirlo aparecio una confusion mia sobre `ScopesRequested`: asumi que sin scopes la marca valia
+`true`. **No: vale `false`, y es lo correcto.** La marca significa "el cliente pidio un narrowing", no
+"el mock concedio algo"; darla por cierta haria que una peticion sin scope invalidara los scopes
+concedidos en lugar de conservarlos. El test quedo escrito con la semántica del codigo y su doc
+explica el porque, que es lo que evita que otro lo "arregle" en la direccion contraria.
+
+**Una construccion posicional sobrevive, a proposito.** `TokenEndpointService` es el unico sitio que
+mapea los once campos, y es precisamente el que la caracterizacion cubre. Ahi el constructor posicional
+es correcto porque el mapeo es el objeto del metodo, y el comentario lo dice para que no se lea como un
+olvido.
+
+**Nota sobre el filtro de tests.** Bajo Testing Platform, `dotnet test --filter` se ignora en silencio
+(avisa con `MTP0001` y ejecuta la suite entera). El filtro real es el nativo de xunit v3:
+`dotnet run --project tests/OidcMock.UnitTests -- -class "*NombreDeLaClase*"`. Un filtro que no filtra
+devuelve un verde que no es verde.
+
+## Etapa 16: licencia abierta y un solo comando para publicar
+
+### La licencia MIT ya estaba
+
+**No se anade nada.** `LICENSE` es MIT desde `e3fbfc6`, con copyright de Chienwei82. Se comprueba el
+contenido y se declara en el README, porque un proyecto que quiere quedar abierto comunica la licencia
+en la portada y no solo en un fichero que nadie mira. El texto de la licencia **no se modifica**: es el
+canonico de la FSF y reescribirlo para "dejarlo mas claro" lo dejaria de ser MIT.
+
+### `scripts/publish.py`: un comando para build, tests y publicacion
+
+Habia tres scripts que se invocaban por separado (`test.sh`, `publish.sh` y los comandos sueltos de
+`dotnet publish`). El flujo de "dejar esto listo para usar" es siempre el mismo, asi que se mete en uno.
+
+- **Es un wrapper, no una reimplementacion.** Sigue llamando a `dotnet build` y `dotnet publish`; no
+  reimplementa nada de MSBuild. El valor esta en la secuencia, el color y el diagnostico.
+- **No publica si el build falla o los tests estan en rojo.** Publicar con pruebas en rojo publicaria
+  algo que no se sabe que funciona, y el nombre del directorio (`artifacts/publish`) haria creer lo
+  contrario.
+- **El log de cada paso va a `artifacts/publish/logs/` y se imprime un resumen, no el volcado.** Un
+  fallo enseña las lineas con `: error ` o `[FAIL]`, que es lo que hace falta para diagnosticar.
+- **El resumen de tests se lee con expresion regular, no partiendo por comas.** El runner de Testing
+  Platform **colorea su salida con codigos ANSI**, asi que la linea llega sucia; la primera version
+  devolvia `? tests, ? fallos` porque `Total:` venia precedido de escapes. Se filtra tambien el aviso
+  `MTP0001`, que es ruido conocido (D-044).
+- **Se borra el directorio de salida antes de publicar.** Un publish parcial de una version anterior
+  dejaria binarios viejos junto a los nuevos, que es la forma clasica de distribuir de mas.
+- **Color con salida a TTY y respeta `NO_COLOR`.** A alguien que redirige la salida a un fichero no le
+  llegan secuencias de escape.
+- **`publish.sh` y `test.sh` se quedan.** El wrapper es lo que se usa a diario; los otros dos siguen
+  sirviendo para publish a pelo o para los tests sin publicar, y borrarlos seria quitar opciones.
+
+### La salida de publicacion nunca estuvo en git
+
+Se pidio sacar `publish/` del repositorio. **No hacia falta: `git log --all -- publish/` y
+`git log --all -- artifacts/` salen vacios**, es decir, nunca hubo nada que sacar. `artifacts/` ya
+estaba en `.gitignore` desde antes. Lo que si se hace es **blindarlo** para que no aparezca por
+costumbre: `publish/` y `__pycache__/` se anaden a `.gitignore`, y `publish` a `.dockerignore` para que
+una publicacion local no engorde el contexto de la imagen. El script avisa si encuentra un `publish/`
+en la raiz, porque ahi no es donde escribe.
+
+### Verificacion
+
+El binario publicado se arranco de verdad, no solo se compilo: `dotnet publish` en `linux-x64`, copia de
+`config/` a un directorio aparte (D-033: los JSON no viajan en la salida), arranque con
+`OidcMock__Serving__AllowHttp=true` y `HttpPort=5199`. Discovery 200, JWKS 200, y el bug de D-042
+verificado en el binario: `response_type=id_token token` responde 302 con
+`error=unsupported_response_type` al `redirect_uri` registrado.

@@ -117,6 +117,103 @@ public sealed class ClientAuthenticationEndpointTests
         Assert.Contains("client_secret_post", methods);
     }
 
+    /// El descubrimiento anuncia los dos metodos, asi que PAR, que tambien exige cliente autenticado,
+    /// tiene que aceptarlos igual que el token endpoint. Antes solo leia el cuerpo, asi que un cliente
+    /// de verdad, que manda <c>client_secret_basic</c> en el encabezado, se veia rechazado con
+    /// <c>invalid_client</c> contra un metodo que el propio mock anuncia.
+    /// </summary>
+    [Fact]
+    public async Task ParAceptaClientSecretBasicComoElTokenEndpoint()
+    {
+        using var client = Create();
+
+        using var response = await PostWithBasicAuthAsync(
+            client,
+            EndpointPaths.PushedAuthorizationRequest,
+            PushedRequestForm(),
+            ConfidentialClientId,
+            ConfidentialSecret);
+        var body = await ReadJsonAsync(response);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.False(string.IsNullOrWhiteSpace(body.RootElement.GetProperty("request_uri").GetString()));
+    }
+
+    [Fact]
+    public async Task ParRechazaElSecretoIncorrectoConInvalidClient()
+    {
+        using var client = Create();
+
+        using var response = await PostWithBasicAuthAsync(
+            client,
+            EndpointPaths.PushedAuthorizationRequest,
+            PushedRequestForm(),
+            ConfidentialClientId,
+            "secreto-incorrecto");
+        var body = await ReadJsonAsync(response);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal("invalid_client", body.RootElement.GetProperty("error").GetString());
+    }
+
+    /// RFC 6749 2.3.1, igual que en el token endpoint: si hay encabezado Basic, el <c>client_secret</c>
+    /// del cuerpo no autentica. Sin esta regla, un cuerpo con el secreto correcto se saltaria el Basic.
+    /// </summary>
+    [Fact]
+    public async Task EnParElEncabezadoBasicGanaAlClientSecretDelCuerpo()
+    {
+        using var client = Create();
+
+        var form = new Dictionary<string, string>(PushedRequestForm())
+        {
+            ["client_id"] = ConfidentialClientId,
+            ["client_secret"] = ConfidentialSecret
+        };
+
+        using var response = await PostWithBasicAuthAsync(
+            client,
+            EndpointPaths.PushedAuthorizationRequest,
+            form,
+            ConfidentialClientId,
+            "secreto-incorrecto");
+        var body = await ReadJsonAsync(response);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal("invalid_client", body.RootElement.GetProperty("error").GetString());
+    }
+
+    /// Un cliente publico se identifica solo por <c>client_id</c>, tambien en PAR: la proteccion la
+    /// aporta el PKCE ya registrado, no un secreto que no tiene.
+    /// </summary>
+    [Fact]
+    public async Task ParAceptaUnClientePublicoSinSecreto()
+    {
+        using var client = Create();
+
+        var form = new Dictionary<string, string>(PushedRequestForm())
+        {
+            ["client_id"] = ClientId,
+            ["redirect_uri"] = RedirectUri
+        };
+
+        using var response = await PostFormAsync(client, EndpointPaths.PushedAuthorizationRequest, form);
+        var body = await ReadJsonAsync(response);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.False(string.IsNullOrWhiteSpace(body.RootElement.GetProperty("request_uri").GetString()));
+    }
+
+    private static Dictionary<string, string> PushedRequestForm() =>
+        new()
+        {
+            ["client_id"] = ConfidentialClientId,
+            ["redirect_uri"] = RedirectUri,
+            ["response_type"] = "code",
+            ["scope"] = "openid",
+            ["code_challenge"] = CodeVerifier,
+            ["code_challenge_method"] = "plain"
+        };
+
     private static async Task<JsonDocument> ReadJsonAsync(HttpResponseMessage response) =>
         JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 }

@@ -1,5 +1,8 @@
+using OidcMock.Core.Authorization;
 using OidcMock.Core.Clients;
+using OidcMock.Core.Codes;
 using OidcMock.Core.Configuration;
+using OidcMock.Core.Grants;
 using OidcMock.Core.Scopes;
 
 namespace OidcMock.Core.Discovery;
@@ -10,33 +13,14 @@ namespace OidcMock.Core.Discovery;
 /// </summary>
 public sealed class DiscoveryDocumentBuilder(IScopeStore scopeStore, OidcMockOptions options, ClientAuthenticator clientAuthenticator)
 {
-    private static readonly string[] GrantTypes =
-    [
-        "authorization_code",
-        "client_credentials",
-        "refresh_token",
-        "implicit",
-        "password",
-        "urn:ietf:params:oauth:grant-type:device_code",
-        "urn:openid:params:grant-type:ciba"
-    ];
-
-    private static readonly string[] ResponseTypes =
-    [
-        "code",
-        "token",
-        "id_token",
-        "id_token token",
-        "code id_token",
-        "code token",
-        "code id_token token"
-    ];
-
-    private static readonly string[] ResponseModes = ["form_post", "query", "fragment"];
-
-    private static readonly string[] PromptValues = ["none", "login", "consent", "select_account"];
-
-    private static readonly string[] CodeChallengeMethods = ["plain", "S256"];
+    /// Los valores que el mock anuncia salen de las constantes del dominio (GrantTypes,
+    /// ResponseTypeNames, ResponseModes, PromptValues y PkceCodeChallengeMethods) y no de copias
+    /// literales de aqui: un grant o un prompt nuevo queda anunciado sin tocar el builder, y el
+    /// discovery no puede quedarse atras respecto a lo que el endpoint acepta.
+    ///
+    /// Los metodos de autenticacion vienen de los autenticadores registrados, por el mismo motivo.
+    /// </summary>
+    private IReadOnlyList<string> AuthMethods => clientAuthenticator.SupportedMethods;
 
     public DiscoveryDocument Build(string issuer)
     {
@@ -44,10 +28,6 @@ public sealed class DiscoveryDocumentBuilder(IScopeStore scopeStore, OidcMockOpt
 
         var normalizedIssuer = EndpointUri.NormalizeIssuer(issuer);
         var scopes = scopeStore.List();
-
-        // Los metodos de autenticacion se anuncian desde los autenticadores registrados, para que el
-        // discovery no pueda quedar por detras de lo que el token endpoint acepta de verdad.
-        IReadOnlyList<string> authMethods = clientAuthenticator.SupportedMethods;
 
         return new DiscoveryDocument
         {
@@ -66,16 +46,16 @@ public sealed class DiscoveryDocumentBuilder(IScopeStore scopeStore, OidcMockOpt
             RequirePushedAuthorizationRequests = false,
             ScopesSupported = [.. scopes.Select(scope => scope.Name)],
             ClaimsSupported = CollectClaims(scopes),
-            GrantTypesSupported = GrantTypes,
-            ResponseTypesSupported = ResponseTypes,
-            ResponseModesSupported = ResponseModes,
-            TokenEndpointAuthMethodsSupported = authMethods,
-            RevocationEndpointAuthMethodsSupported = authMethods,
-            IntrospectionEndpointAuthMethodsSupported = authMethods,
+            GrantTypesSupported = GrantTypes.Supported,
+            ResponseTypesSupported = ResponseTypeNames.SupportedCombinations,
+            ResponseModesSupported = ResponseModes.Supported,
+            TokenEndpointAuthMethodsSupported = AuthMethods,
+            RevocationEndpointAuthMethodsSupported = AuthMethods,
+            IntrospectionEndpointAuthMethodsSupported = AuthMethods,
             IdTokenSigningAlgValuesSupported = DiscoveryCapabilities.SigningAlgorithms,
             SubjectTypesSupported = DiscoveryCapabilities.SubjectTypes,
-            CodeChallengeMethodsSupported = CodeChallengeMethods,
-            PromptValuesSupported = PromptValues,
+            CodeChallengeMethodsSupported = PkceCodeChallengeMethods.Supported,
+            PromptValuesSupported = PromptValues.Supported,
             AuthorizationResponseIssParameterSupported = true,
             BackchannelTokenDeliveryModesSupported = DiscoveryCapabilities.BackchannelTokenDeliveryModes,
             BackchannelUserCodeParameterSupported = true,

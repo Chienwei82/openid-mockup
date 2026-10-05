@@ -13,8 +13,6 @@ public sealed record User(
 {
     public bool TryGetClaim(string claimName, out JsonElement value) => Claims.TryGetValue(claimName, out value);
 
-    public bool HasClaim(string claimName) => Claims.ContainsKey(claimName);
-
     public JsonElement GetClaim(string claimName) =>
         TryGetClaim(claimName, out var value)
             ? value

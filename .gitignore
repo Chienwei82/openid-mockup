@@ -2,10 +2,16 @@ bin/
 obj/
 .vs/
 .idea/
+__pycache__/
 *.user
 *.suo
 artifacts/
 TestResults/
+
+# Salida de publicacion. El script scripts/publish.py deja los ejecutables en
+# artifacts/publish/<runtime>/, que ya queda fuera con la linea anterior; esta cubre el
+# publish/ que alguien cree en la raiz por costumbre.
+publish/
 
 # Clave de firma generada en el primer arranque; no se versiona.
 config/signing-key.pem

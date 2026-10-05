@@ -19,6 +19,7 @@ RUN dotnet publish src/OidcMock.Host/OidcMock.Host.csproj \
     --runtime linux-x64 \
     --self-contained true \
     -p:PublishSingleFile=true \
+    -p:ContinuousIntegrationBuild=true \
     --no-restore \
     --output /published
 

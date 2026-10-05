@@ -73,6 +73,54 @@ public sealed class InMemoryPendingAuthorizationStoreTests
         Assert.Empty(_store.List());
     }
 
+    /// El store distingue el handle caducado del desconocido, que es lo que permite al sondeo responder
+    /// <c>expired_token</c> en vez de <c>invalid_grant</c>. Antes <see cref="Find"/> los trataba igual:
+    /// el caducado se descartaba en el momento y no quedaba rastro para el grant.
+    /// </summary>
+    [Fact]
+    public void PollDevuelveElCaducadoYLoDescarta()
+    {
+        Issue();
+        _clock.Advance(Lifetime + TimeSpan.FromSeconds(1));
+
+        var polled = _store.Poll("handle-1");
+
+        Assert.True(polled.Succeeded);
+        Assert.Empty(_store.List());
+    }
+
+    [Fact]
+    public void PollDeUnHandleDesconocidoFallaConInvalidGrant()
+    {
+        var polled = _store.Poll("inventado");
+
+        Assert.False(polled.Succeeded);
+        Assert.Equal("invalid_grant", polled.Error?.Code);
+    }
+
+    /// El sondeo no consume la peticion: preguntar dos veces tiene que devolverla las dos veces.
+    /// </summary>
+    [Fact]
+    public void PollNoConsumeLaPeticion()
+    {
+        Issue();
+
+        Assert.True(_store.Poll("handle-1").Succeeded);
+        Assert.True(_store.Poll("handle-1").Succeeded);
+    }
+
+    /// El intervalo se lleva por handle: el sondeo de uno deja al otro con su primer sondeo intacto.
+    /// </summary>
+    [Fact]
+    public void ElUltimoSondeoSeRegistraPorHandle()
+    {
+        Issue();
+        _store.Poll("handle-1");
+
+        Assert.True(_store.Find("handle-1").Value!.PolledTooSoonAt(Now));
+        Assert.False(_store.Find("handle-1").Value!.PolledTooSoonAt(Now + TimeSpan.FromSeconds(6)));
+    }
+
     [Fact]
     public void UnHandleDesconocidoNoSeEncuentra()
     {

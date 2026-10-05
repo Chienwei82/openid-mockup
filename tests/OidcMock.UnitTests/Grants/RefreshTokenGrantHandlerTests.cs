@@ -218,15 +218,10 @@ public sealed class RefreshTokenGrantHandlerTests : GrantHandlerTestBase
     private async Task<Result<TokenResponse>> HandleAsync(
         string token,
         IReadOnlyList<string>? requestedScopes = null) =>
-        await _handler.HandleAsync(new TokenRequest(
+        await _handler.HandleAsync(TokenRequest.ForRefreshToken(
             ClientStoreFixture.Spa(),
             Issuer,
             requestedScopes ?? [],
-            null,
-            null,
-            null,
             token,
-            null,
-            null,
-            ScopesRequested: requestedScopes is not null));
+            requestedScopes is not null));
 }
