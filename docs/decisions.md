@@ -1037,3 +1037,52 @@ olvido.
 (avisa con `MTP0001` y ejecuta la suite entera). El filtro real es el nativo de xunit v3:
 `dotnet run --project tests/OidcMock.UnitTests -- -class "*NombreDeLaClase*"`. Un filtro que no filtra
 devuelve un verde que no es verde.
+
+## Etapa 16: licencia abierta y un solo comando para publicar
+
+### La licencia MIT ya estaba
+
+**No se anade nada.** `LICENSE` es MIT desde `e3fbfc6`, con copyright de Chienwei82. Se comprueba el
+contenido y se declara en el README, porque un proyecto que quiere quedar abierto comunica la licencia
+en la portada y no solo en un fichero que nadie mira. El texto de la licencia **no se modifica**: es el
+canonico de la FSF y reescribirlo para "dejarlo mas claro" lo dejaria de ser MIT.
+
+### `scripts/publish.py`: un comando para build, tests y publicacion
+
+Habia tres scripts que se invocaban por separado (`test.sh`, `publish.sh` y los comandos sueltos de
+`dotnet publish`). El flujo de "dejar esto listo para usar" es siempre el mismo, asi que se mete en uno.
+
+- **Es un wrapper, no una reimplementacion.** Sigue llamando a `dotnet build` y `dotnet publish`; no
+  reimplementa nada de MSBuild. El valor esta en la secuencia, el color y el diagnostico.
+- **No publica si el build falla o los tests estan en rojo.** Publicar con pruebas en rojo publicaria
+  algo que no se sabe que funciona, y el nombre del directorio (`artifacts/publish`) haria creer lo
+  contrario.
+- **El log de cada paso va a `artifacts/publish/logs/` y se imprime un resumen, no el volcado.** Un
+  fallo enseña las lineas con `: error ` o `[FAIL]`, que es lo que hace falta para diagnosticar.
+- **El resumen de tests se lee con expresion regular, no partiendo por comas.** El runner de Testing
+  Platform **colorea su salida con codigos ANSI**, asi que la linea llega sucia; la primera version
+  devolvia `? tests, ? fallos` porque `Total:` venia precedido de escapes. Se filtra tambien el aviso
+  `MTP0001`, que es ruido conocido (D-044).
+- **Se borra el directorio de salida antes de publicar.** Un publish parcial de una version anterior
+  dejaria binarios viejos junto a los nuevos, que es la forma clasica de distribuir de mas.
+- **Color con salida a TTY y respeta `NO_COLOR`.** A alguien que redirige la salida a un fichero no le
+  llegan secuencias de escape.
+- **`publish.sh` y `test.sh` se quedan.** El wrapper es lo que se usa a diario; los otros dos siguen
+  sirviendo para publish a pelo o para los tests sin publicar, y borrarlos seria quitar opciones.
+
+### La salida de publicacion nunca estuvo en git
+
+Se pidio sacar `publish/` del repositorio. **No hacia falta: `git log --all -- publish/` y
+`git log --all -- artifacts/` salen vacios**, es decir, nunca hubo nada que sacar. `artifacts/` ya
+estaba en `.gitignore` desde antes. Lo que si se hace es **blindarlo** para que no aparezca por
+costumbre: `publish/` y `__pycache__/` se anaden a `.gitignore`, y `publish` a `.dockerignore` para que
+una publicacion local no engorde el contexto de la imagen. El script avisa si encuentra un `publish/`
+en la raiz, porque ahi no es donde escribe.
+
+### Verificacion
+
+El binario publicado se arranco de verdad, no solo se compilo: `dotnet publish` en `linux-x64`, copia de
+`config/` a un directorio aparte (D-033: los JSON no viajan en la salida), arranque con
+`OidcMock__Serving__AllowHttp=true` y `HttpPort=5199`. Discovery 200, JWKS 200, y el bug de D-042
+verificado en el binario: `response_type=id_token token` responde 302 con
+`error=unsupported_response_type` al `redirect_uri` registrado.
