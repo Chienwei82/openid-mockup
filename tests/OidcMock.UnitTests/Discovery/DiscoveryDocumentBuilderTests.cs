@@ -31,6 +31,22 @@ public sealed class DiscoveryDocumentBuilderTests
         Assert.Equal(PkceCodeChallengeMethods.Supported, document.CodeChallengeMethodsSupported);
     }
 
+    /// <summary>
+    /// Las dos listas tienen que seguir siendo distintas. El bug que corrigio D-042 fue usar la
+    /// lista de lo anunciado como lista de lo aceptado: si vuelven a ser la misma, el authorize
+    /// acepta combinaciones que no emite.
+    /// </summary>
+    [Fact]
+    public void AnunciarMasResponseTypesDeLosQueEmiteEsIntencionado()
+    {
+        Assert.Equal([ResponseTypeNames.Code], ResponseTypeNames.EmittedByAuthorizationEndpoint);
+        Assert.Contains(
+            ResponseTypeNames.Code,
+            ResponseTypeNames.SupportedCombinations);
+        Assert.True(
+            ResponseTypeNames.SupportedCombinations.Length > ResponseTypeNames.EmittedByAuthorizationEndpoint.Length);
+    }
+
     [Fact]
     public void LosNombresDeCampoSonUnSubconjuntoDelDiscoveryDeReferencia()
     {

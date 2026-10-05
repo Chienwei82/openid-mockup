@@ -941,3 +941,42 @@ explicita: no por el fallo, sino porque asi el script dice que corredor ejecuta 
 
 **Suprimido a proposito:** el paralelismo entre suites y el paquete de cobertura instrumentada siguen fuera
 (razones en la seccion anterior y en `progress.md` de la etapa 12).
+
+## Etapa 15: cierre de brechas
+
+### D-042 — Anunciar no es aceptar: dos listas de response_type
+
+**El bug.** `ResponseTypeValidator` validaba contra `ResponseTypeNames.SupportedCombinations`, que es
+la lista que el discovery **anuncia** por paridad con el BCCR, y no contra la que el endpoint sabe
+**responder**. Como el authorize solo emite codigo de autorizacion, `response_type=id_token token` pasaba
+la validacion, el usuario hacia login, y la respuesta era `code=...` en el fragmento: el cliente pedia
+tokens y recibia un codigo que no sabe usar, **sin ningun error**. Es peor que rechazar, porque nada
+le dice al cliente que fallo.
+
+**Por que nadie lo vio.** La regla no tenia test propio: `ResponseTypeValidator` solo aparecia dentro de
+dos cadenas de validacion, y ninguna pedia una combinacion implicita. Un test de paridad con el
+discovery habria dado el visto bueno, porque las dos listas coincidian. El propio
+`DiscoveryDocumentBuilderTests.LosValoresAnunciadosVienenDeLasConstantesDelDominio` afirmaba esa
+coincidencia como si fuera una propiedad deseable, y era justamente el bug.
+
+**La correccion.** Dos listas con dos nombres que dicen para que son, en `ResponseTypeNames`:
+
+- `EmittedByAuthorizationEndpoint` (`[code]`): lo que el authorize acepta y responde. La usa el validador.
+- `SupportedCombinations` (las 7): lo que el discovery declara. La usa el builder.
+
+Se elimino `Supported`, que era una tercera lista (`[code, token, id_token]`) **sin un solo uso** en `src`
+ni en `tests`: no la consumia ni el validador ni el discovery. Tres listas parcialmente solapadas era
+justo el terreno donde el bug se escondia.
+
+**Decision de alcance.** El discovery **sigue anunciando** las siete combinaciones. Anunciarlas es lo que
+permite que una aplicacion real valide la metadata al arrancar sin fallar, que es el objetivo del
+proyecto; implementarlas es D-019 y sigue fuera de alcance. Lo que cambia es que el endpoint ya no
+**acepta** lo que no puede **emitir**: la paridad se mantiene donde es inocua y se corrige donde miente.
+
+**El criterio, en una frase:** un cliente debe recibir un error honesto antes que una respuesta que no
+puede usar. Reimplementar el flow implicito (D-019) es lo que haria innecesario este rechazo; hasta
+entonces, `unsupported_response_type` es la respuesta correcta.
+
+**Cobertura.** 6 tests en rojo, uno por combinacion implicita, mas 6 de integracion por HTTP que
+comprueban ademas que la redireccion **no** lleva `code=`, y un test que ata que las dos listas sigan
+siendo distintas. Verificado revirtiendo el arreglo: 6 fallos.

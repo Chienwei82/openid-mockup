@@ -37,7 +37,7 @@ JWKS. Los secretos que hay en `config/` son de ejemplo y están pensados para es
 | Device Authorization Grant (RFC 8628) | **Simulado** | Emite `device_code`/`user_code` y responde `authorization_pending` / `slow_down` / `expired_token` según el RFC 8628 3.5, pero no hay pantalla de identificación |
 | CIBA | **Simulado** | Solo la API de *poll* del token endpoint, con el mismo ciclo de sondeo; sin entrega push ni pantalla de aprobación |
 | `check_session_iframe` | **Simulado** | Se sirve la página, no implementa OPiFrame (RFC 6614) |
-| Implicit (`response_type=id_token token`) | **Anunciado, no implementado** | El authorize lo rechaza; el discovery lo anuncia por paridad con el real |
+| Implicit (`response_type=id_token token`) | **Anunciado, no implementado** | El discovery lo declara por paridad con el real, pero el authorize responde `unsupported_response_type`: el mock solo emite `code` |
 | `select_account` | **Anunciado, no implementado** | Se acepta el valor pero el flujo es el mismo que sin él |
 | `request` objects firmados, DPoP, mTLS (`ClientCertificate`) | **No implementado** | |
 | Frontchannel logout | Parcial | Se llama al `frontchannel_logout_uri`; no hay aviso de sesión de backchannel |

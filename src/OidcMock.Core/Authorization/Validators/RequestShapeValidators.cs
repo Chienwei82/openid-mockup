@@ -2,7 +2,11 @@ using OidcMock.Core.Errors;
 
 namespace OidcMock.Core.Authorization.Validators;
 
-/// <summary>Regla: el response_type tiene que ser una combinacion que anuncia el discovery.</summary>
+/// <summary>
+/// Regla: el response_type tiene que ser una combinacion que el endpoint sepa responder.
+/// Valida contra <see cref="ResponseTypeNames.EmittedByAuthorizationEndpoint"/> y no contra la lista
+/// que anuncia el discovery: son dos listas distintas a proposito (D-042).
+/// </summary>
 public sealed class ResponseTypeValidator : IAuthorizeRequestValidator
 {
     public bool ErrorIsRedirectable => true;
@@ -11,7 +15,7 @@ public sealed class ResponseTypeValidator : IAuthorizeRequestValidator
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        return ResponseTypeNames.SupportedCombinations.Contains(
+        return ResponseTypeNames.EmittedByAuthorizationEndpoint.Contains(
             context.Request.ResponseType ?? string.Empty,
             StringComparer.Ordinal)
             ? null
