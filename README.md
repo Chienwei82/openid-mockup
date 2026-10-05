@@ -34,8 +34,8 @@ JWKS. Los secretos que hay en `config/` son de ejemplo y están pensados para es
 | `introspect` y `revocation` (RFC 7662 / 7009) | Implementado | Con autenticación de cliente |
 | `end_session` (RP-Initiated Logout) | Implementado | Valida `id_token_hint`, avisa por frontchannel logout |
 | Pushed Authorization Requests (RFC 9126) | Implementado | Se anuncia y **se resuelve**: `request_uri` reconstruye la petición |
-| Device Authorization Grant (RFC 8628) | **Simulado** | Emite `device_code`/`user_code` y responde `authorization_pending`, pero no hay pantalla de identificación |
-| CIBA | **Simulado** | Solo la API de *poll* del token endpoint; sin entrega push ni pantalla de aprobación |
+| Device Authorization Grant (RFC 8628) | **Simulado** | Emite `device_code`/`user_code` y responde `authorization_pending` / `slow_down` / `expired_token` según el RFC 8628 3.5, pero no hay pantalla de identificación |
+| CIBA | **Simulado** | Solo la API de *poll* del token endpoint, con el mismo ciclo de sondeo; sin entrega push ni pantalla de aprobación |
 | `check_session_iframe` | **Simulado** | Se sirve la página, no implementa OPiFrame (RFC 6614) |
 | Implicit (`response_type=id_token token`) | **Anunciado, no implementado** | El authorize lo rechaza; el discovery lo anuncia por paridad con el real |
 | `select_account` | **Anunciado, no implementado** | Se acepta el valor pero el flujo es el mismo que sin él |
@@ -365,9 +365,12 @@ el HTTP del host, y la de compatibilidad usa `Microsoft.AspNetCore.Authenticatio
 el mock se aparta del protocolo en algo que un cliente real nota, lo detecta.
 
 ```bash
-dotnet build
-dotnet test
+# Build en Release y las tres suites: lo que hay que ejecutar antes de dar algo por terminado.
+./scripts/test.sh
 ```
+
+El script es el comando de referencia porque compila en **Release**, que es la configuración que se publica
+y donde los analizadores se portan distinto de `Debug`.
 
 ---
 

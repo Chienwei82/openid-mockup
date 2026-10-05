@@ -829,3 +829,115 @@ es el de la referencia y la limitacion esta escrita.
 
 Si algun dia se implementa, el orden seria: permitir varios usuarios por `client_id` en el store, y luego
 un selector en la pantalla de autorizacion que fije el `sub` de la sesion.
+
+## Etapa 14 (2026-10-05): deuda tecnica, cuatro bugs reales
+
+Revision de la deuda tecnica con dos agentes de analisis y verificacion manual de cada hallazgo antes de
+tocar nada. Todo lo de aqui son **bugs de protocolo o de seguridad**, no estilo. **637 tests** (419 unit +
+196 integration + 22 compat.).
+
+### D-037 — La cookie de sesion se borraba con un `path` distinto al de escritura
+
+**Bug.** `AuthSessionCookie.Write` emitia la cookie con `Path = /personafisica`; `Clear` la borraba con
+`response.Cookies.Delete(Name)`, que sale **sin atributo `path`**. El navegador empareja una cookie por
+(nombre, dominio, path), asi que el `Set-Cookie` de borrado no emparejaba con la cookie escrita: la sesion se
+cerraba en el servidor pero la credencial seguia en el navegador, en contra de lo que documenta
+`EndSessionEndpoints`.
+
+**Decision.** `Write` y `Clear` comparten una unica factoria de `CookieOptions`. No basta con "pasar el path
+bien": la pareja nombre+path es lo que empareja el borrado, y tocarlas por separado volveria a romperlo.
+
+**El test anterior pasaba en vacio.** `Assert.Contains("expires=")` se cumple tanto si el borrado acierta como
+si no. Ese es el detalle que dejo el bug vivo: un assert de cabecera tiene que comprobar el valor que
+importa, no la presencia de una palabra.
+
+### D-038 — El sondeo no implementaba `expired_token` ni `slow_down`
+
+**Bug.** `ProtocolErrors.ExpiredToken` y `SlowDown` estaban declarados y **no los usaba nadie**. Un
+`device_code` caducado respondia `invalid_grant`, que al cliente le dice "este handle no vale" cuando lo que
+paso es "este handle caduco, pide otro". Y el `interval` que anuncian `deviceauthorization` y CIBA no se
+cumplia.
+
+**Decision.** `IPendingAuthorizationStore` gana `Poll`, que separa los tres finales que `Find` mezclaba:
+desconocido (`invalid_grant`), caducado (`expired_token`) y vivo (el resto del ciclo). `Find` no puede
+servir para esto porque al encontrar un caducado lo descarta en el momento, y sin ese rastro el grant no
+tiene forma de nombrarlo.
+
+**El primer sondeo nunca es `slow_down`.** El cliente no puede respetar un intervalo que aun no conoce, asi
+que frenarlo en el primer intento lo deja sin poder avanzar. El intervalo es por handle: frena a quien sondea
+de mas, no a los demas flujos.
+
+### D-039 — PAR autentica al cliente con una comparacion propia
+
+**Bug.** `PushedAuthorizationService` leia `client_id` y `client_secret` **solo del cuerpo** y comparaba con
+`string.Equals`. Dos desviaciones: era la **unica** comparacion de secreto del repositorio que no pasaba por
+`ClientSecrets` (sin tiempo constante), y no aceptaba `client_secret_basic`, que el propio discovery anuncia:
+un cliente real que manda el secreto en el encabezado `Authorization` recibia `invalid_client`.
+
+**Decision.** `PushRequestParameters` lleva `ClientCredentials` ya resuelto; el endpoint lo lee con el mismo
+`ClientCredentialsReader` que el token endpoint (con la precedencia del encabezado de RFC 6749 2.3.1) y el
+servicio se autentica con el `ClientAuthenticator` de la DI. Se borra la cuarta copia de autenticacion de
+cliente del host.
+
+**Por que en el caso de uso y no en el endpoint.** El endpoint lee HTTP; el caso de uso decide. Duplicar la
+autenticacion en PAR es lo que produjo el bug, y la unica forma de que no vuelva es que no haya dos formas.
+
+### D-040 — `no-store` en un solo endpoint, y a mano
+
+**Bug.** `Cache-Control: no-store` lo ponia un unico metodo privado de `TokenEndpoints`. Lo demas devolvian
+material igual de sensible sin el: el `device_code` y el `user_code`, el `request_uri` de un solo uso, el
+estado de un token de terceros en introspection y los claims de una persona en userinfo.
+
+**Decision.** Filtro `NoStoreFilter` declarado al mapear el endpoint (`.DoNotStore()`), en vez de escribir la
+cabecera a mano en cada handler. El motivo no es solo DRY: escrito a mano, un endpoint nuevo **puede
+olvidarse**; declarado al mapear, hay que escribir la decision al anadirlo.
+
+**La lista de endpoints vive en el test** (`TheoryData`). Anadir uno obliga a decidir si lleva la cabecera,
+que es justo la pregunta que hay que hacer al anadir un endpoint.
+
+### Refactors de la misma etapa (sin cambio de comportamiento)
+
+Todo verificado con `grep` sobre `src` **y** `tests` antes de borrar:
+
+| Que | Por que se va |
+| --- | --- |
+| `PendingAuthorizationRequest.DeviceCode`, `.UserCode`, `.BindingMessage` | Se escribian y nadie los leia: el sondeo usa `Handle`. `BindingMessage` no tenia ni una referencia. |
+| `TokenResponseFactory.Issue(timeProvider, …)` | Solo aparecia en un `ThrowIfNull`. Al quitarlo, CS9113 senalo el mismo parametro muerto en `AuthorizationCodeGrantHandler`. |
+| `AuthorizationRule` (delegate) | Sin un solo uso. El fichero pasa a `AuthorizeRequestValidators.cs`, que es lo que declara. |
+| `GrantHandlerRegistry.Supports`, `User.HasClaim` | Sin llamadores. |
+| Listas literales del `DiscoveryDocumentBuilder` | Repetian como strings los grants, response types, modos, prompts y metodos de PKCE que ya viven como constantes. Un grant nuevo no se anunciaba y nada fallaba. |
+
+**Leccion sobre el compilador como detector de deuda:** con `TreatWarningsAsErrors`, quitar un parametro
+muerto **delata los demas**. CS9113 aparecio solo tras el primer borrado.
+
+### Lo que se decide no hacer
+
+- **Partir `TokenEndpoints`** (MEDIO de la etapa 12): sigue sin hacerse. Es correcto, pero es estructura sin
+  bug detras, y este trabajo se centro en lo que si cambia comportamiento observable.
+- **Flags posicionales de `TokenRequest`** (MEDIO de la etapa 12): sigue abierto. Ver D-024: `ScopesRequested`
+  protege un fallo silencioso real, asi que arreglarlo requiere un value object, no un cambio de firma.
+- **`prompt=select_account`**: fuera de alcance por decision previa (ver la seccion anterior).
+- **Paralelismo de las suites**: se mantiene el serializado. Con 637 tests y puertos Kestrel reservados por
+  test, paralelizar exige rehacer el arnes; el beneficio son ~10 s.
+
+### D-041 — Un comando para la regla 8, y build reproducible
+
+La regla 8 (build y test en verde) se cumplia con dos comandos a mano por proyecto. `scripts/test.sh` la
+cierra en uno y compila en **Release**, que es donde se publica y donde los analizadores se portan distinto
+de Debug.
+
+Dos cosas mas que salen de lo mismo:
+
+- **`global.json` fija el SDK.** Sin el flotaba con el instalado, y dos compilaciones del mismo commit podian
+  dar binarios distintos. `rollForward: latestFeature` deja avanzar de version sin romperse.
+- **`ContinuousIntegrationBuild` y `PathMap`** en el publish y el Dockerfile: sin ellos el ensamblado lleva
+  la ruta absoluta de la maquina que lo compilo. En `Directory.Build.props` se activan **solo con
+  `CI=true`**, para no ralentizar el build local.
+
+**D-011 queda obsoleto.** Decía que `dotnet test` a nivel de solucion abortaba en este entorno
+(`Internal CLR error 0x80131506`). Con .NET 10 y el runner de Testing Platform **funciona** (405 + 184 + 22
+en la comprobacion de esta etapa). Por eso `scripts/test.sh` invoca las tres suites por proyecto de forma
+explicita: no por el fallo, sino porque asi el script dice que corredor ejecuta cada suite.
+
+**Suprimido a proposito:** el paralelismo entre suites y el paquete de cobertura instrumentada siguen fuera
+(razones en la seccion anterior y en `progress.md` de la etapa 12).
