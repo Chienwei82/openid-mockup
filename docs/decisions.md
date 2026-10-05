@@ -980,3 +980,23 @@ entonces, `unsupported_response_type` es la respuesta correcta.
 **Cobertura.** 6 tests en rojo, uno por combinacion implicita, mas 6 de integracion por HTTP que
 comprueban ademas que la redireccion **no** lleva `code=`, y un test que ata que las dos listas sigan
 siendo distintas. Verificado revirtiendo el arreglo: 6 fallos.
+
+### D-043 — `select_account` se anuncia, se acepta y no se hace
+
+`prompt=select_account` aparece en `prompt_values_supported` porque el servidor real lo declara, y el
+validador lo acepta. Pero `AuthorizationInteraction.Decide` no tiene rama para el: cae en la final y
+concede en silencio con el usuario de la sesion. Sin sesion, pide login.
+
+**Por que no se implementa la pantalla de eleccion.** El mock tiene una pantalla de login con un
+`datalist` de `users.json`. Reutilizarla para `select_account` daria al usuario una lista de cuentas
+**sin indicarle que el prompt no se esta honrando**, y el resultado seria peor que no implementarlo:
+parece funcionar y no cumple lo que el cliente pidio. Es el mismo criterio de D-042, al reves: ahi se
+rechaza una peticion que no se puede cumplir; aqui se acepta una que se puede cumplir, pero de otra
+manera.
+
+**Decision.** Se deja como esta, documentado junto al codigo y fijados con tres tests: con sesion
+concede, sin sesion pide login, y el usuario concedido es el de la sesion. Un solo test
+(`SelectAccountSeTrataComoSinPrompt`) fijaba la mitad del comportamiento y dejaba la otra mitad libre.
+Ahora los tres casos estan escritos, de modo que **cambiarlo sea un acto deliberado y no un efecto
+colateral**. Si algun dia se implementa, el punto de entrada es `AuthorizationStep`, que ya distingue
+`Consent` de `Grant` y admite un paso mas sin tocar el endpoint.

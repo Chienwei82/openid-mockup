@@ -38,7 +38,7 @@ JWKS. Los secretos que hay en `config/` son de ejemplo y están pensados para es
 | CIBA | **Simulado** | Solo la API de *poll* del token endpoint, con el mismo ciclo de sondeo; sin entrega push ni pantalla de aprobación |
 | `check_session_iframe` | **Simulado** | Se sirve la página, no implementa OPiFrame (RFC 6614) |
 | Implicit (`response_type=id_token token`) | **Anunciado, no implementado** | El discovery lo declara por paridad con el real, pero el authorize responde `unsupported_response_type`: el mock solo emite `code` |
-| `select_account` | **Anunciado, no implementado** | Se acepta el valor pero el flujo es el mismo que sin él |
+| `select_account` | **Anunciado, no implementado** | Se acepta el valor pero el flujo es el mismo que sin él: concede con el usuario de la sesión. Ver D-043 |
 | `request` objects firmados, DPoP, mTLS (`ClientCertificate`) | **No implementado** | |
 | Frontchannel logout | Parcial | Se llama al `frontchannel_logout_uri`; no hay aviso de sesión de backchannel |
 | Multitenancy / usuarios reales | Fuera de alcance | Un solo conjunto de clientes, usuarios y scopes, el del `config/` |

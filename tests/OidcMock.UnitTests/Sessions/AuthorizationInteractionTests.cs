@@ -70,9 +70,24 @@ public sealed class AuthorizationInteractionTests
     public void UnaSesionDesconocidaCuentaComoNoHaberSesion() =>
         Assert.Equal(AuthorizationStep.Login, Decide(sessionId: "sesion-inventada").Step);
 
+    /// <summary>
+    /// <c>select_account</c> se anuncia en el discovery por paridad con el servidor real, pero el
+    /// mock no implementa la eleccion de cuenta (D-043): el authorize se comporta como si el prompt
+    /// no fuera. Con sesion concede en silencio con el usuario de la sesion; sin sesion pide login.
+    /// El test fija ese comportamiento a proposito: es la decision de no implementar la
+    /// pantalla de eleccion, y cambiarlo tiene que ser un acto deliberado, no un efecto colateral.
+    /// </summary>
     [Fact]
     public void SelectAccountSeTrataComoSinPrompt() =>
         Assert.Equal(AuthorizationStep.Grant, Decide(sessionId: OpenSession(), prompt: PromptValues.SelectAccount).Step);
+
+    [Fact]
+    public void SelectAccountSinSesionPideLogin() =>
+        Assert.Equal(AuthorizationStep.Login, Decide(prompt: PromptValues.SelectAccount).Step);
+
+    [Fact]
+    public void SelectAccountConcedeConElUsuarioDeLaSesion() =>
+        Assert.Equal("jperez", Decide(sessionId: OpenSession(), prompt: PromptValues.SelectAccount).UserName);
 
     private AuthorizationDecision Decide(string? sessionId = null, string? prompt = null) =>
         _interaction.Decide(AuthorizationWith(prompt), sessionId);
