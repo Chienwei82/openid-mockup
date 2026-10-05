@@ -15,6 +15,8 @@ for runtime in linux-x64 win-x64; do
         --runtime "$runtime" \
         --self-contained true \
         -p:PublishSingleFile=true \
+        -p:ContinuousIntegrationBuild=true \
+        -p:PathMap="$root=/_/" \
         --output "$output"
 
     echo "publicado $runtime en $output"
