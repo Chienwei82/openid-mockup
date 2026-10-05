@@ -179,6 +179,30 @@ public sealed class EndSessionEndpointTests
         Assert.Contains("expires=", cookie, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// El borrado tiene que declarar el mismo <c>path</c> con el que se escribio la cookie. El
+    /// navegador empareja por (nombre, dominio, path): si el borrado sale sin <c>path</c>, se resuelve
+    /// al directorio de la URL de la peticion y no empareja con la cookie escrita bajo el PathBase, que
+    /// sobrevive al logout.
+    /// </summary>
+    [Fact]
+    public async Task ElEndSessionBorraLaCookieEnElMismoPathConElQueSeEscribio()
+    {
+        using var client = Create();
+        await SignInAsync(client);
+
+        using var written = await EndSessionAsync(client, HttpGet, new Dictionary<string, string>
+        {
+            ["client_id"] = ClientId
+        });
+
+        var cookie = Assert.Single(
+            written.Headers.GetValues("Set-Cookie"),
+            value => value.StartsWith(AuthSessionCookie.Name + "=", StringComparison.Ordinal));
+
+        Assert.Contains($"path={PathBase}", cookie, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static Task<HttpResponseMessage> EndSessionAsync(
         HttpClient client,
         string method,
