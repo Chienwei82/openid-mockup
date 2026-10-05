@@ -85,8 +85,14 @@ public sealed class PollGrantHandlerTests : GrantHandlerTestBase
     /// Un handle caducado no es un handle pendiente: el cliente tiene que dejar de preguntar y pedir uno
     /// nuevo, asi que responde <c>invalid_grant</c> y no <c>authorization_pending</c>.
     /// </summary>
+    /// <summary>
+    /// RFC 8628 3.5 distingue los dos finales del ciclo, y el cliente decide distinto: <c>expired_token</c>
+    /// le dice que pida un device_code nuevo, mientras que <c>invalid_grant</c> le dice que el handle se
+    /// consumio o nunca existio. Un caducado que responde <c>invalid_grant</c> obliga al cliente a
+    /// reiniciar el flujo a ciegas.
+    /// </summary>
     [Fact]
-    public async Task UnHandleCaducadoRespondeInvalidGrantYNoQuedaPendiente()
+    public async Task UnHandleCaducadoRespondeExpiredToken()
     {
         var issued = Issue("dc-5", lifetime: TimeSpan.FromMinutes(1));
         Clock.Advance(TimeSpan.FromMinutes(1) + TimeSpan.FromSeconds(1));
@@ -94,7 +100,86 @@ public sealed class PollGrantHandlerTests : GrantHandlerTestBase
         var result = await _deviceCodeGrant.HandleAsync(Poll(issued.Handle));
 
         Assert.False(result.Succeeded);
-        Assert.Equal("invalid_grant", result.Error?.Code);
+        Assert.Equal("expired_token", result.Error?.Code);
+    }
+
+    /// <summary>
+    /// Un handle caducado no vuelve a ser pendiente ni autorizable: se descarta igual que antes, para que
+    /// seguir sondeandolo no lo pueda resucitar.
+    /// </summary>
+    [Fact]
+    public async Task UnHandleCaducadoNoQuedaPendienteNiSePuedeAprobarDespues()
+    {
+        var issued = Issue("dc-5b", lifetime: TimeSpan.FromMinutes(1));
+        Clock.Advance(TimeSpan.FromMinutes(1) + TimeSpan.FromSeconds(1));
+
+        var polled = await _deviceCodeGrant.HandleAsync(Poll(issued.Handle));
+
+        Assert.Equal("expired_token", polled.Error?.Code);
+        Assert.False(_pending.Approve(issued.Handle, "jperez", "user-1", Now).Succeeded);
+    }
+
+    /// <summary>
+    /// RFC 8628 3.5: si el cliente vuelve a preguntar antes del intervalo anunciado, la respuesta es
+    /// <c>slow_down</c> y no <c>authorization_pending</c>. Con el mock de por medio no se distingue de un
+    /// sondeo correcto, asi que el intervalo solo existe como contrato.
+    /// </summary>
+    [Fact]
+    public async Task SondearDosVecesDentroDelIntervaloRespondeSlowDown()
+    {
+        var issued = Issue("dc-5c", interval: TimeSpan.FromSeconds(5));
+        await _deviceCodeGrant.HandleAsync(Poll(issued.Handle));
+
+        var second = await _deviceCodeGrant.HandleAsync(Poll(issued.Handle));
+
+        Assert.False(second.Succeeded);
+        Assert.Equal("slow_down", second.Error?.Code);
+    }
+
+    /// <summary>
+    /// El primer sondeo nunca se frena: el cliente no puede respetar un intervalo que todavia no conoce,
+    /// asi que el primer intento responde como el sondeo que es.
+    /// </summary>
+    [Fact]
+    public async Task ElPrimerSondeoNuncaRespondeSlowDown()
+    {
+        var issued = Issue("dc-5f", interval: TimeSpan.FromSeconds(5));
+
+        var first = await _deviceCodeGrant.HandleAsync(Poll(issued.Handle));
+
+        Assert.Equal("authorization_pending", first.Error?.Code);
+    }
+
+    /// <summary>
+    /// Pasado el intervalo, el sondeo vuelve a comportarse como toca: pendiente, y no un slow_down eterno.
+    /// </summary>
+    [Fact]
+    public async Task SondearPasadoElIntervaloVuelveAResponderAuthorizationPending()
+    {
+        var issued = Issue("dc-5d", interval: TimeSpan.FromSeconds(5));
+        await _deviceCodeGrant.HandleAsync(Poll(issued.Handle));
+        await _deviceCodeGrant.HandleAsync(Poll(issued.Handle));
+
+        Clock.Advance(TimeSpan.FromSeconds(6));
+        var third = await _deviceCodeGrant.HandleAsync(Poll(issued.Handle));
+
+        Assert.Equal("authorization_pending", third.Error?.Code);
+    }
+
+    /// <summary>
+    /// El <c>slow_down</c> es por handle, no global: el intervalo del device_code no frena a CIBA ni al
+    /// reves, y cada uno lleva la cuenta desde su primer sondeo.
+    /// </summary>
+    [Fact]
+    public async Task ElIntervaloEsPorHandleYNoGlobal()
+    {
+        var device = Issue("dc-5e", interval: TimeSpan.FromSeconds(5));
+        var ciba = Issue("ciba-5e", interval: TimeSpan.FromSeconds(5));
+
+        await _deviceCodeGrant.HandleAsync(Poll(device.Handle));
+        var cibaFirst = await _cibaGrant.HandleAsync(Poll(ciba.Handle));
+
+        Assert.Equal("authorization_pending", cibaFirst.Error?.Code);
     }
 
     [Fact]
@@ -174,17 +259,19 @@ public sealed class PollGrantHandlerTests : GrantHandlerTestBase
 
     /// <summary>
     /// CIBA recorre exactamente el mismo ciclo con el <c>auth_req_id</c> en lugar del
-    /// <c>device_code</c>: la base es compartida y esto confirma que no se ha colado una excepcion.
+    /// <c>device_code</c>: la base es compartida y esto confirma que no se ha colado una excepcion. Entre
+    /// los dos sondeos pasa el intervalo anunciado, porque sondear antes es <c>slow_down</c> en ambos.
     /// </summary>
     [Fact]
     public async Task CibaComparteElCicloDeSondeo()
     {
-        var issued = Issue("ciba-1");
+        var issued = Issue("ciba-1", interval: TimeSpan.FromSeconds(5));
         var pending = await _cibaGrant.HandleAsync(Poll(issued.Handle));
 
         Assert.Equal("authorization_pending", pending.Error?.Code);
 
         _pending.Approve(issued.Handle, "jperez", "user-1", Now);
+        Clock.Advance(TimeSpan.FromSeconds(6));
         var redeemed = await _cibaGrant.HandleAsync(Poll(issued.Handle));
 
         Assert.True(redeemed.Succeeded, redeemed.Error?.ToString());
@@ -203,14 +290,15 @@ public sealed class PollGrantHandlerTests : GrantHandlerTestBase
         string handle,
         string clientId = ClientStoreFixture.SpaClientId,
         IReadOnlyList<string>? scopes = null,
-        TimeSpan? lifetime = null) =>
+        TimeSpan? lifetime = null,
+        TimeSpan? interval = null) =>
         _pending.Issue(new PendingAuthorizationRequest(
             handle,
             clientId,
             scopes ?? ["openid", "email"],
             AuthorizationOf(clientId),
             Now + (lifetime ?? TimeSpan.FromMinutes(10)),
-            TimeSpan.FromSeconds(5)));
+            interval ?? TimeSpan.FromSeconds(5)));
 
     private ValidatedAuthorizationRequest AuthorizationOf(string clientId) =>
         new(
