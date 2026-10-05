@@ -12,6 +12,9 @@ public sealed class ClientStoreFixture
     public const string ServiceClientId = "backend-service";
     public const string ConfidentialWebClientId = "web-app-confidencial";
 
+    /// <summary>Secreto de <see cref="ConfidentialWeb"/>, el unico cliente de ejemplo con redireccion y secreto.</summary>
+    public const string ConfidentialWebSecret = "super-secreto-web";
+
     public static IClientStore Create() =>
         new InMemoryClientStore([Spa(), Service(), ConfidentialWeb()]);
 
@@ -23,7 +26,7 @@ public sealed class ClientStoreFixture
     /// </summary>
     public static Client ConfidentialWeb() => new(
         ConfidentialWebClientId,
-        "super-secreto-web",
+        ConfidentialWebSecret,
         ["https://localhost:5173/callback"],
         ["https://localhost:5173/"],
         ["authorization_code", "refresh_token"],

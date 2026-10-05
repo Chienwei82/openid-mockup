@@ -31,7 +31,14 @@ public sealed class PushedAuthorizationServiceTests
     {
         var clients = ClientStoreFixture.Create();
         _store = new InMemoryPendingAuthorizationStore(_clock);
-        _service = new PushedAuthorizationService(_store, ValidatorOver(clients), clients, _clock);
+
+        // El mismo autenticador que registra el host, con los dos metodos: una prueba que usara otro
+        // autenticaria a un cliente que el de verdad rechaza, o al reves.
+        _service = new PushedAuthorizationService(
+            _store,
+            ValidatorOver(clients),
+            ClientStoreFixture.AuthenticatorOver(clients),
+            _clock);
     }
 
     /// <summary>
@@ -232,6 +239,48 @@ public sealed class PushedAuthorizationServiceTests
         Assert.Equal("plain", found.Value!.CodeChallengeMethod);
     }
 
+    /// El secreto se compara en tiempo constante en todo el mock, y PAR no era la excepcion: su
+    /// autenticacion era una comparacion propia con string.Equals, la unica del repositorio que no
+    /// pasaba por ClientSecrets. Ahora usa el ClientAuthenticator del token endpoint, asi que un cliente
+    /// con el secreto correcto entra por cualquier metodo y uno equivocado no entra por ninguno.
+    /// </summary>
+    [Theory]
+    [InlineData(ClientAuthenticationMethods.ClientSecretPost)]
+    [InlineData(ClientAuthenticationMethods.ClientSecretBasic)]
+    public void AceptaElSecretoCorrectoPorLosDosMetodos(string method)
+    {
+        var pushed = _service.Push(ValidParameters(
+            clientId: ClientStoreFixture.ConfidentialWebClientId,
+            clientSecret: ClientStoreFixture.ConfidentialWebSecret,
+            method: method));
+
+        Assert.True(pushed.Succeeded, pushed.Error?.ToString());
+    }
+
+    [Fact]
+    public void RechazaElSecretoIncorrectoPorClientSecretBasic()
+    {
+        var pushed = _service.Push(ValidParameters(
+            clientId: ClientStoreFixture.ConfidentialWebClientId,
+            clientSecret: "no-es-el-secreto",
+            method: ClientAuthenticationMethods.ClientSecretBasic));
+
+        Assert.False(pushed.Succeeded);
+        Assert.Equal("invalid_client", pushed.Error?.Code);
+    }
+
+    [Fact]
+    public void RechazaUnClienteConfidencialSinSecreto()
+    {
+        var pushed = _service.Push(ValidParameters(
+            clientId: ClientStoreFixture.ConfidentialWebClientId,
+            clientSecret: null,
+            method: ClientAuthenticationMethods.ClientSecretBasic));
+
+        Assert.False(pushed.Succeeded);
+        Assert.Equal("invalid_client", pushed.Error?.Code);
+    }
+
     private static PushRequestParameters ValidParameters(
         string clientId = ClientStoreFixture.SpaClientId,
         string? clientSecret = null,
@@ -240,10 +289,10 @@ public sealed class PushedAuthorizationServiceTests
         string? state = null,
         string? nonce = null,
         string? codeChallenge = CodeChallenge,
-        string? codeChallengeMethod = PkceCodeChallengeMethods.Sha256) =>
+        string? codeChallengeMethod = PkceCodeChallengeMethods.Sha256,
+        string method = ClientAuthenticationMethods.ClientSecretPost) =>
         new(
-            clientId,
-            clientSecret,
+            new ClientCredentials(method, clientId, clientSecret),
             redirectUri,
             ResponseTypeNames.Code,
             scope,

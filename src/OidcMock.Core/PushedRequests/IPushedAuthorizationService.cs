@@ -1,4 +1,5 @@
 using OidcMock.Core.Authorization;
+using OidcMock.Core.Clients;
 using OidcMock.Core.Errors;
 
 namespace OidcMock.Core.PushedRequests;
@@ -38,10 +39,12 @@ public sealed record PushedAuthorizationResponse(
 
 /// <summary>
 /// Parametros de la peticion de autorizacion en su forma de texto plano, tal como llega en PAR.
+/// <paramref name="Credentials"/> lleva el metodo de autenticacion ya resuelto, igual que en el token
+/// endpoint: el endpoint decide si las credenciales vinieron en el encabezado o en el cuerpo, y el caso
+/// de uso no vuelve a mirar el request HTTP.
 /// </summary>
 public sealed record PushRequestParameters(
-    string? ClientId,
-    string? ClientSecret,
+    ClientCredentials Credentials,
     string? RedirectUri,
     string? ResponseType,
     string? Scope,
