@@ -215,14 +215,11 @@ public sealed class AuthorizationCodeGrantHandlerTests : GrantHandlerTestBase
         string codeValue = "codigo-inventado",
         string? redirectUri = null,
         string? codeVerifier = null) =>
-        await _handler.HandleAsync(new TokenRequest(
+        await _handler.HandleAsync(TokenRequest.ForAuthorizationCode(
             ClientStoreFixture.Spa(),
             Issuer,
             ["openid", "email"],
             code?.Code ?? codeValue,
             redirectUri ?? RedirectUri,
-            codeVerifier,
-            null,
-            null,
-            null));
+            codeVerifier));
 }

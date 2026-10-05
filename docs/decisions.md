@@ -1000,3 +1000,40 @@ concede, sin sesion pide login, y el usuario concedido es el de la sesion. Un so
 Ahora los tres casos estan escritos, de modo que **cambiarlo sea un acto deliberado y no un efecto
 colateral**. Si algun dia se implementa, el punto de entrada es `AuthorizationStep`, que ya distingue
 `Consent` de `Grant` y admite un paso mas sin tocar el endpoint.
+
+### D-044 — Las factorias de `TokenRequest` cierran D-024
+
+D-024 pidio un value object para los once parametros posicionales de `TokenRequest` y dejo constancia de
+que un simple cambio de firma no bastaba. La forma que se elige no es un value object sino **factorias
+con nombre** sobre el mismo record: `ForClient`, `ForAuthorizationCode`, `ForPassword`, `ForRefreshToken`
+y `ForPoll`. Se descarta el value object porque no hace falta un tipo nuevo para eliminar el error que
+D-024 describia.
+
+**El riesgo concreto.** Once parametros, nueve de ellos `string?` contiguos. Transponer `userName` y
+`password`, o `code` y `refreshToken`, **compila sin un solo aviso** y produce un fallo en tiempo de
+ejecucion, en el camino que autentica al usuario. El compilador no puede verlo porque los tipos son
+identicos; solo un test lo ve.
+
+**Por que factorias y no un record por grant.** Un `AuthorizationCodeRequest` y un `PasswordRequest`
+habrian hecho el constructor a prueba de transposiciones, pero cada grant con su tipo propio empuja el
+despacho de `TokenEndpointService` hacia un switch de tipos, y el dispatcher dejaria de ser "no conoce los
+detalles de ningun grant" (D-009). Las factorias conservan un unico record y un unico dispatcher: lo
+que cambian es **como se llama**, no quien decide.
+
+**La caracterizacion primero, y encontro algo.** `TokenRequestMappingTests` fija, campo por campo, que
+cada valor de `TokenEndpointRequest` cae en su slot, con un grant espia que captura la peticion. Al
+escribirlo aparecio una confusion mia sobre `ScopesRequested`: asumi que sin scopes la marca valia
+`true`. **No: vale `false`, y es lo correcto.** La marca significa "el cliente pidio un narrowing", no
+"el mock concedio algo"; darla por cierta haria que una peticion sin scope invalidara los scopes
+concedidos en lugar de conservarlos. El test quedo escrito con la semántica del codigo y su doc
+explica el porque, que es lo que evita que otro lo "arregle" en la direccion contraria.
+
+**Una construccion posicional sobrevive, a proposito.** `TokenEndpointService` es el unico sitio que
+mapea los once campos, y es precisamente el que la caracterizacion cubre. Ahi el constructor posicional
+es correcto porque el mapeo es el objeto del metodo, y el comentario lo dice para que no se lea como un
+olvido.
+
+**Nota sobre el filtro de tests.** Bajo Testing Platform, `dotnet test --filter` se ignora en silencio
+(avisa con `MTP0001` y ejecuta la suite entera). El filtro real es el nativo de xunit v3:
+`dotnet run --project tests/OidcMock.UnitTests -- -class "*NombreDeLaClase*"`. Un filtro que no filtra
+devuelve un verde que no es verde.

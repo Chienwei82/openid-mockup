@@ -6,6 +6,9 @@ using OidcMock.UnitTests.Grants;
 
 namespace OidcMock.UnitTests.Grants;
 
+/// <summary>
+/// Autenticacion del cliente, despacho por grant y validacion de scopes del token endpoint.
+/// </summary>
 public sealed class TokenEndpointServiceTests : GrantHandlerTestBase
 {
     private readonly TokenEndpointService _service;

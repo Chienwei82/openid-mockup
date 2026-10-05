@@ -46,6 +46,9 @@ public sealed class TokenEndpointService(
                 ProtocolErrors.InvalidScope("Uno de los scopes solicitados no esta permitido para el cliente."));
         }
 
+        // Unica construccion posicional de TokenRequest que sobrevive, y es a proposito: el servicio
+        // mapea los once campos uno a uno, que es justo lo que fijan los tests de TokenRequestMapping.
+        // En cualquier otro sitio el constructor posicional es un riesgo (D-044) y se usan las factorias.
         return await handler.HandleAsync(new TokenRequest(
             client,
             issuer,

@@ -51,14 +51,10 @@ public sealed class PasswordGrantHandlerTests : GrantHandlerTestBase
     }
 
     private async Task<Result<TokenResponse>> HandleAsync(string? userName, string? password) =>
-        await _handler.HandleAsync(new TokenRequest(
+        await _handler.HandleAsync(TokenRequest.ForPassword(
             ClientStoreFixture.Service(),
             Issuer,
             ["openid"],
-            null,
-            null,
-            null,
-            null,
             userName,
             password));
 }
