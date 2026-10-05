@@ -17,8 +17,8 @@ public static class PollEndpoints
         var options = endpoints.ServiceProvider.GetRequiredService<OidcMockOptions>();
         var group = endpoints.MapGroup(EndpointUri.NormalizePathBase(options.PathBase));
 
-        group.MapPost(EndpointPaths.DeviceAuthorization, StartDeviceAuthorization);
-        group.MapPost(EndpointPaths.Ciba, StartCiba);
+        group.MapPost(EndpointPaths.DeviceAuthorization, StartDeviceAuthorization).DoNotStore();
+        group.MapPost(EndpointPaths.Ciba, StartCiba).DoNotStore();
         group.MapGet(
             EndpointPaths.CheckSession,
             () => Results.Content(CheckSessionPage.Body, "text/html; charset=utf-8"));

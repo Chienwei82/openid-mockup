@@ -17,7 +17,7 @@ public static class PushedRequestEndpoints
         var options = endpoints.ServiceProvider.GetRequiredService<OidcMockOptions>();
         var group = endpoints.MapGroup(EndpointUri.NormalizePathBase(options.PathBase));
 
-        group.MapPost(EndpointPaths.PushedAuthorizationRequest, Push);
+        group.MapPost(EndpointPaths.PushedAuthorizationRequest, Push).DoNotStore();
 
         return endpoints;
     }

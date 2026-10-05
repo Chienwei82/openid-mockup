@@ -119,7 +119,7 @@ public sealed class ClientAuthenticationEndpointTests
 
     /// El descubrimiento anuncia los dos metodos, asi que PAR, que tambien exige cliente autenticado,
     /// tiene que aceptarlos igual que el token endpoint. Antes solo leia el cuerpo, asi que un cliente
-    /// de verdad, que manda <c>client_secret_basic</c> en el encabezado, seenia rechazado con
+    /// de verdad, que manda <c>client_secret_basic</c> en el encabezado, se veia rechazado con
     /// <c>invalid_client</c> contra un metodo que el propio mock anuncia.
     /// </summary>
     [Fact]

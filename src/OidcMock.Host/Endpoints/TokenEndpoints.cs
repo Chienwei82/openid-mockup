@@ -40,11 +40,11 @@ public static class TokenEndpoints
 
         // El token endpoint y el userinfo los consume una SPA; introspect y revocation son de
         // backends que no hacen preflight, asi que no se exponen a otros origenes.
-        group.MapPost(EndpointPaths.Token, IssueToken).RequireCors(browser);
-        group.MapGet(EndpointPaths.UserInfo, DescribeUserInfo).RequireCors(browser);
-        group.MapPost(EndpointPaths.UserInfo, DescribeUserInfo).RequireCors(browser);
-        group.MapPost(EndpointPaths.Introspection, Introspect);
-        group.MapPost(EndpointPaths.Revocation, Revoke);
+        group.MapPost(EndpointPaths.Token, IssueToken).RequireCors(browser).DoNotStore();
+        group.MapGet(EndpointPaths.UserInfo, DescribeUserInfo).RequireCors(browser).DoNotStore();
+        group.MapPost(EndpointPaths.UserInfo, DescribeUserInfo).RequireCors(browser).DoNotStore();
+        group.MapPost(EndpointPaths.Introspection, Introspect).DoNotStore();
+        group.MapPost(EndpointPaths.Revocation, Revoke).DoNotStore();
 
         return endpoints;
     }
@@ -65,8 +65,8 @@ public static class TokenEndpoints
         LogOutcome(logger, request, result);
 
         return result.Succeeded
-            ? TokenResponseWithoutCaching(context, Results.Json(result.Value, TokenResponse.SerializerOptions))
-            : TokenResponseWithoutCaching(context, ErrorResponse(result.Error!));
+            ? Results.Json(result.Value, TokenResponse.SerializerOptions)
+            : ErrorResponse(result.Error!);
     }
 
     /// <summary>
@@ -95,20 +95,6 @@ public static class TokenEndpoints
             result.Error!.Code,
             request.Credentials.ClientId ?? "(sin client_id)",
             request.Credentials.Method);
-    }
-
-    /// <summary>
-    /// Ninguna respuesta del token endpoint se guarda en cache: RFC 6749 5.1 lo exige para el access
-    /// token, el id_token y el refresh_token. El error tambien, para que un 401 por secreto
-    /// equivocado no quede cacheado por un proxy. Pragma: no-cache es el equivalente para los caches
-    /// HTTP/1.0.
-    /// </summary>
-    private static IResult TokenResponseWithoutCaching(HttpContext context, IResult result)
-    {
-        context.Response.Headers.CacheControl = "no-store, no-cache";
-        context.Response.Headers.Pragma = "no-cache";
-
-        return result;
     }
 
     /// <summary>
