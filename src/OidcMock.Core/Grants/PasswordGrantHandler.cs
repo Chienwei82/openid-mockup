@@ -41,7 +41,6 @@ public sealed class PasswordGrantHandler(
         return TokenResponseFactory.Issue(
             tokenFactory,
             refreshTokenStore,
-            timeProvider,
             request.Issuer,
             request.Client,
             user,

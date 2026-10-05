@@ -1,6 +1,9 @@
 using System.Text.Json;
+using OidcMock.Core.Authorization;
+using OidcMock.Core.Codes;
 using OidcMock.Core.Configuration;
 using OidcMock.Core.Discovery;
+using OidcMock.Core.Grants;
 using OidcMock.Core.Scopes;
 using OidcMock.UnitTests.Fixtures;
 
@@ -10,6 +13,23 @@ public sealed class DiscoveryDocumentBuilderTests
 {
     private const string Issuer = "http://localhost:5000/personafisica/";
     private const string ReferenceIssuer = "https://oauth2.bccr.fi.cr/personafisica/";
+
+    /// <summary>
+    /// El discovery se arma con listas literales dentro del propio builder, que se pueden quedar atras
+    /// sin que nada falle: registrar un grant nuevo no lo anuncia y nadie se entera hasta que un
+    /// cliente real lo echa de menos. Este test ata cada lista a la constante del dominio que la define.
+    /// </summary>
+    [Fact]
+    public void LosValoresAnunciadosVienenDeLasConstantesDelDominio()
+    {
+        var document = BuildDocument();
+
+        Assert.Equal(GrantTypes.Supported, document.GrantTypesSupported);
+        Assert.Equal(ResponseTypeNames.SupportedCombinations, document.ResponseTypesSupported);
+        Assert.Equal(ResponseModes.Supported, document.ResponseModesSupported);
+        Assert.Equal(PromptValues.Supported, document.PromptValuesSupported);
+        Assert.Equal(PkceCodeChallengeMethods.Supported, document.CodeChallengeMethodsSupported);
+    }
 
     [Fact]
     public void LosNombresDeCampoSonUnSubconjuntoDelDiscoveryDeReferencia()

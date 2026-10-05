@@ -220,7 +220,6 @@ public sealed class TokenResponseFactoryTests : GrantHandlerTestBase
         TokenResponseFactory.Issue(
             Tokens,
             into ?? RefreshTokens,
-            Clock,
             Issuer,
             forClient ?? Clients.Find(ClientStoreFixture.SpaClientId)!,
             SampleUser(),

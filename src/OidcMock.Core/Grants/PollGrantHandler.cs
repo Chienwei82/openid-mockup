@@ -68,7 +68,6 @@ public abstract class PollGrantHandler(
         return TokenResponseFactory.Issue(
             tokenFactory,
             refreshTokenStore,
-            timeProvider,
             request.Issuer,
             request.Client,
             user,

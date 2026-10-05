@@ -13,10 +13,7 @@ public sealed record PendingAuthorizationRequest(
     IReadOnlyList<string> Scopes,
     ValidatedAuthorizationRequest Authorization,
     DateTimeOffset ExpiresAt,
-    TimeSpan Interval,
-    string? DeviceCode = null,
-    string? UserCode = null,
-    string? BindingMessage = null)
+    TimeSpan Interval)
 {
     public bool IsExpiredAt(DateTimeOffset instant) => instant >= ExpiresAt;
 

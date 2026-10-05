@@ -15,8 +15,7 @@ public sealed class AuthorizationCodeGrantHandler(
     ICodeStore codeStore,
     IRefreshTokenStore refreshTokenStore,
     IUserStore userStore,
-    ITokenFactory tokenFactory,
-    TimeProvider timeProvider) : IGrantHandler
+    ITokenFactory tokenFactory) : IGrantHandler
 {
     private const string InvalidCode =
         "El codigo de autorizacion es invalido, ya fue usado, caduco o no corresponde a esta peticion.";
@@ -59,7 +58,6 @@ public sealed class AuthorizationCodeGrantHandler(
         return TokenResponseFactory.Issue(
             tokenFactory,
             refreshTokenStore,
-            timeProvider,
             request.Issuer,
             request.Client,
             user,

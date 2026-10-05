@@ -16,7 +16,6 @@ public static class TokenResponseFactory
     public static Result<TokenResponse> Issue(
         ITokenFactory tokenFactory,
         IRefreshTokenStore refreshTokenStore,
-        TimeProvider timeProvider,
         string issuer,
         Client client,
         User user,
@@ -30,7 +29,6 @@ public static class TokenResponseFactory
     {
         ArgumentNullException.ThrowIfNull(tokenFactory);
         ArgumentNullException.ThrowIfNull(refreshTokenStore);
-        ArgumentNullException.ThrowIfNull(timeProvider);
         ArgumentNullException.ThrowIfNull(client);
         ArgumentNullException.ThrowIfNull(user);
         ArgumentNullException.ThrowIfNull(scopes);

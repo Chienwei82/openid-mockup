@@ -13,7 +13,7 @@ public sealed class AuthorizationCodeGrantHandlerTests : GrantHandlerTestBase
     private readonly AuthorizationCodeGrantHandler _handler;
 
     public AuthorizationCodeGrantHandlerTests() =>
-        _handler = new AuthorizationCodeGrantHandler(CodeStore, RefreshTokens, UserStore, Tokens, Clock);
+        _handler = new AuthorizationCodeGrantHandler(CodeStore, RefreshTokens, UserStore, Tokens);
 
     [Fact]
     public async Task CanjeaUnCodigoValidoYEmiteTokens()

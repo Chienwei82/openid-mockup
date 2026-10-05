@@ -37,9 +37,3 @@ public interface IAuthorizationRequestValidator
 {
     AuthorizationValidationResult Validate(AuthorizationRequest request);
 }
-
-/// <summary>
-/// Una regla de validacion de la peticion de autorizacion: devuelve el error que impide continuar, o
-/// null si la peticion cumple la regla. Permite encadenar reglas sin condicionales anidados.
-/// </summary>
-public delegate ProtocolError? AuthorizationRule(Client client, AuthorizationRequest request);

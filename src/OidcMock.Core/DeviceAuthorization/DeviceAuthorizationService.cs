@@ -56,9 +56,7 @@ public sealed class PollAuthorizationService(
             scopes,
             AuthorizationWithoutRedirect(client, scopes),
             issued + DeviceCodeLifetime,
-            TimeSpan.FromSeconds(DefaultIntervalInSeconds),
-            deviceCode,
-            userCode));
+            TimeSpan.FromSeconds(DefaultIntervalInSeconds)));
 
         return Result<DeviceAuthorizationResponse>.Ok(new DeviceAuthorizationResponse(
             deviceCode,
