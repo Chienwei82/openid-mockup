@@ -36,6 +36,12 @@ public static class HostConfigDirectory
     /// </summary>
     public const string IssuerSettingName = "OidcMock:Issuer";
 
+    /// <summary>
+    /// Clave de configuracion de la URL publica del mock (p. ej. https://miserver/oidc). Fija el
+    /// PathBase y el issuer a la vez; manda sobre PathBase e Issuer.
+    /// </summary>
+    public const string BaseUrlSettingName = "OidcMock:BaseUrl";
+
     public static string Resolve(IHostEnvironment environment)
     {
         ArgumentNullException.ThrowIfNull(environment);

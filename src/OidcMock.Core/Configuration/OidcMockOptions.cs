@@ -34,6 +34,26 @@ public sealed class OidcMockOptions
     public string? Issuer { get; init; }
 
     /// <summary>
+    /// URL publica donde se hospeda el mock, por ejemplo <c>https://miserver/oidc</c> cuando se
+    /// publica en IIS bajo una ruta relativa. Fija a la vez el prefijo de rutas (su path) y el emisor
+    /// anunciado (la URL entera). Cuando esta presente manda sobre <see cref="PathBase"/> e
+    /// <see cref="Issuer"/>: se usa una opcion u otra, no ambas.
+    /// </summary>
+    public string? BaseUrl { get; init; }
+
+    /// <summary>
+    /// Prefijo de rutas efectivo: el path de <see cref="BaseUrl"/> si esta configurado, y si no
+    /// <see cref="PathBase"/>. Es el que se le pasa a <c>UsePathBase</c>.
+    /// </summary>
+    public string EffectivePathBase => BaseUrl is null ? PathBase : new Uri(BaseUrl).AbsolutePath;
+
+    /// <summary>
+    /// Emisor efectivo: <see cref="BaseUrl"/> si esta (manda), y si no <see cref="Issuer"/>. Null
+    /// significa "deducirlo del host de la peticion".
+    /// </summary>
+    public string? EffectiveIssuer => BaseUrl ?? Issuer;
+
+    /// <summary>
     /// Vigencia de la sesion de login que recuerda el authorize entre peticiones. Es larga a
     /// proposito: en un mock de desarrollo interesa no reescribir la contrasena cada vez.
     /// </summary>
