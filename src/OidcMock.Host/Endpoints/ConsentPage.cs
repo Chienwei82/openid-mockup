@@ -26,20 +26,7 @@ public static class ConsentPage
               <meta charset="utf-8" />
               <meta name="viewport" content="width=device-width, initial-scale=1" />
               <title>{{Escape(branding.DisplayName)}}</title>
-              <style>
-                :root { --primary: {{Escape(branding.PrimaryColor ?? "#00695C")}}; }
-                body { font-family: system-ui, sans-serif; background: #f4f5f7; margin: 0; padding: 3rem 1rem; }
-                .card { max-width: 26rem; margin: 0 auto; background: #fff; border-radius: 12px; padding: 2rem;
-                        box-shadow: 0 1px 3px rgba(0,0,0,.16); }
-                header { border-bottom: 4px solid var(--primary); margin: -2rem -2rem 1.5rem; padding: 1.25rem 2rem; }
-                h1 { font-size: 1.1rem; margin: 0; color: var(--primary); }
-                .mock { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; color: #6b7280; }
-                ul { padding-left: 1.1rem; font-size: .9rem; }
-                .actions { display: flex; gap: .75rem; margin-top: 1.5rem; }
-                button { flex: 1; padding: .65rem; border: 0; border-radius: 6px; font-size: .95rem; cursor: pointer; }
-                .accept { background: var(--primary); color: #fff; }
-                .deny { background: #e5e7eb; color: #374151; }
-              </style>
+              {{MockStyles.Render(branding.PrimaryColor)}}
             </head>
             <body>
               <div class="card">
