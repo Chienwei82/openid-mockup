@@ -83,7 +83,6 @@ public sealed class AuthorizeEndpointTests
     [InlineData("id_token")]
     [InlineData("token")]
     [InlineData("id_token token")]
-    [InlineData("code id_token")]
     [InlineData("code token")]
     [InlineData("code id_token token")]
     public async Task UnResponseTypeAnunciadoPeroNoEmitidoRedirigeConUnsupportedResponseType(string responseType)

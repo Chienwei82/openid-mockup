@@ -15,6 +15,23 @@ public static class AuthorizationResponder
             parameters["code"] = granted.Code.Code);
 
     /// <summary>
+    /// Respuesta del flujo hibrido: el code, el id_token y el session_state salen juntos en el
+    /// mismo modo de respuesta, que para este flujo es el fragmento si la peticion no dice otra cosa.
+    /// </summary>
+    public static IResult RedirectWithHybrid(
+        AuthorizationGranted granted,
+        string idToken,
+        string sessionState,
+        string responseMode,
+        string issuer) =>
+        BuildResponse(granted.Code.RedirectUri ?? string.Empty, granted.Code.State, responseMode, issuer, parameters =>
+        {
+            parameters["code"] = granted.Code.Code;
+            parameters["id_token"] = idToken;
+            parameters["session_state"] = sessionState;
+        });
+
+    /// <summary>
     /// Los errores viajan por el redirect_uri solo cuando este ya se valido (CanRedirect). Si el
     /// client_id o el redirect_uri no son validos se responde en el endpoint, para no mandar a la
     /// aplicacion a una URL que el mock no ha verificado.

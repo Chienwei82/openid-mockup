@@ -10,6 +10,13 @@ public static class ResponseModes
     public const string FormPost = "form_post";
 
     public static readonly string[] Supported = [Query, Fragment, FormPost];
+
+    /// <summary>
+    /// response_mode por defecto cuando la peticion no lo declara (Multi Response Type Encoding 3):
+    /// el codigo viaja en el query string; cualquier respuesta que lleve tokens, en el fragmento.
+    /// </summary>
+    public static string DefaultFor(string? responseType) =>
+        string.Equals(responseType, ResponseTypeNames.Code, StringComparison.Ordinal) ? Query : Fragment;
 }
 
 /// <summary>

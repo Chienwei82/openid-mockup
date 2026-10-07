@@ -10,14 +10,18 @@ public static class ResponseTypeNames
     public const string Token = "token";
     public const string IdToken = "id_token";
 
+    /// <summary>Flujo hibrido: el code viaja en el fragmento junto al id_token y el session_state.</summary>
+    public static readonly string CodeIdToken = $"{Code} {IdToken}";
+
     /// <summary>
-    /// Combinaciones que el endpoint de autorizacion del mock acepta y responde. El mock solo
-    /// emite codigo de autorizacion (D-019), asi que el unico flow completo es <c>code</c>.
-    /// Deliberadamente no incluye las combinaciones que declaran tokens en el fragmento: aceptarlas
-    /// sin emitirlos devolveria al cliente un <c>code</c> donde pidio tokens, sin ningun error que
-    /// lo explicara, que es peor que un <c>unsupported_response_type</c> honesto.
+    /// Combinaciones que el endpoint de autorizacion del mock acepta y responde: el code del flujo
+    /// de autorizacion y el flujo hibrido <c>code id_token</c>, que es el que pide el cliente real
+    /// contra el que se valida el mock. Deliberadamente no incluye las combinaciones que declaran
+    /// un access token en el fragmento: aceptarlas sin emitirlo devolveria al cliente una respuesta
+    /// donde pidio un token y no llega, sin ningun error que lo explicara, que es peor que un
+    /// <c>unsupported_response_type</c> honesto.
     /// </summary>
-    public static readonly string[] EmittedByAuthorizationEndpoint = [Code];
+    public static readonly string[] EmittedByAuthorizationEndpoint = [Code, CodeIdToken];
 
     /// <summary>
     /// Combinaciones validas que anuncia el discovery por paridad con el servidor real, que las

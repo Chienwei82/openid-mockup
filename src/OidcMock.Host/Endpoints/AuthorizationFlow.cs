@@ -1,8 +1,10 @@
 using OidcMock.Core.Authorization;
 using OidcMock.Core.Configuration;
+using OidcMock.Core.Codes;
 using OidcMock.Core.Discovery;
 using OidcMock.Core.Errors;
 using OidcMock.Core.PushedRequests;
+using OidcMock.Core.Tokens;
 using OidcMock.Core.Users;
 
 namespace OidcMock.Host.Endpoints;
@@ -19,10 +21,12 @@ internal sealed class AuthorizationFlow(
     IAuthorizationInteraction interaction,
     IUserStore users,
     IAuthSessionStore sessions,
+    ITokenFactory tokens,
     DiscoveryDocumentBuilder discovery,
     OidcMockOptions options)
 {
     private const string ExpiredSessionDescription = "La sesion del navegador caduco antes de consenting.";
+    private const string MissingUserDescription = "El usuario de la sesion ya no existe en el mock.";
 
     public async Task<IResult> ShowAsync()
     {
@@ -144,13 +148,61 @@ internal sealed class AuthorizationFlow(
         }
 
         return granted.Succeeded
-            ? AuthorizationResponder.RedirectWithCode(granted.Value!, authorized.ResponseMode, Issuer)
+            ? RespondGranted(granted.Value!, authorized, userName)
             : RespondToError(
                 AuthorizationValidationResult.Failed(
                     granted.Error!,
                     authorized.RedirectUri,
                     authorized.State),
                 authorized.ResponseMode);
+    }
+
+    /// <summary>
+    /// Elige la respuesta segun el response_type: el flujo de codigo devuelve solo el code, y el
+    /// hibrido emite ademas el id_token (con c_hash del code) y el session_state, como el servidor
+    /// real al que sustituye este mock.
+    /// </summary>
+    private IResult RespondGranted(
+        AuthorizationGranted granted,
+        ValidatedAuthorizationRequest authorized,
+        string userName) =>
+        authorized.ResponseType == ResponseTypeNames.CodeIdToken
+            ? RespondHybrid(granted, authorized, userName)
+            : AuthorizationResponder.RedirectWithCode(granted, authorized.ResponseMode, Issuer);
+
+    private IResult RespondHybrid(
+        AuthorizationGranted granted,
+        ValidatedAuthorizationRequest authorized,
+        string userName)
+    {
+        var user = users.FindByUserName(userName);
+
+        if (user is null)
+        {
+            return RespondToError(
+                AuthorizationValidationResult.Failed(
+                    AuthorizationErrors.AccessDenied(MissingUserDescription),
+                    authorized.RedirectUri,
+                    authorized.State),
+                authorized.ResponseMode);
+        }
+
+        var idToken = tokens.CreateIdToken(new IdTokenRequest(
+            Issuer,
+            authorized.Client.ClientId,
+            authorized.Scopes,
+            user,
+            granted.Code.AuthenticatedAt,
+            authorized.Client.TokenLifetimes.IdentityToken,
+            authorized.Nonce,
+            AuthorizationCode: granted.Code.Code));
+
+        return AuthorizationResponder.RedirectWithHybrid(
+            granted,
+            idToken,
+            SessionStateValue.New(),
+            authorized.ResponseMode,
+            Issuer);
     }
 
     /// <summary>

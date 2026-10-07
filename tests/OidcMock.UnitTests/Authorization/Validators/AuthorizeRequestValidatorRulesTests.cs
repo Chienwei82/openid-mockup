@@ -162,7 +162,6 @@ public sealed class ResponseTypeValidatorTests
     [InlineData("token")]
     [InlineData("id_token")]
     [InlineData("id_token token")]
-    [InlineData("code id_token")]
     [InlineData("code token")]
     [InlineData("code id_token token")]
     public void RechazaLasCombinacionesQueElDiscoveryAnunciaPeroElEndpointNoEmite(string responseType) =>
