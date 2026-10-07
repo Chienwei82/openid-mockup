@@ -51,6 +51,39 @@ public sealed class OidcMockOptionsValidatorTests
     }
 
     [Fact]
+    public void AceptaUnBaseUrlAbsolutoHttp()
+    {
+        var errors = OidcMockOptionsValidator.Validate(new OidcMockOptions { BaseUrl = "https://miserver/oidc" });
+
+        Assert.Empty(errors);
+    }
+
+    [Theory]
+    [InlineData("no-es-una-url")]
+    [InlineData("ftp://miserver/oidc")]
+    [InlineData("https://miserver/oidc?x=1")]
+    public void RechazaUnBaseUrlQueNoEsUnaUrlHttpSinQueryNiFragmento(string baseUrl)
+    {
+        var errors = OidcMockOptionsValidator.Validate(new OidcMockOptions { BaseUrl = baseUrl });
+
+        Assert.Contains(errors, error => error.Setting == "OidcMock:BaseUrl");
+    }
+
+    [Fact]
+    public void RechazaBaseUrlJuntoConIssuerPorqueBaseUrlYaFijaElEmisor()
+    {
+        var options = new OidcMockOptions
+        {
+            BaseUrl = "https://miserver/oidc",
+            Issuer = "https://otro.example/oidc"
+        };
+
+        var errors = OidcMockOptionsValidator.Validate(options);
+
+        Assert.Contains(errors, error => error.Setting == "OidcMock:BaseUrl");
+    }
+
+    [Fact]
     public void RechazaUnaVigenciaDeSesionNoPositiva()
     {
         var errors = OidcMockOptionsValidator.Validate(new OidcMockOptions { SessionLifetime = TimeSpan.Zero });
@@ -158,6 +191,32 @@ public sealed class OidcMockOptionsTests
     [Fact]
     public void SinIssuerConfiguradoElDocumentoUsaElHostDeLaPeticion() =>
         Assert.Null(new OidcMockOptions().Issuer);
+
+    [Fact]
+    public void ElBaseUrlFijaElPathBaseYElEmisor()
+    {
+        var options = new OidcMockOptions { BaseUrl = "https://miserver/oidc" };
+
+        Assert.Equal("/oidc", EndpointUri.NormalizePathBase(options.EffectivePathBase));
+        Assert.Equal("https://miserver/oidc", options.EffectiveIssuer);
+    }
+
+    [Fact]
+    public void ElBaseUrlMandaSobreElPathBase()
+    {
+        var options = new OidcMockOptions { BaseUrl = "https://miserver/openid", PathBase = "/personafisica" };
+
+        Assert.Equal("/openid", EndpointUri.NormalizePathBase(options.EffectivePathBase));
+    }
+
+    [Fact]
+    public void SinBaseUrlSeMantienenElPathBaseYElEmisorDeSiempre()
+    {
+        var options = new OidcMockOptions { PathBase = "/personafisica" };
+
+        Assert.Equal("/personafisica", EndpointUri.NormalizePathBase(options.EffectivePathBase));
+        Assert.Null(options.EffectiveIssuer);
+    }
 
     [Theory]
     [InlineData("personafisica", "/personafisica")]
