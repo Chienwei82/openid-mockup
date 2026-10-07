@@ -169,6 +169,53 @@ public static class MockStyles
             .deny { color: var(--md-primary); }
             .deny:hover { background: rgba(227,226,233,.08); }
             .error { margin: 1rem 0 0; font: var(--md-type-label); color: var(--md-error); }
+            /* Pantalla raiz: lista de clientes y generador de la URL de authorize. */
+            .clients { display: grid; gap: 1rem; margin: 1rem 0 0; }
+            .client {
+              padding: 1rem 1.25rem;
+              border: 1px solid var(--md-outline-variant);
+              border-radius: var(--md-shape-md);
+              background: var(--md-surface-container-high);
+            }
+            .client h2 { margin: 0; font: var(--md-type-title); color: var(--md-on-surface); }
+            .client dl {
+              display: grid;
+              grid-template-columns: max-content 1fr;
+              gap: .15rem .75rem;
+              margin: .5rem 0 0;
+              font: var(--md-type-label);
+              color: var(--md-on-surface-variant);
+            }
+            .client dt { color: var(--md-outline); }
+            .client dd { margin: 0; overflow-wrap: anywhere; }
+            .generate {
+              display: inline-block;
+              margin-top: .75rem;
+              padding: .5rem .9rem;
+              border: 0;
+              border-radius: var(--md-shape-full);
+              background: var(--md-primary);
+              color: var(--md-on-primary);
+              text-decoration: none;
+              font: var(--md-type-label);
+              cursor: pointer;
+            }
+            .generate:hover { filter: brightness(1.08); }
+            .hint { margin: .75rem 0 0; font: var(--md-type-label); color: var(--md-outline); }
+            .url-box {
+              display: block;
+              width: 100%;
+              min-height: 5rem;
+              margin-top: .5rem;
+              padding: .75rem;
+              border: 1px solid var(--md-outline-variant);
+              border-radius: var(--md-shape-sm);
+              background: var(--md-surface-container-highest);
+              color: var(--md-on-surface);
+              font: var(--md-type-body);
+              resize: vertical;
+              overflow-wrap: anywhere;
+            }
             iframe { display: none; }
           </style>
           """;

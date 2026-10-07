@@ -31,6 +31,7 @@ app.UseCors();
 app.MapDiscoveryEndpoints();
 app.MapAuthorizationEndpoints();
 app.MapAccountLoginEndpoints();
+app.MapHomeEndpoints();
 app.MapAssetEndpoints();
 app.MapTokenEndpoints();
 app.MapEndSessionEndpoints();
