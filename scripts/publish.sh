@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Publica el mock autocontenido y de un solo archivo para los dos SO que se usan en desarrollo.
-# No necesita el runtime de .NET en la maquina de destino. La salida va a artifacts/publish/,
+# No necesita el runtime de .NET en la maquina de destino. La salida va a publish/<runtime>/,
 # que esta en .gitignore: son binarios generados y no tienen nada que ver en el historico.
 #
 # Uso: ./scripts/publish.sh    (sin build ni tests; para eso esta ./scripts/publish.py)
@@ -14,7 +14,7 @@ readonly project="$root/src/OidcMock.Host/OidcMock.Host.csproj"
 readonly runtimes=(linux-x64 win-x64)
 
 for runtime in "${runtimes[@]}"; do
-    output="$root/artifacts/publish/$runtime"
+    output="$root/publish/$runtime"
     # Se borra antes: un publish parcial de una version anterior dejaria binarios viejos al lado.
     rm -rf "$output"
 

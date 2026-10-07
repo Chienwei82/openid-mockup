@@ -116,8 +116,9 @@ docker run --rm -p 8080:8080 -v "$PWD/config:/app/config" oidcmock
 ./scripts/publish.py          # compila, pasa los tests y publica (lo hace todo)
 ```
 
-Deja un binario de un solo archivo, sin necesidad del runtime de .NET, en
-`artifacts/publish/linux-x64` y `artifacts/publish/win-x64`. Si prefieres solo publicar, sin volver a
+Deja un binario de un solo archivo, sin necesidad del runtime de .NET, junto a su `config/` real y
+editable, en `publish/linux-x64` y `publish/win-x64`: cada carpeta se copia a un equipo y se arranca
+tal cual, con sus clientes, usuarios y scopes de ejemplo. Si prefieres solo publicar, sin volver a
 probar, `./scripts/publish.py --skip-tests`; el script `scripts/publish.sh` sigue siendo la publicación
 a pelo, sin build ni tests.
 
@@ -417,11 +418,12 @@ Si algo falla, dice **qué** falló y enseña las líneas relevantes del log, no
 ./scripts/publish.py -c Debug
 ```
 
-Los ejecutables quedan en `artifacts/publish/<runtime>/`, autocontenidos y de un solo archivo: no
-necesitan el runtime de .NET en la máquina de destino. Los logs de cada paso quedan en
-`artifacts/publish/logs/`.
+Los ejecutables quedan en `publish/<runtime>/`, autocontenidos y de un solo archivo: no necesitan el
+runtime de .NET en la máquina de destino. Cada carpeta lleva su `config/` real al lado del binario
+(clientes, usuarios, scopes), listo para editar y arrancar; la clave de firma se genera en el primer
+arranque. Los logs de cada paso quedan en `publish/logs/`.
 
-`artifacts/` y `publish/` están en `.gitignore`: son binarios generados y no van al repositorio.
+`publish/` está en `.gitignore`: son binarios generados y no van al repositorio.
 
 ---
 

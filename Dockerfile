@@ -34,8 +34,7 @@ COPY --from=build /published ./
 # directorio de extraccion, que no es un sitio donde buscar ni sobreescribir configuracion.
 COPY --from=build /source/config/ ./config/
 
-ENV ASPNETCORE_ENVIRONMENT=Production \
-    OidcMock__ConfigDirectory=/app/config \
+ENV OidcMock__ConfigDirectory=/app/config \
     OidcMock__Serving__UseHttps=false \
     OidcMock__Serving__AllowHttp=true \
     OidcMock__Serving__HttpPort=8080

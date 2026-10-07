@@ -3,7 +3,6 @@
 .gitignore
 **/bin
 **/obj
-artifacts
 publish
 TestResults
 docs
