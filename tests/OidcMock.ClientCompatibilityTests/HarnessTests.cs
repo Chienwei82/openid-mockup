@@ -25,7 +25,6 @@ public sealed class HarnessTests
         using var login = await browser.SignInAsync(
             world.ClientBaseAddress,
             CompatibilityWorld.UserName,
-            CompatibilityWorld.Password,
             TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
@@ -49,7 +48,6 @@ public sealed class HarnessTests
         using var _login = await browser.SignInAsync(
             world.ClientBaseAddress,
             CompatibilityWorld.UserName,
-            CompatibilityWorld.Password,
             TestContext.Current.CancellationToken);
 
         using var renewed = await browser.GetAsync(
@@ -84,7 +82,6 @@ public sealed class HarnessTests
         using var _login = await browser.SignInAsync(
             world.ClientBaseAddress,
             CompatibilityWorld.UserName,
-            CompatibilityWorld.Password,
             TestContext.Current.CancellationToken);
 
         using var _first = await browser.GetAsync(

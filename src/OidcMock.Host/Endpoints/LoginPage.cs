@@ -12,14 +12,16 @@ namespace OidcMock.Host.Endpoints;
 /// </summary>
 public static class LoginPage
 {
-    private const string UserListId = "oidc-mock-users";
-
-
-    public static string Render(ValidatedAuthorizationRequest authorization, IReadOnlyList<User> users, AuthorizationRequest request)
+    public static string Render(
+        ValidatedAuthorizationRequest authorization,
+        IReadOnlyList<User> profiles,
+        AuthorizationRequest request,
+        User profile,
+        Func<string, string> perfilHref)
     {
         var branding = authorization.Client.Branding;
-        var hiddenFields = HiddenFields(authorization, request);
-        var userOptions = UserOptions(users);
+        var hiddenFields = HiddenFields(authorization, request, profile);
+        var identity = IdentityFields.Render(profile, profiles, perfilHref);
         var logo = Logo(branding);
 
         return $$"""
@@ -61,15 +63,11 @@ public static class LoginPage
                 <p>La aplicacion <strong>{{Escape(authorization.Client.ClientId)}}</strong> solicita acceso a tu cuenta.</p>
                 <form method="post" action="">
                   {{hiddenFields}}
-                  <label for="user">Usuario</label>
-                  <input id="user" name="{{LoginFormFields.User}}" list="{{UserListId}}" autocomplete="username" required />
-                  <datalist id="{{UserListId}}">{{userOptions}}</datalist>
-                  <label for="password">Contrasena</label>
-                  <input id="password" name="{{LoginFormFields.Password}}" type="password" autocomplete="current-password" required />
+                  {{identity}}
                   <div class="scopes">Scopes solicitados: {{Escape(string.Join(" ", authorization.Scopes))}}</div>
                   <div class="actions">
-                    <button class="accept" type="submit" name="action" value="accept">Aceptar</button>
-                    <button class="deny" type="submit" name="action" value="deny">Denegar</button>
+                    <button class="accept" type="submit" name="{{LoginFormFields.Action}}" value="{{LoginFormFields.Accept}}">Aceptar</button>
+                    <button class="deny" type="submit" name="{{LoginFormFields.Action}}" value="{{LoginFormFields.Deny}}">Denegar</button>
                   </div>
                 </form>
               </div>
@@ -80,9 +78,10 @@ public static class LoginPage
 
     /// <summary>
     /// El POST del login debe reenviar la peticion original tal cual, asi que los campos ocultos son
-    /// los mismos parametros que llegaron por query string.
+    /// los mismos parametros que llegaron por query string, mas el perfil base cuyos valores se
+    /// precargaron.
     /// </summary>
-    private static string HiddenFields(ValidatedAuthorizationRequest authorization, AuthorizationRequest request)
+    private static string HiddenFields(ValidatedAuthorizationRequest authorization, AuthorizationRequest request, User profile)
     {
         var fields = new Dictionary<string, string?>(StringComparer.Ordinal)
         {
@@ -97,6 +96,7 @@ public static class LoginPage
             ["code_challenge"] = authorization.CodeChallenge,
             ["code_challenge_method"] = authorization.CodeChallengeMethod,
             ["grant_type"] = request.GrantType,
+            [LoginFormFields.Perfil] = profile.UserName,
             // La peticion empujada se reenvia oculta: el POST del login vuelve al authorize y tiene
             // que volver a encontrar los parametros originales detras del request_uri.
             [AuthorizationRequestBinder.RequestUriField] = authorization.RequestUri
@@ -110,15 +110,8 @@ public static class LoginPage
     }
 
     /// <summary>
-    /// El campo de usuario es un input con datalist: el desplegable ofrece los usuarios de
-    /// users.json, pero el mismo campo admite escribir cualquiera. Sin JavaScript, que es lo que
-    /// pide un mock que se usa en desarrollo.
+    /// El logo del branding se sirve desde /assets; sin logo configurado, solo el nombre.
     /// </summary>
-    private static string UserOptions(IReadOnlyList<User> users) =>
-        string.Join(
-            Environment.NewLine,
-            users.Select(user => $"<option value=\"{Escape(user.UserName)}\"></option>"));
-
     private static string Logo(Branding branding) =>
         string.IsNullOrEmpty(branding.LogoUrl)
             ? string.Empty

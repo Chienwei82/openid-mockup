@@ -15,7 +15,7 @@ namespace OidcMock.IntegrationTests.Endpoints;
 public sealed class AuthorizationFlowEndpointTests
 {
     [Fact]
-    public async Task AuthorizeMuestraLaPantallaDeLoginConElBrandingDelCliente()
+    public async Task AuthorizeMuestraLaPantallaDeIdentidadConElBrandingDelCliente()
     {
         using var client = Create();
 
@@ -25,7 +25,7 @@ public sealed class AuthorizationFlowEndpointTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("text/html", response.Content.Headers.ContentType?.MediaType ?? string.Empty, StringComparison.Ordinal);
         Assert.Contains("web-app-spa", html, StringComparison.Ordinal);
-        Assert.Contains("name=\"password\"", html, StringComparison.Ordinal);
+        Assert.Contains("name=\"sub\"", html, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -42,13 +42,12 @@ public sealed class AuthorizationFlowEndpointTests
     }
 
     [Fact]
-    public async Task AuthorizeConCredencialesIncorrectasRedirigeConErrorYNoEmiteCode()
+    public async Task DenegarRedirigeConErrorYNoEmiteCode()
     {
         using var client = Create();
         using var loginPage = await client.GetAsync(AuthorizeUrl(), TestContext.Current.CancellationToken);
         var fields = LoginFormFields.Parse(await loginPage.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
-        fields["username"] = UserName;
-        fields["password"] = "clave-incorrecta";
+        fields["action"] = "deny";
 
         using var response = await client.SendAsync(
             new HttpRequestMessage(HttpMethod.Post, $"{PathBase}/{EndpointPaths.Authorize}")

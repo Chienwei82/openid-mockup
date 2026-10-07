@@ -9,9 +9,8 @@ using static OidcMock.IntegrationTests.Endpoints.OidcTestClient;
 namespace OidcMock.IntegrationTests.Endpoints;
 
 /// <summary>
-/// Nombres de los campos de las pantallas de login y consentimiento, y valores posibles de la
-/// decision de consentimiento. Se declaran aqui para que el test y el HTML no dependan de
-/// cadenas sueltas.
+/// Valores posibles de la decision de consentimiento. Se declaran aqui para que el test y el HTML
+/// no dependan de cadenas sueltas.
 /// </summary>
 public static class ConsentDecision
 {
@@ -19,12 +18,9 @@ public static class ConsentDecision
     public const string Deny = "deny";
 }
 
-/// <summary>Campo del formulario de login y de consentimiento que lleva la decision del usuario.</summary>
+/// <summary>Campo del formulario de consentimiento que lleva la decision del usuario.</summary>
 public static class ConsentFormFields
 {
-    public const string User = "user";
-    public const string UserName = "username";
-    public const string Password = "password";
     public const string Decision = "decision";
 }
 
@@ -215,7 +211,7 @@ public sealed class AuthorizeEndpointTests
     }
 
     [Fact]
-    public async Task PromptLoginVuelveAPedirCredencialesConSesionPreexistente()
+    public async Task PromptLoginVuelveAMostrarLaPantallaDeIdentidadConSesionPreexistente()
     {
         using var client = Create();
         await SignInAsync(client, AuthorizeUrl());
@@ -225,7 +221,7 @@ public sealed class AuthorizeEndpointTests
             TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("name=\"password\"", await ReadBodyAsync(response), StringComparison.Ordinal);
+        Assert.Contains("name=\"sub\"", await ReadBodyAsync(response), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -282,48 +278,50 @@ public sealed class AuthorizeEndpointTests
     }
 
     [Fact]
-    public async Task LaPantallaDeLoginOfreceLosUsuariosDeUsersJsonYElCampoParaEscribirlos()
+    public async Task LaPantallaDeIdentidadOfreceLosPerfilesDeUsersJsonYElSubjectEditable()
     {
         using var client = Create();
 
         using var response = await client.GetAsync(AuthorizeUrl(), TestContext.Current.CancellationToken);
         var html = await ReadBodyAsync(response);
 
-        Assert.Contains("name=\"user\"", html, StringComparison.Ordinal);
+        Assert.Contains("name=\"sub\"", html, StringComparison.Ordinal);
         Assert.Contains("jperez", html, StringComparison.Ordinal);
         Assert.Contains("empresa-demo", html, StringComparison.Ordinal);
-        Assert.Contains("name=\"password\"", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("name=\"password\"", html, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public async Task SePuedeEntrarEscribiendoUsuarioYContrasenaSinElegirDeLaLista()
+    public async Task ElPerfilElegidoDeterminaLaIdentidadDelCanje()
     {
+        const string PerfilUserName = "prueba";
+        const string PerfilSubject = "01-2222-3333";
+
         using var client = Create();
-        using var loginPage = await client.GetAsync(AuthorizeUrl(), TestContext.Current.CancellationToken);
+        using var loginPage = await client.GetAsync(
+            $"{AuthorizeUrl()}&perfil={PerfilUserName}",
+            TestContext.Current.CancellationToken);
         var fields = LoginFormFields.Parse(await ReadBodyAsync(loginPage));
-        fields[ConsentFormFields.User] = "empresa-demo";
-        fields[ConsentFormFields.UserName] = UserName;
-        fields[ConsentFormFields.Password] = Password;
+        fields["action"] = "accept";
 
-        using var response = await PostFormAsync(client, EndpointPaths.Authorize, fields);
+        using var granted = await PostFormAsync(client, EndpointPaths.Authorize, fields);
+        var code = HttpUtility.ParseQueryString(AssertRedirectedToClient(granted))["code"]!;
 
-        Assert.Contains("code=", AssertRedirectedToClient(response), StringComparison.Ordinal);
+        var tokens = await RequestTokensAsync(client, GrantTypes.AuthorizationCode, code);
+
+        Assert.Equal(PerfilSubject, ReadJwtPayload(tokens.IdToken!).GetProperty("sub").GetString());
     }
 
-    private static Task<HttpResponseMessage> SignInAsync(HttpClient client, string url) =>
-        SignInAsync(client, url, UserName);
-
     /// <summary>
-    /// Recorre la pantalla de login simulando al navegador: GET al authorize, formulario con las
-    /// credenciales y POST al mismo endpoint. Devuelve la respuesta con la redireccion al cliente.
+    /// Recorre la pantalla de identidad simulando al navegador: GET al authorize, formulario
+    /// precargado tal cual y POST al mismo endpoint. Devuelve la respuesta con la redireccion al
+    /// cliente.
     /// </summary>
-    private static async Task<HttpResponseMessage> SignInAsync(HttpClient client, string url, string userName)
+    private static async Task<HttpResponseMessage> SignInAsync(HttpClient client, string url)
     {
         using var loginPage = await client.GetAsync(url, TestContext.Current.CancellationToken);
         var fields = LoginFormFields.Parse(await ReadBodyAsync(loginPage));
-        fields[ConsentFormFields.User] = userName;
-        fields[ConsentFormFields.UserName] = userName;
-        fields[ConsentFormFields.Password] = Password;
+        fields["action"] = "accept";
 
         return await PostFormAsync(client, EndpointPaths.Authorize, fields);
     }

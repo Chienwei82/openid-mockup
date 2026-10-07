@@ -5,7 +5,7 @@ namespace OidcMock.ClientCompatibilityTests.Infrastructure;
 
 /// <summary>
 /// Navegador minimo para las pruebas de protocolo: sigue redirecciones a mano, lleva las cookies y
-/// sabe rellenar el formulario de login del mock.
+/// sabe responder la pantalla de identidad del mock.
 ///
 /// No se usa <c>AllowAutoRedirect</c> porque el objetivo es <b>ver</b> cada paso: que el authorize
 /// mande al login, que el login mande un codigo al <c>redirect_uri</c> registrado y que el logout
@@ -15,6 +15,8 @@ namespace OidcMock.ClientCompatibilityTests.Infrastructure;
 public sealed partial class BrowserSession : IDisposable
 {
     private const int MaxRedirects = 12;
+    private const string Accept = "accept";
+    private const string Deny = "deny";
 
     private readonly HttpClient _client;
 
@@ -42,32 +44,51 @@ public sealed partial class BrowserSession : IDisposable
         FollowAsync(url, cancellationToken);
 
     /// <summary>
-    /// Recorre el flujo completo contra el mock: entra al cliente, rellena el login que el mock
-    /// devuelve y sigue hasta el endpoint protegido. Devuelve la respuesta de ese endpoint final.
+    /// Recorre el flujo completo contra el mock: entra al cliente, acepta la pantalla de identidad
+    /// con el perfil pedido y sigue hasta el endpoint protegido. Devuelve la respuesta de ese
+    /// endpoint final.
     /// </summary>
     public async Task<HttpResponseMessage> SignInAsync(
         string clientBaseAddress,
-        string userName,
-        string password,
+        string profileUserName,
         CancellationToken cancellationToken)
     {
         await FollowAsync($"{clientBaseAddress}/login", cancellationToken);
-        await SignInAtMockAsync(userName, password, cancellationToken);
+        await AnswerAtMockAsync(profileUserName, Accept, cancellationToken);
 
         return await FollowAsync(CurrentUrl, cancellationToken);
     }
 
     /// <summary>
-    /// Envia las credenciales al login del mock y deja la sesion lista. El authorize responde con el
+    /// Igual que <see cref="SignInAsync"/>, pero denegando en la pantalla de identidad: el mock
+    /// simula un fallo de autenticacion, responde access_denied y el cliente no crea sesion.
+    /// </summary>
+    public async Task<HttpResponseMessage> DenyAsync(
+        string clientBaseAddress,
+        CancellationToken cancellationToken)
+    {
+        await FollowAsync($"{clientBaseAddress}/login", cancellationToken);
+        await AnswerAtMockAsync(profileUserName: null, Deny, cancellationToken);
+
+        return await FollowAsync(CurrentUrl, cancellationToken);
+    }
+
+    /// <summary>
+    /// Responde la pantalla de identidad del mock con los campos ocultos (la peticion de
+    /// autorizacion), el perfil cuya identidad precargar y la decision. El authorize responde con el
     /// <c>redirect_uri</c> del cliente, que es el paso que hay que cruzar para tener un codigo.
     /// </summary>
-    private async Task SignInAtMockAsync(string userName, string password, CancellationToken cancellationToken)
+    private async Task AnswerAtMockAsync(string? profileUserName, string decision, CancellationToken cancellationToken)
     {
         var html = await LastResponse.Content.ReadAsStringAsync(cancellationToken);
         var fields = HiddenFields.Parse(html);
 
-        fields["user"] = userName;
-        fields["password"] = password;
+        if (profileUserName is not null)
+        {
+            fields["perfil"] = profileUserName;
+        }
+
+        fields["action"] = decision;
 
         var authorizationUrl = CurrentUrl;
 

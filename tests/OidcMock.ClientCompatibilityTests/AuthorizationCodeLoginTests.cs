@@ -24,7 +24,6 @@ public sealed class AuthorizationCodeLoginTests
         using var response = await browser.SignInAsync(
             world.ClientBaseAddress,
             CompatibilityWorld.UserName,
-            CompatibilityWorld.Password,
             TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -57,7 +56,6 @@ public sealed class AuthorizationCodeLoginTests
         using var response = await browser.SignInAsync(
             world.ClientBaseAddress,
             CompatibilityWorld.UserName,
-            CompatibilityWorld.Password,
             TestContext.Current.CancellationToken);
 
         var claims = await ReadClaimsAsync(response);
@@ -75,20 +73,19 @@ public sealed class AuthorizationCodeLoginTests
     }
 
     [Fact]
-    public async Task ElPrincipalNoSeAutenticaConCredencialesIncorrectas()
+    public async Task ElPrincipalNoSeAutenticaCuandoSeDeniega()
     {
         await using var world = await CompatibilityWorld.StartAsync();
         await world.StartClientAsync();
 
         using var browser = new BrowserSession();
 
-        // El mock responde access_denied por el redirect_uri (OAuth lleva los errores de protocolo
-        // por ahi), el cliente lo recibe en el callback y no llega a crear sesion. Lo que importa es
-        // que /profile siga sin autenticar, no el status con el que el cliente responde.
-        var response = await browser.SignInAsync(
+        // Denegar simula un fallo de autenticacion: el mock responde access_denied por el
+        // redirect_uri (OAuth lleva los errores de protocolo por ahi), el cliente lo recibe en el
+        // callback y no llega a crear sesion. Lo que importa es que /profile siga sin autenticar, no
+        // el status con el que el cliente responde.
+        var response = await browser.DenyAsync(
             world.ClientBaseAddress,
-            CompatibilityWorld.UserName,
-            "clave-que-no-es-la-buena",
             TestContext.Current.CancellationToken);
 
         Assert.NotEqual(HttpStatusCode.OK, response.StatusCode);
@@ -104,7 +101,6 @@ public sealed class AuthorizationCodeLoginTests
         using var _login = await browser.SignInAsync(
             world.ClientBaseAddress,
             CompatibilityWorld.UserName,
-            CompatibilityWorld.Password,
             TestContext.Current.CancellationToken);
 
         // Una peticion aparte con la misma sesion: la cookie es lo unico que mantiene al usuario

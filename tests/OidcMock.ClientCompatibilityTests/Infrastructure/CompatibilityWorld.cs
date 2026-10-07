@@ -22,8 +22,6 @@ public sealed class CompatibilityWorld : IAsyncDisposable
 
     public const string UserName = "jperez";
 
-    public const string Password = "Passw0rd!";
-
     public const string UserSubject = "user-persona-fisica";
 
     /// <summary>Scopes minimos: openid para el id_token, offline_access para el refresh token.</summary>

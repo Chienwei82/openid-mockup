@@ -6,14 +6,15 @@ using OidcMock.Core.Users;
 namespace OidcMock.Host.Endpoints;
 
 /// <summary>
-/// Ruta de entrada /Account/Login del servidor real: muestra el login con el ReturnUrl oculto y,
-/// tras autenticar al usuario, abre sesion y redirige a el. El ReturnUrl solo puede ser una ruta
-/// local: aceptar una URL absoluta convertiria la ruta en un open redirect, porque su valor viene
-/// de la barra de direcciones del navegador.
+/// Ruta de entrada /Account/Login del servidor real: muestra la pantalla de identidad con el
+/// ReturnUrl oculto y, tras aceptar, abre sesion y redirige a el. Denegar simula un fallo de
+/// autenticacion y vuelve a mostrar la pantalla. El ReturnUrl solo puede ser una ruta local:
+/// aceptar una URL absoluta convertiria la ruta en un open redirect, porque su valor viene de la
+/// barra de direcciones del navegador.
 /// </summary>
 public static class AccountLoginEndpoints
 {
-    private const string InvalidCredentials = "El usuario o la contrasena no son correctos.";
+    private const string DeniedAuthentication = "El mock simulo un fallo de autenticacion.";
     private const string InvalidReturnUrl = "El ReturnUrl solo puede ser una ruta local del servidor.";
     private const string HtmlContentType = "text/html; charset=utf-8";
 
@@ -30,18 +31,19 @@ public static class AccountLoginEndpoints
         return endpoints;
     }
 
-    private static IResult ShowLogin(HttpRequest request)
+    private static IResult ShowLogin(HttpRequest request, IUserStore users)
     {
         var returnUrl = ReturnUrl(request);
 
         return IsLocal(returnUrl)
-            ? Results.Content(AccountLoginPage.Render(returnUrl!, error: null), HtmlContentType)
+            ? ShowForm(returnUrl!, error: null, request.Query[LoginFormFields.Perfil].FirstOrDefault(), users)
             : Results.Text(InvalidReturnUrl, statusCode: StatusCodes.Status400BadRequest);
     }
 
     private static async Task<IResult> SignIn(
         HttpContext context,
-        UserAuthenticator authenticator,
+        IUserStore users,
+        IUserOverlay overlay,
         IAuthSessionStore sessions,
         OidcMockOptions options)
     {
@@ -58,12 +60,13 @@ public static class AccountLoginEndpoints
             return Results.Text(InvalidReturnUrl, statusCode: StatusCodes.Status400BadRequest);
         }
 
-        var user = authenticator.Authenticate(ReadUserName(form), form.GetValueOrDefault(LoginFormFields.Password) ?? string.Empty);
-
-        if (user is null)
+        if (IdentityForm.IsDenied(form))
         {
-            return Results.Content(AccountLoginPage.Render(returnUrl!, InvalidCredentials), HtmlContentType);
+            return ShowForm(returnUrl!, DeniedAuthentication, form.GetValueOrDefault(LoginFormFields.Perfil), users);
         }
+
+        var user = IdentityForm.ReadUser(form, users.List());
+        overlay.Remember(user);
 
         var session = sessions.Start(user.UserName, user.Subject);
 
@@ -72,19 +75,27 @@ public static class AccountLoginEndpoints
         return Results.Redirect(returnUrl!);
     }
 
+    private static IResult ShowForm(string returnUrl, string? error, string? perfil, IUserStore users)
+    {
+        var profiles = users.List();
+
+        return Results.Content(
+            AccountLoginPage.Render(returnUrl, error, IdentityForm.BaseProfile(perfil, profiles), profiles, PerfilHref(returnUrl)),
+            HtmlContentType);
+    }
+
+    /// <summary>
+    /// Los enlaces de perfil recargan esta misma pantalla con el ReturnUrl intacto: sin JavaScript,
+    /// elegir perfil es una navegacion GET y los valores editados se pierden a proposito.
+    /// </summary>
+    private static Func<string, string> PerfilHref(string returnUrl) =>
+        perfil => $"?{AccountLoginPage.ReturnUrlField}={Uri.EscapeDataString(returnUrl)}" +
+            $"&{LoginFormFields.Perfil}={Uri.EscapeDataString(perfil)}";
+
     private static string? ReturnUrl(HttpRequest request) => request.Query[AccountLoginPage.ReturnUrlField].FirstOrDefault();
 
     private static bool IsLocal(string? returnUrl) =>
         returnUrl is { Length: > 0 } value
             && value[0] == '/'
             && !value.StartsWith("//", StringComparison.Ordinal);
-
-    /// <summary>
-    /// Mismo criterio que la pantalla del authorize: se prefiere el campo tecleado "username" y se
-    /// cae a "user", el de la lista desplegable.
-    /// </summary>
-    private static string ReadUserName(IReadOnlyDictionary<string, string> form) =>
-        form.GetValueOrDefault(LoginFormFields.UserName) is { Length: > 0 } typed
-            ? typed
-            : form.GetValueOrDefault(LoginFormFields.User) ?? string.Empty;
 }

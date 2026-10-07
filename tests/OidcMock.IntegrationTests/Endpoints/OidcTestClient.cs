@@ -35,7 +35,6 @@ public static class OidcTestClient
     public const string ConfidentialSecret = "super-secreto-web";
     public const string RedirectUri = "https://localhost:5173/callback";
     public const string UserName = "jperez";
-    public const string Password = "Passw0rd!";
     public const string CodeVerifier = "verificador-de-prueba-con-suficiente-longitud-0000000000000";
 
     /// <summary>
@@ -255,8 +254,7 @@ public static class OidcTestClient
     private static HttpRequestMessage BuildSignInForm(string html)
     {
         var fields = LoginFormFields.Parse(html);
-        fields["username"] = UserName;
-        fields["password"] = Password;
+        fields["action"] = "accept";
 
         return new HttpRequestMessage(HttpMethod.Post, $"{PathBase}/{EndpointPaths.Authorize}")
         {
