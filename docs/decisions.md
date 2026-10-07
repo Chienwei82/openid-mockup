@@ -803,6 +803,12 @@ este forget.
 
 ## `prompt=select_account`: se anuncia a proposito y sin implementar
 
+> **Actualizado (2026-10-07): implementado.** La pantalla de identidad (sin contrasena) resulto ser la
+> pantalla de eleccion de cuenta que faltaba: los perfiles de `users.json` son las cuentas. Hoy
+> `prompt=select_account` muestra esa pantalla con y sin sesion, precarga la cuenta de la sesion (el
+> campo `perfil` casa tambien por `subject`) y concede con el perfil elegido (`AuthorizationStep.SelectAccount`).
+> Lo de abajo es el razonamiento original de por que se dejo sin implementar en su momento.
+
 **Decision: se deja como esta. No es un olvido.**
 
 `DiscoveryDocumentBuilder` anuncia `select_account` en `prompt_values_supported`, igual que la referencia
@@ -1217,4 +1223,23 @@ viaja en el JWT, y las pantallas se pintan con los tokens Material You dark del 
   cliente aparece en la pantalla). Como los brandings de `config/` son oscuros, `--md-on-primary`
   va en claro para conservar el contraste del boton primario; sin branding manda la pareja de la
   paleta del prototipo.
+
+
+## D-045 · Consentimiento memorable (2026-10-07)
+
+**Decision: el consentimiento aprobado se recuerda en memoria por cliente + usuario, y lo recordado
+cubre solo sus scopes.** Cierra el pendiente "Consentimiento memorable: `prompt=consent` vuelve a
+preguntar en cada authorize".
+
+- **`IConsentStore` / `InMemoryConsentStore`**: el conjunto de scopes aprobados crece con cada
+  aprobacion de la pantalla de consentimiento. Denegar no deja constancia (la proxima vez vuelve a
+  preguntar), y un scope nuevo tampoca esta cubierto: vuelve a mostrar la pantalla.
+- **Solo la pantalla de consentimiento deja constancia.** La concesion en un paso de la pantalla de
+  identidad autentica, no consiente; si contara como consentimiento, `prompt=consent` dejaria de
+  preguntar tras cualquier login y el prompt no significaria nada.
+- **Desviacion consciente de OIDC Core 3.1.2.1**, que pide volver a mostrar el consentimiento con
+  `prompt=consent`. El mock es una herramienta de desarrollo: el flujo repetido (probar la app una y
+  otra vez) no debe obligar a hacer click en cada authorize. Es el mismo espiritu que "un mockup no
+  autentica": lo que se optimiza es la iteracion, no la seguridad.
+- **En memoria, como los codigos y los tokens** (regla 3): reiniciar el mock borra lo recordado.
 

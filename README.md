@@ -40,7 +40,7 @@ JWKS. Los secretos que hay en `config/` son de ejemplo y están pensados para es
 | `check_session_iframe` | **Simulado** | Se sirve la página, no implementa OPiFrame (RFC 6614) |
 | Híbrido (`response_type=code id_token`) | Implementado | Flujo del servidor real: `#code`, `#id_token` (con `c_hash`) y `#session_state` en el fragmento del `redirect_uri` |
 | Implicit (`response_type=id_token token` y demás combinaciones con access token) | **Anunciado, no implementado** | El discovery lo declara por paridad con el real, pero el authorize responde `unsupported_response_type`: solo emite `code` y `code id_token` |
-| `select_account` | **Anunciado, no implementado** | Se acepta el valor pero el flujo es el mismo que sin él: concede con el usuario de la sesión. Ver D-043 |
+| `select_account` | Implementado | Muestra la pantalla de elección de cuenta (los perfiles de `users.json`), precarga la de la sesión y concede con la elegida. Ver D-043 |
 | `request` objects firmados, DPoP, mTLS (`ClientCertificate`) | **No implementado** | |
 | Frontchannel logout | Parcial | Se llama al `frontchannel_logout_uri`; no hay aviso de sesión de backchannel |
 | Multitenancy / usuarios reales | Fuera de alcance | Un solo conjunto de clientes, usuarios y scopes, el del `config/` |
