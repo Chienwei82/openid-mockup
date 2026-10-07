@@ -38,4 +38,20 @@ public sealed class PublishLayoutTests
             project.Descendants("IncludeAllContentForSelfExtract"),
             element => string.Equals((string?)element, "true", StringComparison.OrdinalIgnoreCase));
     }
+
+    [Fact]
+    public void LaConfiguracionDeAppsettingsSePublicaComoArchivoRealJuntoAlEjecutable()
+    {
+        var project = XDocument.Load(RepositoryLayout.HostProjectFile);
+
+        var appsettings = project
+            .Descendants("Content")
+            .Where(content => (string?)content.Attribute("Update") == "appsettings.json")
+            .ToList();
+
+        Assert.NotEmpty(appsettings);
+        Assert.All(
+            appsettings,
+            content => Assert.Equal("true", (string?)content.Attribute("ExcludeFromSingleFile")));
+    }
 }
