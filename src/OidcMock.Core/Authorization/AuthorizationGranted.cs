@@ -16,12 +16,3 @@ public sealed record AuthorizationGranted(AuthorizationCode Code)
             ["state"] = Code.State ?? string.Empty
         };
 }
-
-/// <summary>
-/// Credenciales que el usuario escribe en la pantalla de login del mock.
-/// </summary>
-public sealed record SignInRequest(
-    string UserName,
-    string Password,
-    ValidatedAuthorizationRequest Authorization,
-    string ResponseMode);

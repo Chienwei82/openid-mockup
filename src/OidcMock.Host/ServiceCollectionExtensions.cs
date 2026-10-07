@@ -126,7 +126,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAuthorizeRequestValidator, PromptValidator>();
         services.AddSingleton<IAuthorizeRequestValidator, ResponseModeValidator>();
         services.AddSingleton<IAuthorizationService, AuthorizationService>();
-        services.AddSingleton<UserAuthenticator>();
         services.AddSingleton<IAuthorizationInteraction, AuthorizationInteraction>();
         services.AddSingleton<GrantHandlerRegistry>();
         services.AddSingleton<ITokenEndpointService, TokenEndpointService>();
