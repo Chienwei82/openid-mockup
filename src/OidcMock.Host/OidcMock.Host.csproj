@@ -3,6 +3,12 @@
   <PropertyGroup>
     <RootNamespace>OidcMock.Host</RootNamespace>
     <UserSecretsId>oidc-mock-host</UserSecretsId>
+    <!--
+      IIS: el hosting out-of-process es el unico que puede cargar el ejecutable de un solo archivo
+      (in-process no admite single-file). Ademas el mock no fija Kestrel bajo IIS: el modulo (ANCM)
+      aporta el puerto. Ver docs/decisions.md ("Hosting en IIS").
+    -->
+    <AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
   </PropertyGroup>
 
   <!--
@@ -29,6 +35,15 @@
   -->
   <ItemGroup>
     <Content Include="..\..\config\*.json" Link="config\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      appsettings.json viaja como archivo real junto al ejecutable (editable y montable), no empaquetado
+      dentro del single-file: es donde se configura la URL publica (BaseUrl) en un despliegue en IIS.
+      Mismo contrato que config/, que PublishLayoutTests fija.
+    -->
+    <Content Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
   </ItemGroup>
 
   <ItemGroup>

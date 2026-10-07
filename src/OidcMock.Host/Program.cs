@@ -71,7 +71,7 @@ static void ConfigureListening(WebApplicationBuilder builder)
         .GetSection($"{HostConfigDirectory.SectionName}:{ServingOptions.SectionName}")
         .Get<ServingOptions>() ?? new ServingOptions();
 
-    if (!serving.UseHttps && !serving.AllowHttp)
+    if (!ServingListener.ShouldConfigureKestrel(serving, ServingListener.IsHostedByIis(builder.Configuration)))
     {
         return;
     }
