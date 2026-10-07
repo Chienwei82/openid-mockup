@@ -19,6 +19,7 @@ internal sealed class AuthorizationFlow(
     AuthorizationBinder binder,
     IAuthorizationService authorization,
     IAuthorizationInteraction interaction,
+    IConsentStore consents,
     IUserStore users,
     IUserOverlay overlay,
     IAuthSessionStore sessions,
@@ -118,8 +119,19 @@ internal sealed class AuthorizationFlow(
                     authorized.State),
                 authorized.ResponseMode)
             : IsAllowed(form[ConsentPage.DecisionField])
-                ? Grant(authorized, session.UserName, session.SessionId)
+                ? ApproveConsent(authorized, session)
                 : Denied(authorized);
+    }
+
+    /// <summary>
+    /// La pantalla de consentimiento es la unica que deja constancia de la aprobacion: con ella se
+    /// recuerda (D-045) y la proxima peticion igual no vuelve a preguntar.
+    /// </summary>
+    private IResult ApproveConsent(ValidatedAuthorizationRequest authorized, AuthSession session)
+    {
+        consents.Remember(authorized.Client.ClientId, session.UserName, authorized.Scopes);
+
+        return Grant(authorized, session.UserName, session.SessionId);
     }
 
     /// <summary>

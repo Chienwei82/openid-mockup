@@ -7,7 +7,7 @@ namespace OidcMock.Core.Authorization;
 /// Ningun prompt exige interaccion si no hay sesion: en ese caso, o se pide login o se devuelve
 /// login_required, segun el prompt venga o no.
 /// </summary>
-public sealed class AuthorizationInteraction(IAuthSessionStore sessions) : IAuthorizationInteraction
+public sealed class AuthorizationInteraction(IAuthSessionStore sessions, IConsentStore consents) : IAuthorizationInteraction
 {
     private const string LoginRequiredDescription =
         "El prompt=none exige una sesion activa y el navegador no trae ninguna.";
@@ -42,7 +42,11 @@ public sealed class AuthorizationInteraction(IAuthSessionStore sessions) : IAuth
             return AuthorizationDecision.NeedsLogin();
         }
 
+        // prompt=consent pide consentimiento, pero lo ya aprobado por este cliente y usuario no
+        // vuelve a preguntar (D-045): el mock recuerda el consentimiento para no interrumpir el
+        // flujo repetido del desarrollador, y solo dentro de los scopes aprobados.
         return authorization.Prompt == PromptValues.Consent
+            && !consents.IsGranted(authorization.Client.ClientId, session.UserName, authorization.Scopes)
             ? AuthorizationDecision.NeedsConsent(session.UserName)
             : AuthorizationDecision.Grants(session.UserName);
     }
