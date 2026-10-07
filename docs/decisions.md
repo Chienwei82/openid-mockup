@@ -1303,4 +1303,15 @@ motivos independientes, corregidos de raiz.
   host (la raiz permisiva evita rechazar peticiones); y el `path` de `BaseUrl` debe coincidir con el
   alias de la aplicacion IIS.
 
+## Documentacion del flujo OpenID Connect (`docs/openid/`)
+
+Se anade una **serie didactica** de 13 archivos Markdown (`docs/openid/README.md` + `01..12`) que
+documenta el flujo OIDC y, sobre todo, **mapea cada pieza del protocolo al codigo real del mock**.
+
+- **Tres lentes por documento:** teoria (RFC/OIDC), servidor real (BCCR/IdentityServer) y OidcMock.
+  Cuando el mock se aparta de la teoria o del real, se dice y se enlaza la decision (D-0xx).
+- **Diagramas en Mermaid** (no imagenes): se renderizan en GitHub/VS Code y se versionan como texto.
+- **Sin impacto en el build:** son documentos; no entran a compilar ni a las suites. El `README.md`
+  raiz enlaza la serie y la matriz (11) es la vista de paridad de un solo golpe.
+
 

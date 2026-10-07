@@ -422,6 +422,7 @@ tests/
   OidcMock.ClientCompatibilityTests/  Clientes reales de ASP.NET Core contra el mock sobre Kestrel.
 config/                Configuración por defecto (clientes, usuarios, scopes, clave de firma).
 docs/decisions.md      Historial de decisiones con su porqué.
+docs/openid/           Serie didáctica del flujo OIDC (teoría · servidor real · este mock), con diagramas.
 scripts/publish.py      Compila, prueba y publica, con color y resumen por suite.
 scripts/publish.sh      Publicación autocontenida a pelo, sin build ni tests.
 scripts/test.sh         Build en Release y las tres suites.
@@ -431,6 +432,10 @@ Las tres suites cubren cosas distintas: la unitaria prueba reglas de dominio, la
 el HTTP del host, y la de compatibilidad usa `Microsoft.AspNetCore.Authentication.OpenIdConnect` y
 `JwtBearer` **de verdad** contra el mock levantado sobre Kestrel, configurados solo con el issuer: si
 el mock se aparta del protocolo en algo que un cliente real nota, lo detecta.
+
+La serie [`docs/openid/`](docs/openid/README.md) cuenta el flujo del protocolo **tres veces** —teoría
+(RFC y OIDC), servidor real (el BCCR/IdentityServer) y cómo lo resuelve **este** mock, archivo por
+archivo— con diagramas Mermaid. Empieza por su índice.
 
 ```bash
 # Build en Release y las tres suites: lo que hay que ejecutar antes de dar algo por terminado.
