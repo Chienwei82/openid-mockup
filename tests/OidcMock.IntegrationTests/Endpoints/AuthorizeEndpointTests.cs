@@ -297,6 +297,63 @@ public sealed class AuthorizeEndpointTests
         Assert.DoesNotContain("name=\"password\"", html, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// El consentimiento es memorable: lo aprobado una vez para este cliente y usuario no vuelve a
+    /// preguntar, aunque el prompt lo pida.
+    /// </summary>
+    [Fact]
+    public async Task ElConsentimientoAprobadoNoSeVuelveAPreguntar()
+    {
+        using var client = Create();
+        await SignInAsync(client, AuthorizeUrl());
+        var fields = await ConsentFieldsAsync(client);
+
+        using var approved = await PostFormAsync(client, EndpointPaths.Authorize, Approved(fields));
+        Assert.Contains("code=", AssertRedirectedToClient(approved), StringComparison.Ordinal);
+
+        using var again = await client.GetAsync(
+            AuthorizeUrl(prompt: PromptValues.Consent),
+            TestContext.Current.CancellationToken);
+
+        Assert.Contains("code=", AssertRedirectedToClient(again), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task LaDenegacionDeConsentimientoNoSeRecuerda()
+    {
+        using var client = Create();
+        await SignInAsync(client, AuthorizeUrl());
+        var fields = await ConsentFieldsAsync(client);
+
+        using var denied = await PostFormAsync(client, EndpointPaths.Authorize, Denied(fields));
+        Assert.Contains("error=access_denied", AssertRedirectedToClient(denied), StringComparison.Ordinal);
+
+        using var again = await client.GetAsync(
+            AuthorizeUrl(prompt: PromptValues.Consent),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, again.StatusCode);
+        Assert.Contains("name=\"decision\"", await ReadBodyAsync(again), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ElConsentimientoRecordadoNoCubreUnScopeAmpliado()
+    {
+        using var client = Create();
+        await SignInAsync(client, AuthorizeUrl(scope: "openid"));
+        var fields = await ConsentFieldsAsync(client, scope: "openid");
+
+        using var approved = await PostFormAsync(client, EndpointPaths.Authorize, Approved(fields));
+        Assert.Contains("code=", AssertRedirectedToClient(approved), StringComparison.Ordinal);
+
+        using var widened = await client.GetAsync(
+            AuthorizeUrl(prompt: PromptValues.Consent, scope: "openid email"),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, widened.StatusCode);
+        Assert.Contains("name=\"decision\"", await ReadBodyAsync(widened), StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task ElConsentimientoAceptadoRedirigeConCode()
     {
@@ -390,10 +447,10 @@ public sealed class AuthorizeEndpointTests
         return HttpUtility.ParseQueryString(AssertRedirectedToClient(response))["code"]!;
     }
 
-    private static async Task<Dictionary<string, string>> ConsentFieldsAsync(HttpClient client)
+    private static async Task<Dictionary<string, string>> ConsentFieldsAsync(HttpClient client, string? scope = null)
     {
         using var page = await client.GetAsync(
-            AuthorizeUrl(prompt: PromptValues.Consent),
+            AuthorizeUrl(prompt: PromptValues.Consent, scope: scope),
             TestContext.Current.CancellationToken);
 
         return LoginFormFields.Parse(await ReadBodyAsync(page));

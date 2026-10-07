@@ -16,12 +16,14 @@ public sealed class AuthorizationInteractionTests
 {
     private readonly FakeTimeProvider _time = new(new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero));
     private readonly InMemoryAuthSessionStore _sessions;
+    private readonly InMemoryConsentStore _consents;
     private readonly AuthorizationInteraction _interaction;
 
     public AuthorizationInteractionTests()
     {
         _sessions = new InMemoryAuthSessionStore(_time, new OidcMockOptions());
-        _interaction = new AuthorizationInteraction(_sessions);
+        _consents = new InMemoryConsentStore();
+        _interaction = new AuthorizationInteraction(_sessions, _consents);
     }
 
     [Fact]
@@ -88,14 +90,46 @@ public sealed class AuthorizationInteractionTests
     public void SelectAccountPrecargaAlUsuarioDeLaSesion() =>
         Assert.Equal("jperez", Decide(sessionId: OpenSession(), prompt: PromptValues.SelectAccount).UserName);
 
-    private AuthorizationDecision Decide(string? sessionId = null, string? prompt = null) =>
-        _interaction.Decide(AuthorizationWith(prompt), sessionId);
+    /// <summary>
+    /// El consentimiento es memorable: una vez aprobado para un cliente y un usuario, el mismo
+    /// alcance no vuelve a preguntar aunque el prompt lo pida. Es el supuesto del mock (D-045): el
+    /// flujo repetido del desarrollador no debe volver a hacer click.
+    /// </summary>
+    [Fact]
+    public void PromptConsentConConsentimientoRecordadoConcedeEnSilencio()
+    {
+        _consents.Remember(ClientStoreFixture.SpaClientId, "jperez", [ScopeNames.OpenId]);
 
-    private static ValidatedAuthorizationRequest AuthorizationWith(string? prompt) =>
+        Assert.Equal(
+            AuthorizationStep.Grant,
+            Decide(sessionId: OpenSession(), prompt: PromptValues.Consent).Step);
+    }
+
+    /// <summary>
+    /// Lo recordado es un conjunto de scopes, no un visto bueno total: un scope nuevo vuelve a
+    /// mostrar el consentimiento.
+    /// </summary>
+    [Fact]
+    public void ElConsentimientoRecordadoNoCubreScopesAmpliados()
+    {
+        _consents.Remember(ClientStoreFixture.SpaClientId, "jperez", [ScopeNames.OpenId]);
+
+        Assert.Equal(
+            AuthorizationStep.Consent,
+            Decide(
+                sessionId: OpenSession(),
+                prompt: PromptValues.Consent,
+                scopes: [ScopeNames.OpenId, ScopeNames.Email]).Step);
+    }
+
+    private AuthorizationDecision Decide(string? sessionId = null, string? prompt = null, IReadOnlyList<string>? scopes = null) =>
+        _interaction.Decide(AuthorizationWith(prompt, scopes), sessionId);
+
+    private static ValidatedAuthorizationRequest AuthorizationWith(string? prompt, IReadOnlyList<string>? scopes = null) =>
         new(
             ClientStoreFixture.Spa(),
             AuthorizeValidation.RedirectUri,
-            [ScopeNames.OpenId],
+            scopes ?? [ScopeNames.OpenId],
             ResponseTypeNames.Code,
             ResponseModes.Query,
             Nonce: null,
