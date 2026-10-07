@@ -17,7 +17,8 @@ public static class LoginPage
         IReadOnlyList<User> profiles,
         AuthorizationRequest request,
         User profile,
-        Func<string, string> perfilHref)
+        Func<string, string> perfilHref,
+        bool chooser)
     {
         var branding = authorization.Client.Branding;
         var hiddenFields = HiddenFields(authorization, request, profile);
@@ -42,7 +43,7 @@ public static class LoginPage
                     <h1>{{Escape(branding.DisplayName)}}</h1>
                   </div>
                 </header>
-                <p>La aplicacion <strong>{{Escape(authorization.Client.ClientId)}}</strong> solicita acceso a tu cuenta.</p>
+                <p>{{Intro(authorization, chooser)}}</p>
                 <form method="post" action="">
                   {{hiddenFields}}
                   {{identity}}
@@ -57,6 +58,15 @@ public static class LoginPage
             </html>
             """;
     }
+
+    /// <summary>
+    /// El copy del papel que cumple la pantalla: login pide acceso, la eleccion de cuenta invita a
+    /// escoger entre las de users.json.
+    /// </summary>
+    private static string Intro(ValidatedAuthorizationRequest authorization, bool chooser) =>
+        chooser
+            ? $"Elige una cuenta para entrar a <strong>{Escape(authorization.Client.ClientId)}</strong>."
+            : $"La aplicacion <strong>{Escape(authorization.Client.ClientId)}</strong> solicita acceso a tu cuenta.";
 
     /// <summary>
     /// El POST del login debe reenviar la peticion original tal cual, asi que los campos ocultos son

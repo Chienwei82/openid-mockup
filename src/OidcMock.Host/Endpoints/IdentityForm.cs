@@ -29,14 +29,17 @@ public static class IdentityForm
     }
 
     /// <summary>
-    /// El perfil base de la pantalla: el elegido por su username en el campo "perfil" y, sin
-    /// eleccion, el primero de users.json.
+    /// El perfil base de la pantalla: el elegido por su username (o subject) en el campo "perfil" y,
+    /// sin eleccion, el primero de users.json. Se acepta el subject porque la sesion recuerda la
+    /// identidad por el, y select_account precarga la cuenta de la sesion.
     /// </summary>
     public static User BaseProfile(string? perfil, IReadOnlyList<User> profiles)
     {
         ArgumentNullException.ThrowIfNull(profiles);
 
-        var chosen = profiles.FirstOrDefault(user => string.Equals(user.UserName, perfil, StringComparison.Ordinal));
+        var chosen = profiles.FirstOrDefault(user =>
+            string.Equals(user.UserName, perfil, StringComparison.Ordinal)
+            || string.Equals(user.Subject, perfil, StringComparison.Ordinal));
 
         return chosen
             ?? (profiles.Count > 0 ? profiles[0] : throw new InvalidOperationException(NoProfiles));

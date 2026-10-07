@@ -45,9 +45,10 @@ internal sealed class AuthorizationFlow(
             AuthorizationStep.Error => RespondToError(
                 AuthorizationValidationResult.Failed(decision.Error!, authorized.RedirectUri, authorized.State),
                 authorized.ResponseMode),
+            AuthorizationStep.SelectAccount => Login(authorized, binding.Bound!, chooser: true, decision.UserName),
             AuthorizationStep.Consent => Consent(authorized, decision.UserName!),
             AuthorizationStep.Grant => Grant(authorized, decision.UserName!, SessionId()),
-            _ => Login(authorized, binding.Bound!)
+            _ => Login(authorized, binding.Bound!, chooser: false, sessionUserName: null)
         };
     }
 
@@ -74,7 +75,16 @@ internal sealed class AuthorizationFlow(
     private static bool IsConsentAnswer(IReadOnlyDictionary<string, string> form) =>
         form.ContainsKey(ConsentPage.DecisionField);
 
-    private IResult Login(ValidatedAuthorizationRequest authorized, AuthorizationRequest request)
+    /// <summary>
+    /// La pantalla de identidad cumple dos papeles: login y eleccion de cuenta (select_account). El
+    /// perfil precargado es el pedido por el query, el de la sesion en la eleccion de cuenta, o el
+    /// primero de users.json.
+    /// </summary>
+    private IResult Login(
+        ValidatedAuthorizationRequest authorized,
+        AuthorizationRequest request,
+        bool chooser,
+        string? sessionUserName)
     {
         var profiles = users.List();
 
@@ -83,8 +93,9 @@ internal sealed class AuthorizationFlow(
                 authorized,
                 profiles,
                 request,
-                IdentityForm.BaseProfile(Perfil(), profiles),
-                PerfilHref()),
+                IdentityForm.BaseProfile(Perfil() ?? sessionUserName, profiles),
+                PerfilHref(),
+                chooser),
             HtmlContentType);
     }
 

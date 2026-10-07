@@ -12,6 +12,9 @@ public enum AuthorizationStep
     /// <summary>No hay sesion, o el prompt fuerza el login: hay que pedir credenciales.</summary>
     Login,
 
+    /// <summary>El prompt pide elegir cuenta: hay que mostrar la pantalla de eleccion.</summary>
+    SelectAccount,
+
     /// <summary>Hay sesion pero el prompt pide consentimiento: hay que mostrar la pantalla.</summary>
     Consent,
 
@@ -26,6 +29,8 @@ public enum AuthorizationStep
 public sealed record AuthorizationDecision(AuthorizationStep Step, string? UserName, ProtocolError? Error)
 {
     public static AuthorizationDecision NeedsLogin() => new(AuthorizationStep.Login, null, null);
+
+    public static AuthorizationDecision NeedsAccountSelection(string? userName) => new(AuthorizationStep.SelectAccount, userName, null);
 
     public static AuthorizationDecision NeedsConsent(string userName) => new(AuthorizationStep.Consent, userName, null);
 
