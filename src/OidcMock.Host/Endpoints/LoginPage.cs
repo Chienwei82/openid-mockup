@@ -12,14 +12,17 @@ namespace OidcMock.Host.Endpoints;
 /// </summary>
 public static class LoginPage
 {
-    private const string UserListId = "oidc-mock-users";
-
-
-    public static string Render(ValidatedAuthorizationRequest authorization, IReadOnlyList<User> users, AuthorizationRequest request)
+    public static string Render(
+        ValidatedAuthorizationRequest authorization,
+        IReadOnlyList<User> profiles,
+        AuthorizationRequest request,
+        User profile,
+        Func<string, string> perfilHref,
+        bool chooser)
     {
         var branding = authorization.Client.Branding;
-        var hiddenFields = HiddenFields(authorization, request);
-        var userOptions = UserOptions(users);
+        var hiddenFields = HiddenFields(authorization, request, profile);
+        var identity = IdentityFields.Render(profile, profiles, perfilHref);
         var logo = Logo(branding);
 
         return $$"""
@@ -29,25 +32,7 @@ public static class LoginPage
               <meta charset="utf-8" />
               <meta name="viewport" content="width=device-width, initial-scale=1" />
               <title>{{Escape(branding.DisplayName)}}</title>
-              <style>
-                :root { --primary: {{Escape(branding.PrimaryColor ?? "#00695C")}}; }
-                body { font-family: system-ui, sans-serif; background: #f4f5f7; margin: 0; padding: 3rem 1rem; }
-                .card { max-width: 26rem; margin: 0 auto; background: #fff; border-radius: 12px; padding: 2rem;
-                        box-shadow: 0 1px 3px rgba(0,0,0,.16); }
-                header { border-bottom: 4px solid var(--primary); margin: -2rem -2rem 1.5rem; padding: 1.25rem 2rem; }
-                header .identity { display: flex; align-items: center; gap: .75rem; }
-                header img { height: 2rem; }
-                h1 { font-size: 1.1rem; margin: 0; color: var(--primary); }
-                .mock { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; color: #6b7280; }
-                label { display: block; font-size: .85rem; margin: 1rem 0 .25rem; }
-                input[type=text], input[type=password], select { width: 100%; padding: .55rem; border: 1px solid #cbd5e1;
-                        border-radius: 6px; box-sizing: border-box; }
-                .actions { display: flex; gap: .75rem; margin-top: 1.5rem; }
-                button { flex: 1; padding: .65rem; border: 0; border-radius: 6px; font-size: .95rem; cursor: pointer; }
-                .accept { background: var(--primary); color: #fff; }
-                .deny { background: #e5e7eb; color: #374151; }
-                .scopes { margin: 1.25rem 0 0; padding: .75rem; background: #f8fafc; border-radius: 6px; font-size: .8rem; }
-              </style>
+              {{MockStyles.Render(branding.PrimaryColor)}}
             </head>
             <body>
               <div class="card">
@@ -58,18 +43,14 @@ public static class LoginPage
                     <h1>{{Escape(branding.DisplayName)}}</h1>
                   </div>
                 </header>
-                <p>La aplicacion <strong>{{Escape(authorization.Client.ClientId)}}</strong> solicita acceso a tu cuenta.</p>
+                <p>{{Intro(authorization, chooser)}}</p>
                 <form method="post" action="">
                   {{hiddenFields}}
-                  <label for="user">Usuario</label>
-                  <input id="user" name="{{LoginFormFields.User}}" list="{{UserListId}}" autocomplete="username" required />
-                  <datalist id="{{UserListId}}">{{userOptions}}</datalist>
-                  <label for="password">Contrasena</label>
-                  <input id="password" name="{{LoginFormFields.Password}}" type="password" autocomplete="current-password" required />
+                  {{identity}}
                   <div class="scopes">Scopes solicitados: {{Escape(string.Join(" ", authorization.Scopes))}}</div>
                   <div class="actions">
-                    <button class="accept" type="submit" name="action" value="accept">Aceptar</button>
-                    <button class="deny" type="submit" name="action" value="deny">Denegar</button>
+                    <button class="accept" type="submit" name="{{LoginFormFields.Action}}" value="{{LoginFormFields.Accept}}">Aceptar</button>
+                    <button class="deny" type="submit" name="{{LoginFormFields.Action}}" value="{{LoginFormFields.Deny}}">Denegar</button>
                   </div>
                 </form>
               </div>
@@ -79,10 +60,20 @@ public static class LoginPage
     }
 
     /// <summary>
-    /// El POST del login debe reenviar la peticion original tal cual, asi que los campos ocultos son
-    /// los mismos parametros que llegaron por query string.
+    /// El copy del papel que cumple la pantalla: login pide acceso, la eleccion de cuenta invita a
+    /// escoger entre las de users.json.
     /// </summary>
-    private static string HiddenFields(ValidatedAuthorizationRequest authorization, AuthorizationRequest request)
+    private static string Intro(ValidatedAuthorizationRequest authorization, bool chooser) =>
+        chooser
+            ? $"Elige una cuenta para entrar a <strong>{Escape(authorization.Client.ClientId)}</strong>."
+            : $"La aplicacion <strong>{Escape(authorization.Client.ClientId)}</strong> solicita acceso a tu cuenta.";
+
+    /// <summary>
+    /// El POST del login debe reenviar la peticion original tal cual, asi que los campos ocultos son
+    /// los mismos parametros que llegaron por query string, mas el perfil base cuyos valores se
+    /// precargaron.
+    /// </summary>
+    private static string HiddenFields(ValidatedAuthorizationRequest authorization, AuthorizationRequest request, User profile)
     {
         var fields = new Dictionary<string, string?>(StringComparer.Ordinal)
         {
@@ -97,6 +88,7 @@ public static class LoginPage
             ["code_challenge"] = authorization.CodeChallenge,
             ["code_challenge_method"] = authorization.CodeChallengeMethod,
             ["grant_type"] = request.GrantType,
+            [LoginFormFields.Perfil] = profile.UserName,
             // La peticion empujada se reenvia oculta: el POST del login vuelve al authorize y tiene
             // que volver a encontrar los parametros originales detras del request_uri.
             [AuthorizationRequestBinder.RequestUriField] = authorization.RequestUri
@@ -110,15 +102,8 @@ public static class LoginPage
     }
 
     /// <summary>
-    /// El campo de usuario es un input con datalist: el desplegable ofrece los usuarios de
-    /// users.json, pero el mismo campo admite escribir cualquiera. Sin JavaScript, que es lo que
-    /// pide un mock que se usa en desarrollo.
+    /// El logo del branding se sirve desde /assets; sin logo configurado, solo el nombre.
     /// </summary>
-    private static string UserOptions(IReadOnlyList<User> users) =>
-        string.Join(
-            Environment.NewLine,
-            users.Select(user => $"<option value=\"{Escape(user.UserName)}\"></option>"));
-
     private static string Logo(Branding branding) =>
         string.IsNullOrEmpty(branding.LogoUrl)
             ? string.Empty

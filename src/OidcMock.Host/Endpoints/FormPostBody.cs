@@ -17,7 +17,7 @@ public static class FormPostBody
         return $$"""
             <!DOCTYPE html>
             <html lang="es">
-            <head><meta charset="utf-8" /><title>Enviando respuesta de autorizacion</title></head>
+            <head><meta charset="utf-8" /><title>Enviando respuesta de autorizacion</title>{{MockStyles.Render(primaryColor: null)}}</head>
             <body onload="document.forms[0].submit()">
             <form method="post" action="{{Escape(redirectUri)}}">
             {{inputs}}

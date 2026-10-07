@@ -41,9 +41,14 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(TimeProvider.System);
 
         services.AddSingleton<IClientStore>(provider => CreateStore<JsonClientStore>(provider));
-        services.AddSingleton<IUserStore>(provider => CreateStore<JsonUserStore>(provider));
         services.AddSingleton<IScopeStore>(provider => CreateStore<JsonScopeStore>(provider));
         services.AddSingleton<IConfigurationValidator, JsonConfigurationValidator>();
+
+        // La pantalla de identidad crea usuarios sinteticos en memoria que sombrean los de
+        // users.json: el store publico es el decorador, y los dos contratos apuntan al mismo objeto.
+        services.AddSingleton(provider => new OverlayUserStore(CreateStore<JsonUserStore>(provider)));
+        services.AddSingleton<IUserStore>(provider => provider.GetRequiredService<OverlayUserStore>());
+        services.AddSingleton<IUserOverlay>(provider => provider.GetRequiredService<OverlayUserStore>());
 
         return services;
     }
@@ -121,8 +126,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAuthorizeRequestValidator, PromptValidator>();
         services.AddSingleton<IAuthorizeRequestValidator, ResponseModeValidator>();
         services.AddSingleton<IAuthorizationService, AuthorizationService>();
-        services.AddSingleton<UserAuthenticator>();
         services.AddSingleton<IAuthorizationInteraction, AuthorizationInteraction>();
+        services.AddSingleton<IConsentStore, InMemoryConsentStore>();
         services.AddSingleton<GrantHandlerRegistry>();
         services.AddSingleton<ITokenEndpointService, TokenEndpointService>();
 

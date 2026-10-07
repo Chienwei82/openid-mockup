@@ -15,13 +15,16 @@ algo falla, las lineas relevantes del log en vez de un volcado de mil lineas.
     ./scripts/publish.py --configuration Debug
     ./scripts/publish.py --runtimes linux-x64
 
-Los artefactos van a `artifacts/publish/<runtime>`, que esta en .gitignore: son binarios
-generados y no tienen nada que ver en el historico.
+Los artefactos van a `publish/<runtime>`, que esta en .gitignore: son binarios generados y no tienen
+nada que ver en el historico. Cada runtime lleva su config/ real al lado del ejecutable, listo para
+editar y arrancar.
 """
 
 from __future__ import annotations
 
 import argparse
+import atexit
+import json
 import os
 import re
 import shutil
@@ -33,7 +36,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SOLUTION = ROOT / "OidcMock.slnx"
 HOST_PROJECT = ROOT / "src" / "OidcMock.Host" / "OidcMock.Host.csproj"
-ARTIFACTS = ROOT / "artifacts" / "publish"
+# La salida va directa a publish/<runtime>/: los binarios publicados son el producto del script y no
+# merecen una carpeta intermedia. Esta en .gitignore.
+ARTIFACTS = ROOT / "publish"
 
 TEST_PROJECTS = (
     "OidcMock.UnitTests",
@@ -99,6 +104,23 @@ def run(command: list[str], log: Path) -> tuple[bool, float]:
 
 def size_in_mib(size: int) -> str:
     return f"{size / (1024 * 1024):.0f}"
+
+
+def shutdown_build_servers() -> None:
+    """Cierra los nodos de MSBuild y el compilador Roslyn que deja cada build (nodeReuse).
+
+    Sin esto se quedan vivos indefinidamente y acumulan GB de RAM en un server pequeno.
+    `dotnet build-server shutdown` cierra el compilador, pero no siempre los nodos
+    /nodeReuse, asi que se rematan con pkill.
+    """
+    silent = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL, "check": False}
+    subprocess.run(["dotnet", "build-server", "shutdown"], cwd=ROOT, **silent)
+    # El patron lleva corchetes para que pkill no se mate a si mismo ni a la shell que lo invoca.
+    subprocess.run(["pkill", "-f", "[n]odemode:1"], **silent)
+
+
+# Al salir, se terminen bien o mal los pasos: main() tiene returns anticipados cuando algo falla.
+atexit.register(shutdown_build_servers)
 
 
 def relevant_lines(log: Path, limit: int = 15) -> list[str]:
@@ -218,6 +240,11 @@ def publish(runtimes: list[str], console: Console, logs: Path) -> bool:
             size = sum(f.stat().st_size for f in output.rglob("*") if f.is_file())
             console.ok(f"{runtime} en {output.relative_to(ROOT)} "
                        f"({size_in_mib(size)} MiB, {seconds:.0f}s)")
+
+            problem = publish_layout_problem(output)
+            if problem is not None:
+                ok = False
+                console.fail(problem)
         else:
             ok = False
             console.fail(f"publish de {runtime} con errores en {seconds:.1f}s")
@@ -226,10 +253,30 @@ def publish(runtimes: list[str], console: Console, logs: Path) -> bool:
     return ok
 
 
-def warn_about_stray_publish(console: Console) -> None:
-    """Deja claro por que la salida no va a un 'publish/' en la raiz."""
-    if (ROOT / "publish").exists():
-        console.warn("Hay un 'publish/' en la raiz: la salida de este script va a artifacts/publish/.")
+def publish_layout_problem(output: Path) -> str | None:
+    """Comprueba que la publicacion se puede arrancar tal cual: ejecutable + config/ con clientes.
+
+    Sin config/ junto al binario, o sin ningun cliente registrado, el publicado no sirve para nada
+    y solo se descubre al llevarlo a otra maquina.
+    """
+    config = output / "config"
+    clients = config / "clients.json"
+
+    if not config.is_dir():
+        return f"falta el config/ junto al ejecutable en {output}"
+
+    if not clients.is_file():
+        return f"falta {clients} en la publicacion"
+
+    try:
+        document = json.loads(clients.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        return f"{clients} no se pudo leer: {error}"
+
+    if not document.get("clients"):
+        return f"{clients} no contiene ningun cliente"
+
+    return None
 
 
 def main() -> int:
@@ -249,8 +296,7 @@ def main() -> int:
     print(console.bold("OidcMock · compilacion, pruebas y publicacion"))
     console.info(f"raiz: {ROOT}")
     console.info(f"configuracion: {args.configuration}")
-    console.info(f"artefactos: {ARTIFACTS.relative_to(ROOT)} (ignorado por git)")
-    warn_about_stray_publish(console)
+    console.info(f"salida: {ARTIFACTS.relative_to(ROOT)}/<runtime> (ignorada por git)")
 
     if not build(args.configuration, console, logs):
         # Publicar sin un build limpio publicaria algo que no se sabe ni que compila.

@@ -12,6 +12,9 @@ public static class RepositoryLayout
 
     public static string ConfigDirectory => Path.Combine(RootDirectory, ConfigDirectoryName);
 
+    /// <summary>Proyecto del host: de ahi se lee el contrato de publicacion.</summary>
+    public static string HostProjectFile => Path.Combine(RootDirectory, "src", "OidcMock.Host", "OidcMock.Host.csproj");
+
     /// <summary>
     /// Content root del host del mock en las pruebas. Fijarlo evita que WebApplicationFactory infiera
     /// el directorio de contenido y monte un watcher para detectarlo.

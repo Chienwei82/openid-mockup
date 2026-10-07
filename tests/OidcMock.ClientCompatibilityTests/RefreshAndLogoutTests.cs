@@ -117,7 +117,6 @@ public sealed class RefreshAndLogoutTests
         using var _login = await browser.SignInAsync(
             world.ClientBaseAddress,
             CompatibilityWorld.UserName,
-            CompatibilityWorld.Password,
             TestContext.Current.CancellationToken);
 
         return new SignedInWorld(world, browser);

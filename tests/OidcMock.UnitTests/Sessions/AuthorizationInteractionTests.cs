@@ -16,12 +16,14 @@ public sealed class AuthorizationInteractionTests
 {
     private readonly FakeTimeProvider _time = new(new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero));
     private readonly InMemoryAuthSessionStore _sessions;
+    private readonly InMemoryConsentStore _consents;
     private readonly AuthorizationInteraction _interaction;
 
     public AuthorizationInteractionTests()
     {
         _sessions = new InMemoryAuthSessionStore(_time, new OidcMockOptions());
-        _interaction = new AuthorizationInteraction(_sessions);
+        _consents = new InMemoryConsentStore();
+        _interaction = new AuthorizationInteraction(_sessions, _consents);
     }
 
     [Fact]
@@ -71,32 +73,63 @@ public sealed class AuthorizationInteractionTests
         Assert.Equal(AuthorizationStep.Login, Decide(sessionId: "sesion-inventada").Step);
 
     /// <summary>
-    /// <c>select_account</c> se anuncia en el discovery por paridad con el servidor real, pero el
-    /// mock no implementa la eleccion de cuenta (D-043): el authorize se comporta como si el prompt
-    /// no fuera. Con sesion concede en silencio con el usuario de la sesion; sin sesion pide login.
-    /// El test fija ese comportamiento a proposito: es la decision de no implementar la
-    /// pantalla de eleccion, y cambiarlo tiene que ser un acto deliberado, no un efecto colateral.
+    /// <c>select_account</c> pide elegir cuenta <b>siempre</b>, con o sin sesion: es lo que el prompt
+    /// promete. La pantalla de identidad es la eleccion de cuenta (los perfiles son las cuentas), asi
+    /// que el paso es un <see cref="AuthorizationStep.SelectAccount"/> propio y no un login. La
+    /// decision lleva el usuario de la sesion para precargar su cuenta como la actual.
     /// </summary>
     [Fact]
-    public void SelectAccountSeTrataComoSinPrompt() =>
-        Assert.Equal(AuthorizationStep.Grant, Decide(sessionId: OpenSession(), prompt: PromptValues.SelectAccount).Step);
+    public void SelectAccountPideElegirCuentaAunqueHayaSesion() =>
+        Assert.Equal(AuthorizationStep.SelectAccount, Decide(sessionId: OpenSession(), prompt: PromptValues.SelectAccount).Step);
 
     [Fact]
-    public void SelectAccountSinSesionPideLogin() =>
-        Assert.Equal(AuthorizationStep.Login, Decide(prompt: PromptValues.SelectAccount).Step);
+    public void SelectAccountSinSesionTambienPideElegirCuenta() =>
+        Assert.Equal(AuthorizationStep.SelectAccount, Decide(prompt: PromptValues.SelectAccount).Step);
 
     [Fact]
-    public void SelectAccountConcedeConElUsuarioDeLaSesion() =>
+    public void SelectAccountPrecargaAlUsuarioDeLaSesion() =>
         Assert.Equal("jperez", Decide(sessionId: OpenSession(), prompt: PromptValues.SelectAccount).UserName);
 
-    private AuthorizationDecision Decide(string? sessionId = null, string? prompt = null) =>
-        _interaction.Decide(AuthorizationWith(prompt), sessionId);
+    /// <summary>
+    /// El consentimiento es memorable: una vez aprobado para un cliente y un usuario, el mismo
+    /// alcance no vuelve a preguntar aunque el prompt lo pida. Es el supuesto del mock (D-045): el
+    /// flujo repetido del desarrollador no debe volver a hacer click.
+    /// </summary>
+    [Fact]
+    public void PromptConsentConConsentimientoRecordadoConcedeEnSilencio()
+    {
+        _consents.Remember(ClientStoreFixture.SpaClientId, "jperez", [ScopeNames.OpenId]);
 
-    private static ValidatedAuthorizationRequest AuthorizationWith(string? prompt) =>
+        Assert.Equal(
+            AuthorizationStep.Grant,
+            Decide(sessionId: OpenSession(), prompt: PromptValues.Consent).Step);
+    }
+
+    /// <summary>
+    /// Lo recordado es un conjunto de scopes, no un visto bueno total: un scope nuevo vuelve a
+    /// mostrar el consentimiento.
+    /// </summary>
+    [Fact]
+    public void ElConsentimientoRecordadoNoCubreScopesAmpliados()
+    {
+        _consents.Remember(ClientStoreFixture.SpaClientId, "jperez", [ScopeNames.OpenId]);
+
+        Assert.Equal(
+            AuthorizationStep.Consent,
+            Decide(
+                sessionId: OpenSession(),
+                prompt: PromptValues.Consent,
+                scopes: [ScopeNames.OpenId, ScopeNames.Email]).Step);
+    }
+
+    private AuthorizationDecision Decide(string? sessionId = null, string? prompt = null, IReadOnlyList<string>? scopes = null) =>
+        _interaction.Decide(AuthorizationWith(prompt, scopes), sessionId);
+
+    private static ValidatedAuthorizationRequest AuthorizationWith(string? prompt, IReadOnlyList<string>? scopes = null) =>
         new(
             ClientStoreFixture.Spa(),
             AuthorizeValidation.RedirectUri,
-            [ScopeNames.OpenId],
+            scopes ?? [ScopeNames.OpenId],
             ResponseTypeNames.Code,
             ResponseModes.Query,
             Nonce: null,

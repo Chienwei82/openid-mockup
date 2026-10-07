@@ -22,20 +22,10 @@ public static class EndSessionPage
               <meta charset="utf-8" />
               <meta name="viewport" content="width=device-width, initial-scale=1" />
               <title>Sesi&#243;n cerrada</title>
-              <style>
-                :root { --primary: #00695C; }
-                body { font-family: system-ui, sans-serif; background: #f4f5f7; margin: 0; padding: 3rem 1rem; }
-                .card { max-width: 26rem; margin: 0 auto; background: #fff; border-radius: 12px; padding: 2rem;
-                        box-shadow: 0 1px 3px rgba(0,0,0,.16); text-align: center; }
-                header { border-bottom: 4px solid var(--primary); margin: -2rem -2rem 1.5rem; padding: 1.25rem 2rem; }
-                h1 { font-size: 1.1rem; margin: 0; color: var(--primary); }
-                .mock { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; color: #6b7280; }
-                p { color: #374151; font-size: .95rem; }
-                iframe { display: none; }
-              </style>
+              {{MockStyles.Render(primaryColor: null)}}
             </head>
             <body>
-              <div class="card">
+              <div class="card centered">
                 <header>
                   <div class="mock">OidcMock</div>
                   <h1>Sesi&#243;n cerrada</h1>

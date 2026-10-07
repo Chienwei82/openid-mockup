@@ -803,6 +803,12 @@ este forget.
 
 ## `prompt=select_account`: se anuncia a proposito y sin implementar
 
+> **Actualizado (2026-10-07): implementado.** La pantalla de identidad (sin contrasena) resulto ser la
+> pantalla de eleccion de cuenta que faltaba: los perfiles de `users.json` son las cuentas. Hoy
+> `prompt=select_account` muestra esa pantalla con y sin sesion, precarga la cuenta de la sesion (el
+> campo `perfil` casa tambien por `subject`) y concede con el perfil elegido (`AuthorizationStep.SelectAccount`).
+> Lo de abajo es el razonamiento original de por que se dejo sin implementar en su momento.
+
 **Decision: se deja como esta. No es un olvido.**
 
 `DiscoveryDocumentBuilder` anuncia `select_account` en `prompt_values_supported`, igual que la referencia
@@ -1171,3 +1177,69 @@ Para correr la prueba del script contra el mock sustituyendo al servidor real de
   el script lo contrasta con `--subject` / `OIDC_SUBJECT` / `subject` en el `--config` (por defecto
   `01-2222-3333`, el del usuario `prueba`, dato falso). Cambiar el subject no toca codigo: se cambia
   en la configuracion y el desglose senala si el `sub` del id_token coincide o no.
+
+## Identidad editable en las pantallas y UI Material You (2026-10-07)
+
+Para que el mockup no dependa de credenciales: quien usa el mock elige y edita la identidad que
+viaja en el JWT, y las pantallas se pintan con los tokens Material You dark del prototipo de
+`docs/UI-Prototype/` (que se versiona aqui como fuente de verdad visual).
+
+### Supuestos que fijan el contrato observable
+
+- **Un mockup no autentica.** La pantalla de identidad pide `sub` y un input por claim del perfil
+  precargado; no hay usuario ni contrasena y no se valida nada. `Aceptar` concede en un paso (el
+  consentimiento solo aparece con `prompt=consent` con sesion) y `Denegar` simula un fallo de
+  autenticacion, que el cliente ve como `error=access_denied` por el `redirect_uri` (RFC 6749
+  4.1.2.1). En `/Account/Login` `Denegar` re-muestra la pantalla con el error simulado: ahi no hay
+  un cliente al que devolver un `access_denied`.
+- **Un POST sin `action` concede.** Solo `action=deny` deniega: los scripts y el arnes que no pasan
+  por la pantalla esperan obtener su codigo sin saber que boton existe.
+- **Semantica del POST: perfil base + overrides.** El perfil base se elige con `perfil=<username>`
+  (enlaces GET de la pantalla; por defecto el primer usuario de `users.json`), el `sub` tecleado
+  manda sobre el del perfil y cada campo `claim.<nombre>` reemplaza su valor. Un campo de claim
+  vacio borra el claim del JWT; si el formulario no trae ningun campo de claim, la identidad es la
+  del perfil tal cual.
+- **Los valores que parsean como JSON conservan su tipo** (`true`, `123`, `["rol"]`); el resto viaja
+  como cadena. Las cadenas se editan sin comillas.
+- **Identidad sintetica en memoria (`OverlayUserStore`).** El usuario recordado desde la pantalla
+  sombrea al de `users.json` (mismo `sub`) para que el canje, userinfo y refresh devuelvan lo que se
+  edito, sin tocar el pipeline, que sigue hablando de `IUserStore`. La identidad sintetica nace con
+  `UserName == Subject`; el perfil solo aporta los valores iniciales.
+- **El grant `password` sigue autenticando de verdad** contra `users.json`: es protocolo, no
+  pantalla. Es el unico consumidor de la comparacion en tiempo constante (en
+  `PasswordGrantHandler`), y con la pantalla sin credenciales desaparecieron `UserAuthenticator` y
+  `SignInRequest`.
+- **Claims editables = claims de usuario.** Los de protocolo (`aud`, `iss`, `exp`, `nonce`, `sid`,
+  `amr`, `acr`, `idp`, ...) los pone el token factory y no se editan en la pantalla.
+
+### Material You dark
+
+- `MockStyles` concentra la tabla de tokens de `docs/UI-Prototype/index.html` (color, forma,
+  tipografia, elevacion, movimiento) y los componentes de pantalla; las seis pantallas HTML
+  (identidad, `/Account/Login`, consentimiento, sesion cerrada, `form_post` y `check_session`) la
+  referencian en vez de llevar su propio CSS. Sin Google Fonts: la tipografia declara
+  `'Inter', system-ui, sans-serif` y usa la del sistema si Inter no esta instalada.
+- **El branding del cliente manda sobre `--md-primary`** (contrato ya fijado por tests: el color del
+  cliente aparece en la pantalla). Como los brandings de `config/` son oscuros, `--md-on-primary`
+  va en claro para conservar el contraste del boton primario; sin branding manda la pareja de la
+  paleta del prototipo.
+
+
+## D-045 · Consentimiento memorable (2026-10-07)
+
+**Decision: el consentimiento aprobado se recuerda en memoria por cliente + usuario, y lo recordado
+cubre solo sus scopes.** Cierra el pendiente "Consentimiento memorable: `prompt=consent` vuelve a
+preguntar en cada authorize".
+
+- **`IConsentStore` / `InMemoryConsentStore`**: el conjunto de scopes aprobados crece con cada
+  aprobacion de la pantalla de consentimiento. Denegar no deja constancia (la proxima vez vuelve a
+  preguntar), y un scope nuevo tampoca esta cubierto: vuelve a mostrar la pantalla.
+- **Solo la pantalla de consentimiento deja constancia.** La concesion en un paso de la pantalla de
+  identidad autentica, no consiente; si contara como consentimiento, `prompt=consent` dejaria de
+  preguntar tras cualquier login y el prompt no significaria nada.
+- **Desviacion consciente de OIDC Core 3.1.2.1**, que pide volver a mostrar el consentimiento con
+  `prompt=consent`. El mock es una herramienta de desarrollo: el flujo repetido (probar la app una y
+  otra vez) no debe obligar a hacer click en cada authorize. Es el mismo espiritu que "un mockup no
+  autentica": lo que se optimiza es la iteracion, no la seguridad.
+- **En memoria, como los codigos y los tokens** (regla 3): reiniciar el mock borra lo recordado.
+

@@ -3,9 +3,9 @@ using System.Text.RegularExpressions;
 namespace OidcMock.IntegrationTests.Endpoints;
 
 /// <summary>
-/// Lee los campos ocultos que el mock renderiza en la pantalla de login, para poder enviarlos tal
-/// cual lo haria el navegador. El mock los emite uno por input hidden, que es lo unico que la
-/// prueba necesita; no intenta ser un parser de HTML general.
+/// Lee los campos del formulario de las pantallas del mock para enviarlos tal cual lo haria el
+/// navegador: los ocultos (la peticion de autorizacion viaja en ellos) y los visibles con su valor
+/// precargado (subject y claims editables). No intenta ser un parser de HTML general.
 /// </summary>
 public static partial class LoginFormFields
 {
@@ -13,7 +13,7 @@ public static partial class LoginFormFields
     {
         var fields = new Dictionary<string, string>(StringComparer.Ordinal);
 
-        foreach (Match match in HiddenInputPattern().Matches(html))
+        foreach (Match match in InputPattern().Matches(html))
         {
             fields[match.Groups["name"].Value] = match.Groups["value"].Value;
         }
@@ -27,7 +27,7 @@ public static partial class LoginFormFields
     }
 
     [GeneratedRegex(
-        """<input[^>]*type=["']hidden["'][^>]*name=["'](?<name>[^"']+)["'][^>]*value=["'](?<value>[^"']*)["']""",
+        """<input[^>]*name=["'](?<name>[^"']+)["'][^>]*value=["'](?<value>[^"']*)["']""",
         RegexOptions.IgnoreCase)]
-    private static partial Regex HiddenInputPattern();
+    private static partial Regex InputPattern();
 }

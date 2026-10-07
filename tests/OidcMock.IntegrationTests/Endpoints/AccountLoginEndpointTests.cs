@@ -19,13 +19,15 @@ public sealed class AccountLoginEndpointTests
     private const string LoginPath = "Account/Login";
     private const string AuthorizeCallbackPath = "connect/authorize/callback";
     private const string ReturnUrlField = "ReturnUrl";
+    private const string Accept = "accept";
+    private const string Deny = "deny";
 
     private static readonly string CallbackUrl =
         BuildAuthorizeUrl(HybridParameters()).Replace(
             EndpointPaths.Authorize, AuthorizeCallbackPath, StringComparison.Ordinal);
 
     [Fact]
-    public async Task AccountLoginMuestraElFormularioConElReturnUrlOculto()
+    public async Task AccountLoginMuestraLaPantallaDeIdentidadConElReturnUrlOculto()
     {
         using var client = Create();
 
@@ -35,34 +37,33 @@ public sealed class AccountLoginEndpointTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal(CallbackUrl, WebUtility.HtmlDecode(fields[ReturnUrlField]));
-        Assert.Contains("name=\"username\"", html, StringComparison.Ordinal);
-        Assert.Contains("name=\"password\"", html, StringComparison.Ordinal);
+        Assert.Contains("name=\"sub\"", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("name=\"password\"", html, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public async Task AccountLoginConCredencialesValidasRedirigeAlReturnUrl()
+    public async Task AceptarEnAccountLoginRedirigeAlReturnUrl()
     {
         using var client = Create();
 
-        using var response = await PostLoginAsync(client, CallbackUrl, Password);
+        using var response = await PostLoginAsync(client, CallbackUrl, Accept);
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Equal(CallbackUrl, response.Headers.Location!.OriginalString);
     }
 
     [Fact]
-    public async Task AccountLoginConCredencialesInvalidasVuelveAMostrarElFormulario()
+    public async Task DenegarEnAccountLoginVuelveAMostrarElFormulario()
     {
         using var client = Create();
 
-        using var response = await PostLoginAsync(client, CallbackUrl, "clave-incorrecta");
+        using var response = await PostLoginAsync(client, CallbackUrl, Deny);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Null(response.Headers.Location);
-        Assert.Contains(
-            ReturnUrlField,
-            await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken),
-            StringComparison.Ordinal);
+        var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        Assert.Contains(ReturnUrlField, html, StringComparison.Ordinal);
+        Assert.Contains("name=\"sub\"", html, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -76,8 +77,7 @@ public sealed class AccountLoginEndpointTests
             $"{PathBase}/{LoginPath}",
             new FormUrlEncodedContent(new Dictionary<string, string>
             {
-                ["username"] = UserName,
-                ["password"] = Password,
+                ["action"] = Accept,
                 [ReturnUrlField] = External
             }),
             TestContext.Current.CancellationToken);
@@ -97,7 +97,7 @@ public sealed class AccountLoginEndpointTests
     {
         using var client = Create();
 
-        using var signIn = await PostLoginAsync(client, CallbackUrl, Password);
+        using var signIn = await PostLoginAsync(client, CallbackUrl, Accept);
         Assert.Equal(CallbackUrl, signIn.Headers.Location!.OriginalString);
 
         using var granted = await client.GetAsync(signIn.Headers.Location!, TestContext.Current.CancellationToken);
@@ -120,16 +120,16 @@ public sealed class AccountLoginEndpointTests
         $"{PathBase}/{LoginPath}?{ReturnUrlField}={Uri.EscapeDataString(returnUrl)}";
 
     /// <summary>
-    /// Abre la pantalla de login y la envia como lo haria el navegador. El valor del ReturnUrl
-    /// viene entizado en el HTML (el separador de parametros es &amp;) y el navegador lo entrega
-    /// decodificado, asi que la prueba hace lo mismo antes de responder al formulario.
+    /// Abre la pantalla de identidad y la envia como lo haria el navegador, con la decision elegida.
+    /// El valor del ReturnUrl viene entizado en el HTML (el separador de parametros es &amp;) y el
+    /// navegador lo entrega decodificado, asi que la prueba hace lo mismo antes de responder al
+    /// formulario.
     /// </summary>
-    private static async Task<HttpResponseMessage> PostLoginAsync(HttpClient client, string returnUrl, string password)
+    private static async Task<HttpResponseMessage> PostLoginAsync(HttpClient client, string returnUrl, string action)
     {
         using var loginPage = await client.GetAsync(LoginEntryUrl(returnUrl), TestContext.Current.CancellationToken);
         var fields = LoginFormFields.Parse(await loginPage.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
-        fields["username"] = UserName;
-        fields["password"] = password;
+        fields["action"] = action;
         fields[ReturnUrlField] = WebUtility.HtmlDecode(fields[ReturnUrlField]);
 
         return await client.PostAsync(

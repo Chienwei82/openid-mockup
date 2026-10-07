@@ -125,8 +125,7 @@ public sealed class HybridAuthorizeFlowTests
             TestContext.Current.CancellationToken);
         var fields = LoginFormFields.Parse(
             await loginPage.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
-        fields["username"] = UserName;
-        fields["password"] = Password;
+        fields["action"] = "accept";
 
         using var response = await client.SendAsync(
             new HttpRequestMessage(HttpMethod.Post, $"{PathBase}/{EndpointPaths.Authorize}")

@@ -7,7 +7,7 @@ namespace OidcMock.Core.Authorization;
 /// Ningun prompt exige interaccion si no hay sesion: en ese caso, o se pide login o se devuelve
 /// login_required, segun el prompt venga o no.
 /// </summary>
-public sealed class AuthorizationInteraction(IAuthSessionStore sessions) : IAuthorizationInteraction
+public sealed class AuthorizationInteraction(IAuthSessionStore sessions, IConsentStore consents) : IAuthorizationInteraction
 {
     private const string LoginRequiredDescription =
         "El prompt=none exige una sesion activa y el navegador no trae ninguna.";
@@ -28,19 +28,25 @@ public sealed class AuthorizationInteraction(IAuthSessionStore sessions) : IAuth
                 : AuthorizationDecision.Grants(session.UserName);
         }
 
+        // prompt=select_account pide elegir cuenta siempre, con o sin sesion: es lo que el prompt
+        // promete (D-043). La pantalla de identidad es la eleccion de cuenta, y la decision lleva el
+        // usuario de la sesion para precargar su cuenta como la actual.
+        if (authorization.Prompt == PromptValues.SelectAccount)
+        {
+            return AuthorizationDecision.NeedsAccountSelection(session?.UserName);
+        }
+
         // prompt=login invalida la sesion previa, por eso va antes de mirar si existe.
         if (authorization.Prompt == PromptValues.Login || session is null)
         {
             return AuthorizationDecision.NeedsLogin();
         }
 
-        // prompt=select_account cae aqui y se concede en silencio con el usuario de la sesion.
-        // Es deliberado (D-043): el discovery anuncia el valor por paridad con el servidor real,
-        // pero el mock no tiene pantalla de eleccion de cuenta, asi que no puede hacer lo que el
-        // prompt promete. Reutilizar la pantalla de login daria al usuario una cuenta a elegir sin
-        // indicarle que el prompt no se esta honrando, que es peor que no implementarlo. Los tres
-        // tests SelectAccount* fijan este comportamiento para que cambiarlo sea deliberado.
+        // prompt=consent pide consentimiento, pero lo ya aprobado por este cliente y usuario no
+        // vuelve a preguntar (D-045): el mock recuerda el consentimiento para no interrumpir el
+        // flujo repetido del desarrollador, y solo dentro de los scopes aprobados.
         return authorization.Prompt == PromptValues.Consent
+            && !consents.IsGranted(authorization.Client.ClientId, session.UserName, authorization.Scopes)
             ? AuthorizationDecision.NeedsConsent(session.UserName)
             : AuthorizationDecision.Grants(session.UserName);
     }

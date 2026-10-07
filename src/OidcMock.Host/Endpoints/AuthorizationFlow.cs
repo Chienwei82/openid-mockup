@@ -19,7 +19,9 @@ internal sealed class AuthorizationFlow(
     AuthorizationBinder binder,
     IAuthorizationService authorization,
     IAuthorizationInteraction interaction,
+    IConsentStore consents,
     IUserStore users,
+    IUserOverlay overlay,
     IAuthSessionStore sessions,
     ITokenFactory tokens,
     DiscoveryDocumentBuilder discovery,
@@ -44,9 +46,10 @@ internal sealed class AuthorizationFlow(
             AuthorizationStep.Error => RespondToError(
                 AuthorizationValidationResult.Failed(decision.Error!, authorized.RedirectUri, authorized.State),
                 authorized.ResponseMode),
+            AuthorizationStep.SelectAccount => Login(authorized, binding.Bound!, chooser: true, decision.UserName),
             AuthorizationStep.Consent => Consent(authorized, decision.UserName!),
             AuthorizationStep.Grant => Grant(authorized, decision.UserName!, SessionId()),
-            _ => Login(authorized, binding.Bound!)
+            _ => Login(authorized, binding.Bound!, chooser: false, sessionUserName: null)
         };
     }
 
@@ -73,8 +76,29 @@ internal sealed class AuthorizationFlow(
     private static bool IsConsentAnswer(IReadOnlyDictionary<string, string> form) =>
         form.ContainsKey(ConsentPage.DecisionField);
 
-    private IResult Login(ValidatedAuthorizationRequest authorized, AuthorizationRequest request) =>
-        Results.Content(LoginPage.Render(authorized, users.List(), request), HtmlContentType);
+    /// <summary>
+    /// La pantalla de identidad cumple dos papeles: login y eleccion de cuenta (select_account). El
+    /// perfil precargado es el pedido por el query, el de la sesion en la eleccion de cuenta, o el
+    /// primero de users.json.
+    /// </summary>
+    private IResult Login(
+        ValidatedAuthorizationRequest authorized,
+        AuthorizationRequest request,
+        bool chooser,
+        string? sessionUserName)
+    {
+        var profiles = users.List();
+
+        return Results.Content(
+            LoginPage.Render(
+                authorized,
+                profiles,
+                request,
+                IdentityForm.BaseProfile(Perfil() ?? sessionUserName, profiles),
+                PerfilHref(),
+                chooser),
+            HtmlContentType);
+    }
 
     private static IResult Consent(ValidatedAuthorizationRequest authorized, string userName) =>
         Results.Content(ConsentPage.Render(authorized, userName), HtmlContentType);
@@ -95,32 +119,39 @@ internal sealed class AuthorizationFlow(
                     authorized.State),
                 authorized.ResponseMode)
             : IsAllowed(form[ConsentPage.DecisionField])
-                ? Grant(authorized, session.UserName, session.SessionId)
+                ? ApproveConsent(authorized, session)
                 : Denied(authorized);
     }
 
+    /// <summary>
+    /// La pantalla de consentimiento es la unica que deja constancia de la aprobacion: con ella se
+    /// recuerda (D-045) y la proxima peticion igual no vuelve a preguntar.
+    /// </summary>
+    private IResult ApproveConsent(ValidatedAuthorizationRequest authorized, AuthSession session)
+    {
+        consents.Remember(authorized.Client.ClientId, session.UserName, authorized.Scopes);
+
+        return Grant(authorized, session.UserName, session.SessionId);
+    }
+
+    /// <summary>
+    /// El POST de la pantalla de identidad: Denegar simula un fallo de autenticacion y Aceptar
+    /// concede con la identidad que el usuario edito. El mock no autentica a nadie; la identidad
+    /// sintetica se recuerda en memoria para que el canje y userinfo devuelvan lo mismo.
+    /// </summary>
     private IResult SignIn(ValidatedAuthorizationRequest authorized, IReadOnlyDictionary<string, string> form)
     {
-        // Un POST sin formulario es una denegacion: el cliente volvio sin llegar a enviar credenciales.
-        if (!context.Request.HasFormContentType)
+        // Un POST sin formulario es una denegacion: el cliente volvio sin llegar a la pantalla.
+        if (!context.Request.HasFormContentType || IdentityForm.IsDenied(form))
         {
             return Denied(authorized);
         }
 
-        var signedIn = authorization.SignIn(new SignInRequest(
-            ReadUserName(form),
-            form.GetValueOrDefault(LoginFormFields.Password) ?? string.Empty,
-            authorized,
-            authorized.ResponseMode));
+        var user = IdentityForm.ReadUser(form, users.List());
 
-        return signedIn.Failed
-            ? RespondToError(
-                AuthorizationValidationResult.Failed(
-                    signedIn.Error!,
-                    authorized.RedirectUri,
-                    authorized.State),
-                authorized.ResponseMode)
-            : RememberAndContinue(authorized, signedIn.Value!.Code.UserName);
+        overlay.Remember(user);
+
+        return RememberAndContinue(authorized, user.UserName);
     }
 
     /// <summary>
@@ -258,14 +289,22 @@ internal sealed class AuthorizationFlow(
 
     private string Issuer => IssuerResolver.Resolve(context.Request, discovery, options);
 
+    private string? Perfil() => context.Request.Query[LoginFormFields.Perfil].FirstOrDefault();
+
     /// <summary>
-    /// El campo de la lista desplegable es "user" y el de texto libre "username"; se prefiere el
-    /// tecleado, porque es el explicito, y se cae al otro para no romper formularios anteriores.
+    /// Los enlaces de perfil repiten la peticion de autorizacion actual con otro perfil: sin
+    /// JavaScript, elegir perfil es una navegacion GET y los valores editados se pierden a proposito.
     /// </summary>
-    private static string ReadUserName(IReadOnlyDictionary<string, string> form) =>
-        form.GetValueOrDefault(LoginFormFields.UserName) is { Length: > 0 } typed
-            ? typed
-            : form.GetValueOrDefault(LoginFormFields.User) ?? string.Empty;
+    private Func<string, string> PerfilHref()
+    {
+        var query = string.Join(
+            '&',
+            context.Request.Query
+                .Where(parameter => parameter.Key != LoginFormFields.Perfil)
+                .Select(parameter => $"{parameter.Key}={Uri.EscapeDataString(parameter.Value.ToString())}"));
+
+        return perfil => $"?{query}&{LoginFormFields.Perfil}={Uri.EscapeDataString(perfil)}";
+    }
 
     private static bool IsAllowed(string decision) =>
         string.Equals(decision, ConsentPage.Allow, StringComparison.Ordinal);

@@ -15,6 +15,8 @@ namespace OidcMock.ClientCompatibilityTests;
 /// </summary>
 public sealed class PushedAuthorizationTests
 {
+    private const string Accept = "accept";
+
     /// <summary>
     /// Lo que el handler OpenIdConnect hace cuando el discovery trae un endpoint de PAR, y lo que
     /// hace cualquier cliente RFC 9126: POST al endpoint con los parametros de la peticion mas
@@ -60,13 +62,12 @@ public sealed class PushedAuthorizationTests
         Assert.Contains("invalid_request_uri", body, StringComparison.Ordinal);
     }
 
-    /// <summary>Responde el formulario de login del mock con credenciales validas.</summary>
+    /// <summary>Responde la pantalla de identidad del mock con el perfil por defecto.</summary>
     private static async Task ApproveAsync(HttpClient client, CompatibilityWorld world, string html)
     {
         var fields = HiddenFields.Parse(html);
 
-        fields["user"] = CompatibilityWorld.UserName;
-        fields["password"] = CompatibilityWorld.Password;
+        fields["action"] = Accept;
 
         using var response = await client.PostAsync(
             $"{world.Mock.Issuer}{MockEndpoints.Authorize}",

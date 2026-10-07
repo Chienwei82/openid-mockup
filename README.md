@@ -40,7 +40,7 @@ JWKS. Los secretos que hay en `config/` son de ejemplo y están pensados para es
 | `check_session_iframe` | **Simulado** | Se sirve la página, no implementa OPiFrame (RFC 6614) |
 | Híbrido (`response_type=code id_token`) | Implementado | Flujo del servidor real: `#code`, `#id_token` (con `c_hash`) y `#session_state` en el fragmento del `redirect_uri` |
 | Implicit (`response_type=id_token token` y demás combinaciones con access token) | **Anunciado, no implementado** | El discovery lo declara por paridad con el real, pero el authorize responde `unsupported_response_type`: solo emite `code` y `code id_token` |
-| `select_account` | **Anunciado, no implementado** | Se acepta el valor pero el flujo es el mismo que sin él: concede con el usuario de la sesión. Ver D-043 |
+| `select_account` | Implementado | Muestra la pantalla de elección de cuenta (los perfiles de `users.json`), precarga la de la sesión y concede con la elegida. Ver D-043 |
 | `request` objects firmados, DPoP, mTLS (`ClientCertificate`) | **No implementado** | |
 | Frontchannel logout | Parcial | Se llama al `frontchannel_logout_uri`; no hay aviso de sesión de backchannel |
 | Multitenancy / usuarios reales | Fuera de alcance | Un solo conjunto de clientes, usuarios y scopes, el del `config/` |
@@ -116,8 +116,9 @@ docker run --rm -p 8080:8080 -v "$PWD/config:/app/config" oidcmock
 ./scripts/publish.py          # compila, pasa los tests y publica (lo hace todo)
 ```
 
-Deja un binario de un solo archivo, sin necesidad del runtime de .NET, en
-`artifacts/publish/linux-x64` y `artifacts/publish/win-x64`. Si prefieres solo publicar, sin volver a
+Deja un binario de un solo archivo, sin necesidad del runtime de .NET, junto a su `config/` real y
+editable, en `publish/linux-x64` y `publish/win-x64`: cada carpeta se copia a un equipo y se arranca
+tal cual, con sus clientes, usuarios y scopes de ejemplo. Si prefieres solo publicar, sin volver a
 probar, `./scripts/publish.py --skip-tests`; el script `scripts/publish.sh` sigue siendo la publicación
 a pelo, sin build ni tests.
 
@@ -417,11 +418,12 @@ Si algo falla, dice **qué** falló y enseña las líneas relevantes del log, no
 ./scripts/publish.py -c Debug
 ```
 
-Los ejecutables quedan en `artifacts/publish/<runtime>/`, autocontenidos y de un solo archivo: no
-necesitan el runtime de .NET en la máquina de destino. Los logs de cada paso quedan en
-`artifacts/publish/logs/`.
+Los ejecutables quedan en `publish/<runtime>/`, autocontenidos y de un solo archivo: no necesitan el
+runtime de .NET en la máquina de destino. Cada carpeta lleva su `config/` real al lado del binario
+(clientes, usuarios, scopes), listo para editar y arrancar; la clave de firma se genera en el primer
+arranque. Los logs de cada paso quedan en `publish/logs/`.
 
-`artifacts/` y `publish/` están en `.gitignore`: son binarios generados y no van al repositorio.
+`publish/` está en `.gitignore`: son binarios generados y no van al repositorio.
 
 ---
 

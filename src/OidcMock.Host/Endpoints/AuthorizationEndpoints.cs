@@ -36,12 +36,14 @@ public static class AuthorizationEndpoints
         AuthorizationBinder binder,
         IAuthorizationService authorization,
         IAuthorizationInteraction interaction,
+        IConsentStore consents,
         IUserStore users,
+        IUserOverlay overlay,
         IAuthSessionStore sessions,
         Core.Tokens.ITokenFactory tokens,
         DiscoveryDocumentBuilder discovery,
         OidcMockOptions options) =>
-        new AuthorizationFlow(context, binder, authorization, interaction, users, sessions, tokens, discovery, options)
+        new AuthorizationFlow(context, binder, authorization, interaction, consents, users, overlay, sessions, tokens, discovery, options)
             .ShowAsync();
 
     private static Task<IResult> ProcessDecision(
@@ -49,11 +51,13 @@ public static class AuthorizationEndpoints
         AuthorizationBinder binder,
         IAuthorizationService authorization,
         IAuthorizationInteraction interaction,
+        IConsentStore consents,
         IUserStore users,
+        IUserOverlay overlay,
         IAuthSessionStore sessions,
         Core.Tokens.ITokenFactory tokens,
         DiscoveryDocumentBuilder discovery,
         OidcMockOptions options) =>
-        new AuthorizationFlow(context, binder, authorization, interaction, users, sessions, tokens, discovery, options)
+        new AuthorizationFlow(context, binder, authorization, interaction, consents, users, overlay, sessions, tokens, discovery, options)
             .ProcessAsync();
 }
