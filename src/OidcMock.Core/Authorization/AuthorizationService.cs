@@ -5,11 +5,10 @@ using OidcMock.Core.Users;
 namespace OidcMock.Core.Authorization;
 
 /// <summary>
-/// Caso de uso de la pantalla de login del mock. Valida las credenciales contra el IUserStore y
-/// emite el codigo de autorizacion. Para un mock offline la contrasena esta en claro en users.json,
-/// pero se compara en tiempo constante para no filtrar informacion por temporizacion.
+/// Caso de uso de la pantalla de login del mock. Valida las credenciales con el UserAuthenticator
+/// y emite el codigo de autorizacion. Para un mock offline la contrasena esta en claro en users.json.
 /// </summary>
-public sealed class AuthorizationService(ICodeStore codeStore, IUserStore userStore) : IAuthorizationService
+public sealed class AuthorizationService(ICodeStore codeStore, UserAuthenticator authenticator) : IAuthorizationService
 {
     private const string InvalidCredentials = "El usuario o la contrasena no son correctos.";
 
@@ -17,9 +16,9 @@ public sealed class AuthorizationService(ICodeStore codeStore, IUserStore userSt
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var user = userStore.FindByUserName(request.UserName);
+        var user = authenticator.Authenticate(request.UserName, request.Password);
 
-        return user is null || !CredentialsMatch(user, request.Password)
+        return user is null
             ? Result<AuthorizationGranted>.Fail(AuthorizationErrors.AccessDenied(InvalidCredentials))
             : Approve(new AuthorizationApproval(user.UserName, request.Authorization));
     }
@@ -43,9 +42,4 @@ public sealed class AuthorizationService(ICodeStore codeStore, IUserStore userSt
 
         return Result<AuthorizationGranted>.Ok(new AuthorizationGranted(code));
     }
-
-    private static bool CredentialsMatch(User user, string password) =>
-        System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
-            System.Text.Encoding.UTF8.GetBytes(user.Password),
-            System.Text.Encoding.UTF8.GetBytes(password ?? string.Empty));
 }

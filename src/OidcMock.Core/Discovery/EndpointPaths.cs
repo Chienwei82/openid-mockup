@@ -6,6 +6,12 @@ namespace OidcMock.Core.Discovery;
 public static class EndpointPaths
 {
     public const string Authorize = "connect/authorize";
+    /// <summary>
+    /// Alias del authorize que expone el servidor real: es el destino del ReturnUrl de su pantalla
+    /// de login (/Account/Login) y por donde entra la prueba.
+    /// </summary>
+    public const string AuthorizeCallback = "connect/authorize/callback";
+    public const string AccountLogin = "Account/Login";
     public const string Token = "connect/token";
     public const string UserInfo = "connect/userinfo";
     public const string EndSession = "connect/endsession";

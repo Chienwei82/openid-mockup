@@ -72,7 +72,15 @@ public sealed class AccountLoginEndpointTests
         const string External = "https://atacante.example/robo";
 
         using var shown = await client.GetAsync(LoginEntryUrl(External), TestContext.Current.CancellationToken);
-        using var posted = await PostLoginAsync(client, External, Password);
+        using var posted = await client.PostAsync(
+            $"{PathBase}/{LoginPath}",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["username"] = UserName,
+                ["password"] = Password,
+                [ReturnUrlField] = External
+            }),
+            TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.BadRequest, shown.StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, posted.StatusCode);

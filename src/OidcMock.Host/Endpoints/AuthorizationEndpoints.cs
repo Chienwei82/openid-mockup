@@ -23,6 +23,11 @@ public static class AuthorizationEndpoints
         group.MapGet(EndpointPaths.Authorize, ShowAuthorization);
         group.MapPost(EndpointPaths.Authorize, ProcessDecision);
 
+        // El servidor real expone el authorize tambien como /connect/authorize/callback: es el
+        // destino del ReturnUrl de su pantalla de login y por donde entra la prueba.
+        group.MapGet(EndpointPaths.AuthorizeCallback, ShowAuthorization);
+        group.MapPost(EndpointPaths.AuthorizeCallback, ProcessDecision);
+
         return endpoints;
     }
 

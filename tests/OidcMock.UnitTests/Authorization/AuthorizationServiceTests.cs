@@ -24,7 +24,7 @@ public sealed class AuthorizationServiceTests
     public AuthorizationServiceTests()
     {
         _codeStore = new InMemoryCodeStore(_clock);
-        _service = new AuthorizationService(_codeStore, new SingleUserStore());
+        _service = new AuthorizationService(_codeStore, new UserAuthenticator(new SingleUserStore()));
     }
 
     [Fact]
