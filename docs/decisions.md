@@ -1099,6 +1099,31 @@ verificado en el binario: `response_type=id_token token` responde 302 con
   URL; `--random-nonce`/`--new-pkce` generan otros cuando quieras probar.
 - Credenciales/api-keys: el usuario controla su commit (pedido explicito).
 
+## Refactor de legibilidad de scripts/ (2026-10-07)
+
+Cuatro scripts mejorados en la rama `chore/incluir-scripts`: `test.sh`, `publish.sh`, `publish.py` y
+`oidc-test.py`. Criterio: **mismo comportamiento observable** (CLI, textos y formato de salida),
+mejor forma interna.
+
+- **Sin tests nuevos a proposito.** Son herramientas manuales de desarrollo, fuera del flujo TDD
+  (mismo criterio ya decidido para `publish.py` en la etapa 16). La verificacion fue por
+  equivalencia: la salida de `oidc-test.py` se capturo en 7 escenarios antes del cambio y se comparo
+  byte a byte despues (`diff -r`), y `./scripts/publish.py` se ejecuto entero.
+- **`oidc-test.py` reescrito, no retocando:** nombres que revelan intencion (`C`→`Console`,
+  `kv`→`print_field`, `cut`→`abbreviate`, `jwt`→`parse_jwt`, `stamp`→`format_timestamp`,
+  `stable`→`unquote_until_stable`), una sentencia por linea, type hints y docstrings, y los numeros
+  magicos (anchos de columna, truncados, longitudes PKCE) como constantes nombradas. Tambien se
+  elimino un marcador `#PART2` suelto (resto de una edicion anterior).
+- **Bug real hallado y corregido (`fix:` aparte):** en `publish.py`, `report_failure` estaba definida
+  *despues* de `if __name__ == "__main__": sys.exit(main())`, asi que al fallar un build el script
+  revienta con `NameError` en vez de imprimir el resumen del fallo — justo el camino de error para el
+  que existe la funcion. Demostrado en rojo antes de moverla.
+- **`publish.py` ademas:** `megabytes`→`size_in_mib` (devolvia MiB, no MB), `test_summary` con
+  `finditer` y grupos nombrados en vez de `findall` + indices `[0]`/`[1]`, y un unico cronometro
+  (los segundos ya venian de `run()`; se descartaban y se cronometraba otra vez).
+- **Shell scripts:** `readonly`, las suites y los runtimes como arrays nombrados (sin repetir la
+  lista en el `for`), comentarios de uso y el porque del `rm -rf` previo.
+
 ## Adaptacion a GAUDI: flujo hibrido y rutas de entrada (2026-10-07)
 
 Para correr la prueba del script contra el mock sustituyendo al servidor real de la empresa
