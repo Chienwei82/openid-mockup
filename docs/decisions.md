@@ -1142,3 +1142,7 @@ Para correr la prueba del script contra el mock sustituyendo al servidor real de
   el redirect falso. `--host`/`--client-id` lo re-apuntan al servidor real.
 - Los tests dejan de fijar el numero de usuarios del `config/` y fijan los concretos: agregar uno
   de ejemplo no debe romperlos, igual que ya hacia `ConfigCoherenceTests` con los clientes.
+- **El subject es configurable en ambos lados.** El `sub` del usuario vive en `config/users.json` y
+  el script lo contrasta con `--subject` / `OIDC_SUBJECT` / `subject` en el `--config` (por defecto
+  `01-2222-3333`, el del usuario `prueba`, dato falso). Cambiar el subject no toca codigo: se cambia
+  en la configuracion y el desglose senala si el `sub` del id_token coincide o no.

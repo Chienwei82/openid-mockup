@@ -125,11 +125,32 @@ a pelo, sin build ni tests.
 
 El login es una pantalla HTML con la lista de usuarios de `config/users.json`. Con los datos de ejemplo:
 
-| Usuario | Contraseña |
-| --- | --- |
-| `jperez` | `Passw0rd!` |
-| `empresa-demo` | `Passw0rd!` |
-| `admin` | `Admin123!` |
+| Usuario | Contraseña | `sub` (subject) |
+| --- | --- | --- |
+| `jperez` | `Passw0rd!` | `user-persona-fisica` |
+| `empresa-demo` | `Passw0rd!` | `user-persona-juridica` |
+| `prueba` | `Prueba123!` | `01-2222-3333` |
+| `admin` | `Admin123!` | `user-administrador` |
+
+### Probar el flujo de GAUDI (`scripts/oidc-test.py`)
+
+`scripts/oidc-test.py` (solo stdlib) reproduce la prueba de login del servidor real GAUDI contra el
+mock: construye la URL de entrada `/Account/Login?ReturnUrl=…` con el híbrido `code id_token` y
+desglosa a color la URL de retorno (`#code`, `#id_token`, `#session_state`), decodificando el JWT.
+
+```bash
+./scripts/oidc-test.py --build                  # URL de entrada lista para el navegador
+./scripts/oidc-test.py "<url-de-retorno>"       # desglose del fragmento + claims
+./scripts/oidc-test.py --decode "<jwt>"         # solo un JWT suelto
+./scripts/oidc-test.py --subject 99-9999-9999 "<url-de-retorno>"
+```
+
+Todo es configurable sin tocar código: `--host`, `--client-id`, `--subject`, `--nonce`,
+`--redirect-uri`, `--new-pkce`, etc. (flags > env `OIDC_*` > `--config` JSON > defecto). El
+**subject** (`--subject` / `OIDC_SUBJECT`) es el que se contrasta contra el claim `sub` del
+`id_token`; por defecto `01-2222-3333`, el del usuario `prueba` de `config/users.json`. Si cambias
+el `sub` de un usuario en `users.json`, cámbialo también aquí (o pásalo por env) para que el
+desglose siga marcando la coincidencia.
 
 ---
 
@@ -211,7 +232,10 @@ config/
 }
 ```
 
-`sub` es el identificador estable; `claims` se proyecta al `id_token` y al `userinfo` según los scopes
+`sub` es el identificador estable — el **subject** que el `id_token` y el `userinfo` declaran en el
+claim `sub` — y es configurable por usuario: cámbialo aquí y el token sale con el nuevo valor. El
+usuario `prueba` usa `01-2222-3333` como subject de ejemplo para el flujo de GAUDI (es un dato
+falso de prueba). `claims` se proyecta al `id_token` y al `userinfo` según los scopes
 concedidos. La contraseña va **en claro**: es un mock para desarrollo.
 
 ### `scopes.json`
