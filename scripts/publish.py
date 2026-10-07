@@ -22,6 +22,7 @@ generados y no tienen nada que ver en el historico.
 from __future__ import annotations
 
 import argparse
+import atexit
 import os
 import re
 import shutil
@@ -99,6 +100,23 @@ def run(command: list[str], log: Path) -> tuple[bool, float]:
 
 def size_in_mib(size: int) -> str:
     return f"{size / (1024 * 1024):.0f}"
+
+
+def shutdown_build_servers() -> None:
+    """Cierra los nodos de MSBuild y el compilador Roslyn que deja cada build (nodeReuse).
+
+    Sin esto se quedan vivos indefinidamente y acumulan GB de RAM en un server pequeno.
+    `dotnet build-server shutdown` cierra el compilador, pero no siempre los nodos
+    /nodeReuse, asi que se rematan con pkill.
+    """
+    silent = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL, "check": False}
+    subprocess.run(["dotnet", "build-server", "shutdown"], cwd=ROOT, **silent)
+    # El patron lleva corchetes para que pkill no se mate a si mismo ni a la shell que lo invoca.
+    subprocess.run(["pkill", "-f", "[n]odemode:1"], **silent)
+
+
+# Al salir, se terminen bien o mal los pasos: main() tiene returns anticipados cuando algo falla.
+atexit.register(shutdown_build_servers)
 
 
 def relevant_lines(log: Path, limit: int = 15) -> list[str]:

@@ -6,6 +6,9 @@
 # Uso: ./scripts/publish.sh    (sin build ni tests; para eso esta ./scripts/publish.py)
 set -euo pipefail
 
+# Igual que en test.sh: sin esto, los nodos de MSBuild quedan vivos y se comen la RAM.
+trap '{ dotnet build-server shutdown || true; pkill -f "[n]odemode:1" > /dev/null 2>&1 || true; }' EXIT
+
 readonly root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly project="$root/src/OidcMock.Host/OidcMock.Host.csproj"
 readonly runtimes=(linux-x64 win-x64)

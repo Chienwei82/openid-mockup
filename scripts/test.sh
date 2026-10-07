@@ -11,6 +11,11 @@
 # `dotnet test` en varios proyectos a la vez.
 set -euo pipefail
 
+# Los nodos de MSBuild y el compilador Roslyn quedan vivos tras cada build (nodeReuse) y
+# acumulan GB de RAM en un server pequeno. 'dotnet build-server shutdown' cierra el compilador
+# pero no siempre los nodos /nodeReuse, asi que se rematan con pkill al salir de la suite.
+trap '{ dotnet build-server shutdown || true; pkill -f "[n]odemode:1" > /dev/null 2>&1 || true; }' EXIT
+
 readonly root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly configuration="${1:-Release}"
 readonly test_projects=(
