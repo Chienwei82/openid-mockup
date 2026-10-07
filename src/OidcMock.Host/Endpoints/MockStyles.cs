@@ -87,6 +87,22 @@ public static class MockStyles
               box-shadow: var(--md-elevation-2);
             }
             .card.centered { text-align: center; }
+            /* La pantalla de identidad lleva muchos campos: la tarjeta se ensancha y los campos van a
+               dos columnas para no obligar a bajar tanto. En pantallas estrechas vuelve a una columna
+               para no provocar scroll horizontal. */
+            .card.wide { max-width: 46rem; }
+            .fields {
+              display: grid;
+              grid-template-columns: repeat(2, minmax(0, 1fr));
+              gap: .25rem 1.25rem;
+              margin: 1rem 0 0;
+            }
+            .fields .field { min-width: 0; }
+            .fields label { margin: .25rem 0 .25rem; }
+            .fields input { min-width: 0; }
+            @media (max-width: 34rem) {
+              .fields { grid-template-columns: 1fr; }
+            }
             header {
               display: flex;
               flex-wrap: wrap;

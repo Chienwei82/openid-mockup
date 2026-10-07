@@ -35,7 +35,7 @@ public static class LoginPage
               {{MockStyles.Render(branding.PrimaryColor)}}
             </head>
             <body>
-              <div class="card">
+              <div class="card wide">
                 <header>
                   <div class="mock">OidcMock</div>
                   <div class="identity">

@@ -20,9 +20,13 @@ public static class IdentityFields
 
         return $"""
             {PerfilLinks(profiles, perfilHref)}
-            <label for="{LoginFormFields.Subject}">Subject</label>
-            <input id="{LoginFormFields.Subject}" name="{LoginFormFields.Subject}" value="{Escape(profile.Subject)}" required />
-            {string.Join(Environment.NewLine, profile.Claims.Select(ClaimInput))}
+            <div class="fields">
+              <div class="field">
+                <label for="{LoginFormFields.Subject}">Subject</label>
+                <input id="{LoginFormFields.Subject}" name="{LoginFormFields.Subject}" value="{Escape(profile.Subject)}" required />
+              </div>
+              {string.Join(Environment.NewLine, profile.Claims.Select(ClaimInput))}
+            </div>
             """;
     }
 
@@ -36,8 +40,10 @@ public static class IdentityFields
 
     private static string ClaimInput(KeyValuePair<string, JsonElement> claim) =>
         $"""
-            <label for="{Escape($"{LoginFormFields.ClaimPrefix}{claim.Key}")}">{Escape(claim.Key)}</label>
-            <input id="{Escape($"{LoginFormFields.ClaimPrefix}{claim.Key}")}" name="{Escape($"{LoginFormFields.ClaimPrefix}{claim.Key}")}" value="{Escape(DisplayValue(claim.Value))}" />
+              <div class="field">
+                <label for="{Escape($"{LoginFormFields.ClaimPrefix}{claim.Key}")}">{Escape(claim.Key)}</label>
+                <input id="{Escape($"{LoginFormFields.ClaimPrefix}{claim.Key}")}" name="{Escape($"{LoginFormFields.ClaimPrefix}{claim.Key}")}" value="{Escape(DisplayValue(claim.Value))}" />
+              </div>
             """;
 
     /// <summary>
