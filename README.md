@@ -38,7 +38,8 @@ JWKS. Los secretos que hay en `config/` son de ejemplo y están pensados para es
 | Device Authorization Grant (RFC 8628) | **Simulado** | Emite `device_code`/`user_code` y responde `authorization_pending` / `slow_down` / `expired_token` según el RFC 8628 3.5, pero no hay pantalla de identificación |
 | CIBA | **Simulado** | Solo la API de *poll* del token endpoint, con el mismo ciclo de sondeo; sin entrega push ni pantalla de aprobación |
 | `check_session_iframe` | **Simulado** | Se sirve la página, no implementa OPiFrame (RFC 6614) |
-| Implicit (`response_type=id_token token`) | **Anunciado, no implementado** | El discovery lo declara por paridad con el real, pero el authorize responde `unsupported_response_type`: el mock solo emite `code` |
+| Híbrido (`response_type=code id_token`) | Implementado | Flujo del servidor real: `#code`, `#id_token` (con `c_hash`) y `#session_state` en el fragmento del `redirect_uri` |
+| Implicit (`response_type=id_token token` y demás combinaciones con access token) | **Anunciado, no implementado** | El discovery lo declara por paridad con el real, pero el authorize responde `unsupported_response_type`: solo emite `code` y `code id_token` |
 | `select_account` | **Anunciado, no implementado** | Se acepta el valor pero el flujo es el mismo que sin él: concede con el usuario de la sesión. Ver D-043 |
 | `request` objects firmados, DPoP, mTLS (`ClientCertificate`) | **No implementado** | |
 | Frontchannel logout | Parcial | Se llama al `frontchannel_logout_uri`; no hay aviso de sesión de backchannel |
@@ -331,6 +332,8 @@ Todos cuelgan del `PathBase` (`/personafisica` por defecto). En la tabla, `<base
 | `GET` | `<base>/.well-known/openid-configuration/jwks` | Claves públicas para validar JWT | ninguna |
 | `GET` | `<base>/connect/authorize` | Login con la respuesta en el `redirect_uri` | sesión del navegador |
 | `POST` | `<base>/connect/authorize` | Login y consentimiento (`form_post`) | sesión del navegador |
+| `GET`/`POST` | `<base>/connect/authorize/callback` | Alias del authorize, el destino del `ReturnUrl` del servidor real | sesión del navegador |
+| `GET`/`POST` | `<base>/Account/Login` | Entrada del servidor real: login con `ReturnUrl` local | ninguna |
 | `POST` | `<base>/connect/par` | Pushed Authorization Request (RFC 9126) | cliente |
 | `POST` | `<base>/connect/token` | Canje de código, refresh, `client_credentials`, `password` | cliente |
 | `GET`/`POST` | `<base>/connect/userinfo` | Claims del usuario del token | `Bearer` |
