@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using OidcMock.Core.Configuration;
 using OidcMock.Core.DeviceAuthorization;
 using OidcMock.Core.Discovery;
 
@@ -14,12 +13,9 @@ public static class PollEndpoints
     {
         ArgumentNullException.ThrowIfNull(endpoints);
 
-        var options = endpoints.ServiceProvider.GetRequiredService<OidcMockOptions>();
-        var group = endpoints.MapGroup(EndpointUri.NormalizePathBase(options.PathBase));
-
-        group.MapPost(EndpointPaths.DeviceAuthorization, StartDeviceAuthorization).DoNotStore();
-        group.MapPost(EndpointPaths.Ciba, StartCiba).DoNotStore();
-        group.MapGet(
+        endpoints.MapPost(EndpointPaths.DeviceAuthorization, StartDeviceAuthorization).DoNotStore();
+        endpoints.MapPost(EndpointPaths.Ciba, StartCiba).DoNotStore();
+        endpoints.MapGet(
             EndpointPaths.CheckSession,
             () => Results.Content(CheckSessionPage.Body, "text/html; charset=utf-8"));
 

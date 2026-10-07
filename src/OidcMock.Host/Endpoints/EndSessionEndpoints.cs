@@ -22,11 +22,8 @@ public static class EndSessionEndpoints
     {
         ArgumentNullException.ThrowIfNull(endpoints);
 
-        var options = endpoints.ServiceProvider.GetRequiredService<OidcMockOptions>();
-        var group = endpoints.MapGroup(EndpointUri.NormalizePathBase(options.PathBase));
-
-        group.MapGet(EndpointPaths.EndSession, EndSession);
-        group.MapPost(EndpointPaths.EndSession, EndSession);
+        endpoints.MapGet(EndpointPaths.EndSession, EndSession);
+        endpoints.MapPost(EndpointPaths.EndSession, EndSession);
 
         return endpoints;
     }
@@ -44,7 +41,7 @@ public static class EndSessionEndpoints
     {
         var values = await RequestValues.ReadAsync(context.Request);
 
-        AuthSessionCookie.Clear(context.Response, options);
+        AuthSessionCookie.Clear(context.Response, IssuerResolver.PathBase(context.Request, options));
 
         var result = endSession.EndSession(new EndSessionRequest(
             IssuerResolver.Resolve(context.Request, discoveryBuilder, options),

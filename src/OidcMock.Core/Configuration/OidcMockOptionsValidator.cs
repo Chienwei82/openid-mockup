@@ -28,6 +28,7 @@ public static class OidcMockOptionsValidator
         List<OptionValidationError> errors = [];
 
         CheckPathBase(options, errors);
+        CheckBaseUrl(options, errors);
         CheckIssuer(options, errors);
         CheckSessionLifetime(options, errors);
         CheckCorsOrigins(options, errors);
@@ -47,6 +48,44 @@ public static class OidcMockOptionsValidator
             errors.Add(new OptionValidationError(
                 $"{SectionName}:PathBase",
                 $"debe empezar por '/', pero es '{options.PathBase}'."));
+        }
+    }
+
+    private static void CheckBaseUrl(OidcMockOptions options, List<OptionValidationError> errors)
+    {
+        if (string.IsNullOrWhiteSpace(options.BaseUrl))
+        {
+            return;
+        }
+
+        if (!Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var baseUri))
+        {
+            errors.Add(new OptionValidationError(
+                $"{SectionName}:BaseUrl",
+                $"debe ser una URL absoluta, pero es '{options.BaseUrl}'."));
+            return;
+        }
+
+        if (baseUri.Scheme is not ("http" or "https"))
+        {
+            errors.Add(new OptionValidationError(
+                $"{SectionName}:BaseUrl",
+                $"solo admite http o https, pero es '{baseUri.Scheme}'."));
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(baseUri.Query) || !string.IsNullOrEmpty(baseUri.Fragment))
+        {
+            errors.Add(new OptionValidationError(
+                $"{SectionName}:BaseUrl",
+                "no admite query ni fragmento."));
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.Issuer))
+        {
+            errors.Add(new OptionValidationError(
+                $"{SectionName}:BaseUrl",
+                "no se puede usar junto con OidcMock:Issuer: BaseUrl ya fija el emisor."));
         }
     }
 

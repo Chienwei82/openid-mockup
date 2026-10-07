@@ -33,18 +33,15 @@ public static class TokenEndpoints
     {
         ArgumentNullException.ThrowIfNull(endpoints);
 
-        var options = endpoints.ServiceProvider.GetRequiredService<OidcMockOptions>();
-        var group = endpoints.MapGroup(EndpointUri.NormalizePathBase(options.PathBase));
-
         var browser = OidcMockCors.PolicyName;
 
         // El token endpoint y el userinfo los consume una SPA; introspect y revocation son de
         // backends que no hacen preflight, asi que no se exponen a otros origenes.
-        group.MapPost(EndpointPaths.Token, IssueToken).RequireCors(browser).DoNotStore();
-        group.MapGet(EndpointPaths.UserInfo, DescribeUserInfo).RequireCors(browser).DoNotStore();
-        group.MapPost(EndpointPaths.UserInfo, DescribeUserInfo).RequireCors(browser).DoNotStore();
-        group.MapPost(EndpointPaths.Introspection, Introspect).DoNotStore();
-        group.MapPost(EndpointPaths.Revocation, Revoke).DoNotStore();
+        endpoints.MapPost(EndpointPaths.Token, IssueToken).RequireCors(browser).DoNotStore();
+        endpoints.MapGet(EndpointPaths.UserInfo, DescribeUserInfo).RequireCors(browser).DoNotStore();
+        endpoints.MapPost(EndpointPaths.UserInfo, DescribeUserInfo).RequireCors(browser).DoNotStore();
+        endpoints.MapPost(EndpointPaths.Introspection, Introspect).DoNotStore();
+        endpoints.MapPost(EndpointPaths.Revocation, Revoke).DoNotStore();
 
         return endpoints;
     }

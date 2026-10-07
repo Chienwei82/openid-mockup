@@ -135,7 +135,7 @@
         "authorization_code": "00:05:00"
       },
       "branding": {
-        "display_name": "OidcMock - Prueba GAUDI",
+        "display_name": "OidcMock - Pruebas Open ID",
         "logo_url": "/assets/logo-mock.svg",
         "primary_color": "#00695C"
       }

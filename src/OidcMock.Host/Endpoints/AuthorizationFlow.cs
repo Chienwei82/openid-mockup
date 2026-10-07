@@ -96,7 +96,8 @@ internal sealed class AuthorizationFlow(
                 request,
                 IdentityForm.BaseProfile(Perfil() ?? sessionUserName, profiles),
                 PerfilHref(),
-                chooser),
+                chooser,
+                IssuerResolver.PathBase(context.Request, options)),
             HtmlContentType);
     }
 
@@ -164,7 +165,7 @@ internal sealed class AuthorizationFlow(
     {
         var session = OpenSession(userName);
 
-        AuthSessionCookie.Write(context.Response, session.SessionId, options, options.SessionLifetime);
+        AuthSessionCookie.Write(context.Response, session.SessionId, IssuerResolver.PathBase(context.Request, options), options.SessionLifetime);
 
         return authorized.Prompt == PromptValues.Consent
             ? Consent(authorized, session.UserName)

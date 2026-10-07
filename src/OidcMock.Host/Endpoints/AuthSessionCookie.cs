@@ -1,6 +1,3 @@
-using OidcMock.Core.Configuration;
-using OidcMock.Core.Discovery;
-
 namespace OidcMock.Host.Endpoints;
 
 /// <summary>
@@ -16,8 +13,12 @@ public static class AuthSessionCookie
         ? value
         : null;
 
-    public static void Write(HttpResponse response, string sessionId, OidcMockOptions options, TimeSpan lifetime) =>
-        response.Cookies.Append(Name, sessionId, BuildOptions(options, lifetime));
+    /// <summary>
+    /// El path lo resuelve el llamante a partir de la peticion (<see cref="IssuerResolver.PathBase"/>),
+    /// porque bajo IIS la base real la pone el propio IIS y puede no coincidir con la configurada.
+    /// </summary>
+    public static void Write(HttpResponse response, string sessionId, string path, TimeSpan lifetime) =>
+        response.Cookies.Append(Name, sessionId, BuildOptions(path, lifetime));
 
     /// <summary>
     /// El borrado declara las mismas opciones que la escritura, sobre todo el <c>path</c>: el
@@ -25,17 +26,17 @@ public static class AuthSessionCookie
     /// PathBase genera un Set-Cookie que no empareja con la cookie escrita y la sesion sobrevive al
     /// logout en el navegador.
     /// </summary>
-    public static void Clear(HttpResponse response, OidcMockOptions options) =>
-        response.Cookies.Delete(Name, BuildOptions(options, lifetime: null));
+    public static void Clear(HttpResponse response, string path) =>
+        response.Cookies.Delete(Name, BuildOptions(path, lifetime: null));
 
     /// <summary>
     /// Opciones de la cookie, unicas para escribir y borrar: cambiar solo una de las dos veces rompe el
     /// emparejamiento por nombre+path que hace que el borrado sirva de algo.
     /// </summary>
-    private static CookieOptions BuildOptions(OidcMockOptions options, TimeSpan? lifetime) =>
+    private static CookieOptions BuildOptions(string path, TimeSpan? lifetime) =>
         new()
         {
-            Path = EndpointUri.NormalizePathBase(options.PathBase),
+            Path = path,
             HttpOnly = true,
             IsEssential = true,
             SameSite = SameSiteMode.Lax,

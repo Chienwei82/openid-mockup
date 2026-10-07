@@ -28,7 +28,7 @@ public static class AccountLoginPage
             {{MockStyles.Render(primaryColor: null)}}
           </head>
           <body>
-            <div class="card">
+            <div class="card wide">
               <header>
                 <div class="mock">OidcMock</div>
                 <h1>Identifícate</h1>
