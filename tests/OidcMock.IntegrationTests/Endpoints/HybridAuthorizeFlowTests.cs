@@ -52,6 +52,23 @@ public sealed class HybridAuthorizeFlowTests
         Assert.Equal(HashLeftHalf(fragment["code"]!), payload.GetProperty("c_hash").GetString());
     }
 
+    /// <summary>
+    /// La forma exacta de la captura del servidor real: el fragmento empieza por #code= (sin un ?
+    /// de query string de mas) y la respuesta hibrida no lleva el parametro iss, que el servidor
+    /// real omite aqui pese a anunciarlo en el discovery.
+    /// </summary>
+    [Fact]
+    public async Task LaRespuestaHibridaTieneLaFormaExactaDeLaCapturaDelServidorReal()
+    {
+        using var client = Create();
+
+        var location = (await SignInToHybridAsync(client)).Location;
+
+        Assert.Contains("#code=", location.OriginalString, StringComparison.Ordinal);
+        Assert.DoesNotContain("#?", location.OriginalString, StringComparison.Ordinal);
+        Assert.DoesNotContain("iss=", location.OriginalString, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task ElCodeYElSessionStateTienenElFormatoObservadoEnElServidorReal()
     {

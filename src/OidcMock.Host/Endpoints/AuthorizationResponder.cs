@@ -29,7 +29,7 @@ public static class AuthorizationResponder
             parameters["code"] = granted.Code.Code;
             parameters["id_token"] = idToken;
             parameters["session_state"] = sessionState;
-        });
+        }, includeIssuer: false);
 
     /// <summary>
     /// Los errores viajan por el redirect_uri solo cuando este ya se valido (CanRedirect). Si el
@@ -60,9 +60,19 @@ public static class AuthorizationResponder
         string? state,
         string responseMode,
         string issuer,
-        Action<Dictionary<string, string>> fill)
+        Action<Dictionary<string, string>> fill,
+        bool includeIssuer = true)
     {
-        var parameters = new Dictionary<string, string>(StringComparer.Ordinal) { ["iss"] = issuer };
+        var parameters = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        // La respuesta hibrida no lleva iss: el servidor real lo omite aqui pese a anunciarlo en
+        // authorization_response_iss_parameter_supported, y el mock imita lo que hace, no lo que
+        // dice. El flujo de codigo si lo envia, que es su comportamiento fijado.
+        if (includeIssuer)
+        {
+            parameters["iss"] = issuer;
+        }
+
         fill(parameters);
         AddWhenPresent(parameters, "state", state);
 
@@ -85,7 +95,7 @@ public static class AuthorizationResponder
     }
 
     private static string AppendToFragment(string redirectUri, IReadOnlyDictionary<string, string> parameters) =>
-        $"{redirectUri}#{QueryStringHelper.ToQueryString(parameters)}";
+        $"{redirectUri}#{QueryStringHelper.Join(parameters)}";
 }
 
 /// <summary>
@@ -94,8 +104,16 @@ public static class AuthorizationResponder
 public static class QueryStringHelper
 {
     public static string AppendQuery(string redirectUri, IReadOnlyDictionary<string, string> parameters) =>
-        $"{redirectUri}{ToQueryString(parameters)}";
+        $"{redirectUri}?{Join(parameters)}";
 
-    public static string ToQueryString(IReadOnlyDictionary<string, string> parameters) =>
-        QueryHelpers.AddQueryString(string.Empty, parameters.Select(pair => new KeyValuePair<string, string?>(pair.Key, pair.Value)));
+    /// <summary>
+    /// Los parametros serializados sin el signo de apertura: el query string lo pone AppendQuery y
+    /// el fragmento los lleva pegados al #. Un ? de mas dejaria el fragmento como "#?a=b", que no
+    /// es lo que emite el servidor real.
+    /// </summary>
+    public static string Join(IReadOnlyDictionary<string, string> parameters) =>
+        QueryHelpers.AddQueryString(
+            string.Empty,
+            parameters.Select(pair => new KeyValuePair<string, string?>(pair.Key, pair.Value)))
+            .TrimStart('?');
 }
