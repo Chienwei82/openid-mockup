@@ -5,6 +5,7 @@ using System.Text;
 using System.Web;
 using OidcMock.Core.Crypto;
 using OidcMock.Core.Discovery;
+using OidcMock.Core.Grants;
 using static OidcMock.IntegrationTests.Endpoints.OidcTestClient;
 
 namespace OidcMock.IntegrationTests.Endpoints;
@@ -26,7 +27,7 @@ public sealed class HybridAuthorizeFlowTests
     {
         using var client = Create();
 
-        var location = await SignInToHybridAsync(client);
+        var (location, _) = await SignInToHybridAsync(client);
         var fragment = ReadFragment(location);
 
         Assert.Contains("#", location.OriginalString, StringComparison.Ordinal);
@@ -42,7 +43,7 @@ public sealed class HybridAuthorizeFlowTests
     {
         using var client = Create();
 
-        var fragment = ReadFragment(await SignInToHybridAsync(client));
+        var fragment = ReadFragment((await SignInToHybridAsync(client)).Location);
         var payload = ReadJwtPayload(fragment["id_token"]!);
 
         Assert.Equal(Nonce, payload.GetProperty("nonce").GetString());
@@ -56,17 +57,48 @@ public sealed class HybridAuthorizeFlowTests
     {
         using var client = Create();
 
-        var fragment = ReadFragment(await SignInToHybridAsync(client));
+        var fragment = ReadFragment((await SignInToHybridAsync(client)).Location);
 
         Assert.Matches("^[0-9A-F]{64}-1$", fragment["code"]);
         Assert.Matches(@"^[A-Za-z0-9_-]{43}\.[0-9A-F]{32}$", fragment["session_state"]);
     }
 
     /// <summary>
-    /// Recorre el login completo con response_type=code id_token y devuelve el Location de la
-    /// redireccion final al redirect_uri: es justo lo que veria el navegador en la barra.
+    /// El sid del id_token es la sesion del navegador que abrio el login, en el formato que emite
+    /// el servidor real (32 hexadecimales en mayuscula), y viaja igual en todos los id_token.
     /// </summary>
-    private static async Task<Uri> SignInToHybridAsync(HttpClient client)
+    [Fact]
+    public async Task ElIdTokenDeclaraLaSesionDelNavegadorEnSid()
+    {
+        using var client = Create();
+
+        var (location, sessionId) = await SignInToHybridAsync(client);
+        var payload = ReadJwtPayload(ReadFragment(location)["id_token"]!);
+
+        Assert.Matches("^[0-9A-F]{32}$", sessionId);
+        Assert.Equal(sessionId, payload.GetProperty("sid").GetString());
+    }
+
+    [Fact]
+    public async Task ElIdTokenDelCanjeDelCodeDeclaraLaMismaSesionQueElHibrido()
+    {
+        using var client = Create();
+
+        var (location, _) = await SignInToHybridAsync(client);
+        var fragment = ReadFragment(location);
+        var tokens = await RequestTokensAsync(client, GrantTypes.AuthorizationCode, fragment["code"]);
+
+        var hybridSid = ReadJwtPayload(fragment["id_token"]!).GetProperty("sid").GetString();
+
+        Assert.Equal(hybridSid, ReadJwtPayload(tokens.IdToken!).GetProperty("sid").GetString());
+    }
+
+    /// <summary>
+    /// Recorre el login completo con response_type=code id_token y devuelve el Location de la
+    /// redireccion final al redirect_uri y el identificador de la sesion que abrio el login, que es
+    /// lo que el navegador llevaria en su cookie desde ese momento.
+    /// </summary>
+    private static async Task<(Uri Location, string SessionId)> SignInToHybridAsync(HttpClient client)
     {
         var parameters = DefaultParameters();
         parameters["response_type"] = HybridResponseType;
@@ -87,7 +119,17 @@ public sealed class HybridAuthorizeFlowTests
             TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
-        return response.Headers.Location!;
+        return (response.Headers.Location!, SessionIdFrom(response));
+    }
+
+    private static string SessionIdFrom(HttpResponseMessage response)
+    {
+        var name = OidcMock.Host.Endpoints.AuthSessionCookie.Name;
+        var setCookie = response.Headers.GetValues("Set-Cookie")
+            .Single(value => value.StartsWith($"{name}=", StringComparison.Ordinal));
+        var pair = setCookie.Split(';', 2)[0];
+
+        return pair[(name.Length + 1)..];
     }
 
     /// <summary>
