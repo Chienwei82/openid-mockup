@@ -97,7 +97,7 @@ def run(command: list[str], log: Path) -> tuple[bool, float]:
     return process.returncode == 0, time.monotonic() - started
 
 
-def megabytes(size: int) -> str:
+def size_in_mib(size: int) -> str:
     return f"{size / (1024 * 1024):.0f}"
 
 
@@ -158,9 +158,12 @@ def test_summary(log: Path) -> str:
     except OSError:
         return "sin log"
 
-    matches = SUMMARY_PATTERN.findall(text)
+    matches = list(SUMMARY_PATTERN.finditer(text))
+    if not matches:
+        return "sin resumen en el log"
 
-    return f"{matches[-1][0]} tests, {matches[-1][1]} fallos" if matches else "sin resumen en el log"
+    last = matches[-1]
+    return f"{last.group('total')} tests, {last.group('failed')} fallos"
 
 
 def tests(configuration: str, console: Console, logs: Path) -> bool:
@@ -172,8 +175,7 @@ def tests(configuration: str, console: Console, logs: Path) -> bool:
         log = logs / f"test-{name}.log"
         # --no-build: el runner de xunit.v3 no es VSTest y no encaja con `dotnet test` en varios
         # proyectos a la vez. El build de arriba ya produjo los binarios en la configuracion pedida.
-        started = time.monotonic()
-        succeeded, _ = run(
+        succeeded, seconds = run(
             ["dotnet", "run", "--project", str(ROOT / "tests" / project),
              "--configuration", configuration, "--no-build"],
             log,
@@ -181,7 +183,7 @@ def tests(configuration: str, console: Console, logs: Path) -> bool:
 
         summary = test_summary(log)
         if succeeded:
-            console.ok(f"{name}: {summary} ({time.monotonic() - started:.0f}s)")
+            console.ok(f"{name}: {summary} ({seconds:.0f}s)")
         else:
             ok = False
             console.fail(f"{name}: {summary}")
@@ -215,7 +217,7 @@ def publish(runtimes: list[str], console: Console, logs: Path) -> bool:
         if succeeded:
             size = sum(f.stat().st_size for f in output.rglob("*") if f.is_file())
             console.ok(f"{runtime} en {output.relative_to(ROOT)} "
-                       f"({megabytes(size)} MiB, {seconds:.0f}s)")
+                       f"({size_in_mib(size)} MiB, {seconds:.0f}s)")
         else:
             ok = False
             console.fail(f"publish de {runtime} con errores en {seconds:.1f}s")

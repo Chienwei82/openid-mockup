@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
 # Publica el mock autocontenido y de un solo archivo para los dos SO que se usan en desarrollo.
-# No necesita el runtime de .NET en la maquina de destino.
+# No necesita el runtime de .NET en la maquina de destino. La salida va a artifacts/publish/,
+# que esta en .gitignore: son binarios generados y no tienen nada que ver en el historico.
+#
+# Uso: ./scripts/publish.sh    (sin build ni tests; para eso esta ./scripts/publish.py)
 set -euo pipefail
 
-root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-project="$root/src/OidcMock.Host/OidcMock.Host.csproj"
+readonly root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+readonly project="$root/src/OidcMock.Host/OidcMock.Host.csproj"
+readonly runtimes=(linux-x64 win-x64)
 
-for runtime in linux-x64 win-x64; do
+for runtime in "${runtimes[@]}"; do
     output="$root/artifacts/publish/$runtime"
+    # Se borra antes: un publish parcial de una version anterior dejaria binarios viejos al lado.
     rm -rf "$output"
 
     dotnet publish "$project" \
