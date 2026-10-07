@@ -21,25 +21,15 @@ public static class HomeEndpoints
     {
         ArgumentNullException.ThrowIfNull(endpoints);
 
-        var options = endpoints.ServiceProvider.GetRequiredService<OidcMockOptions>();
-        var pathBase = EndpointUri.NormalizePathBase(options.PathBase);
-
         endpoints.MapGet(Root, ShowClients);
         endpoints.MapGet(AuthorizeUrlRoute, ShowAuthorizeUrl);
-
-        if (pathBase != Root)
-        {
-            var group = endpoints.MapGroup(pathBase);
-            group.MapGet(Root, ShowClients);
-            group.MapGet(AuthorizeUrlRoute, ShowAuthorizeUrl);
-        }
 
         return endpoints;
     }
 
-    private static IResult ShowClients(IClientStore clients, OidcMockOptions options) =>
+    private static IResult ShowClients(HttpRequest request, IClientStore clients, OidcMockOptions options) =>
         Results.Content(
-            HomePage.Render(clients.List(), EndpointUri.NormalizePathBase(options.PathBase)),
+            HomePage.Render(clients.List(), IssuerResolver.PathBase(request, options)),
             HtmlContentType);
 
     private static IResult ShowAuthorizeUrl(
@@ -48,7 +38,7 @@ public static class HomeEndpoints
         DiscoveryDocumentBuilder discovery,
         OidcMockOptions options)
     {
-        var pathBase = EndpointUri.NormalizePathBase(options.PathBase);
+        var pathBase = IssuerResolver.PathBase(request, options);
         var clientId = request.Query[ClientField].FirstOrDefault();
 
         if (string.IsNullOrEmpty(clientId))

@@ -25,6 +25,15 @@ app.Services.GetRequiredService<IConfigurationValidator>().Validate();
 
 LogServingConfiguration(app);
 
+// La base de rutas la aporta UsePathBase: en IIS ya la pone el propio IIS (UsePathBase no hace nada
+// si el path no empieza por ella), y en Kestrel recorta el prefijo configurado. Con esto el mock
+// responde igual en /personafisica (local) y en /oidc (ruta relativa en IIS).
+var pathBase = EndpointUri.NormalizePathBase(app.Services.GetRequiredService<OidcMockOptions>().EffectivePathBase);
+if (pathBase != "/")
+{
+    app.UsePathBase(pathBase);
+}
+
 app.UseExceptionHandler();
 app.UseCors();
 

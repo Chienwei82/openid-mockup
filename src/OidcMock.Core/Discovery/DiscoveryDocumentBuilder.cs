@@ -66,8 +66,8 @@ public sealed class DiscoveryDocumentBuilder(IScopeStore scopeStore, OidcMockOpt
     /// <summary>
     /// Issuer anunciado: el configurado, o el que se deduce del host de la peticion mas el PathBase.
     /// </summary>
-    public string ResolveIssuer(string scheme, string host) =>
-        EndpointUri.NormalizeIssuer(options.Issuer ?? $"{scheme}://{host}{EndpointUri.NormalizePathBase(options.PathBase)}");
+    public string ResolveIssuer(string scheme, string host, string pathBase) =>
+        EndpointUri.NormalizeIssuer(options.EffectiveIssuer ?? $"{scheme}://{host}{EndpointUri.NormalizePathBase(pathBase)}");
 
     private static string[] CollectClaims(IReadOnlyList<ScopeDefinition> scopes) =>
     [.. scopes.SelectMany(scope => scope.Claims).Distinct(StringComparer.Ordinal)];

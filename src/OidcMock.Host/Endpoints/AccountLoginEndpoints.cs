@@ -22,11 +22,8 @@ public static class AccountLoginEndpoints
     {
         ArgumentNullException.ThrowIfNull(endpoints);
 
-        var options = endpoints.ServiceProvider.GetRequiredService<OidcMockOptions>();
-        var group = endpoints.MapGroup(EndpointUri.NormalizePathBase(options.PathBase));
-
-        group.MapGet(EndpointPaths.AccountLogin, ShowLogin);
-        group.MapPost(EndpointPaths.AccountLogin, SignIn);
+        endpoints.MapGet(EndpointPaths.AccountLogin, ShowLogin);
+        endpoints.MapPost(EndpointPaths.AccountLogin, SignIn);
 
         return endpoints;
     }
@@ -70,7 +67,7 @@ public static class AccountLoginEndpoints
 
         var session = sessions.Start(user.UserName, user.Subject);
 
-        AuthSessionCookie.Write(context.Response, session.SessionId, options, options.SessionLifetime);
+        AuthSessionCookie.Write(context.Response, session.SessionId, IssuerResolver.PathBase(context.Request, options), options.SessionLifetime);
 
         return Results.Redirect(returnUrl!);
     }

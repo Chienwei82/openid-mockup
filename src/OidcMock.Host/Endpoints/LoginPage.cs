@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Encodings.Web;
 using OidcMock.Core.Authorization;
 using OidcMock.Core.Clients;
+using OidcMock.Core.Discovery;
 using OidcMock.Core.Users;
 
 namespace OidcMock.Host.Endpoints;
@@ -18,12 +19,13 @@ public static class LoginPage
         AuthorizationRequest request,
         User profile,
         Func<string, string> perfilHref,
-        bool chooser)
+        bool chooser,
+        string pathBase)
     {
         var branding = authorization.Client.Branding;
         var hiddenFields = HiddenFields(authorization, request, profile);
         var identity = IdentityFields.Render(profile, profiles, perfilHref);
-        var logo = Logo(branding);
+        var logo = Logo(branding, pathBase);
 
         return $$"""
             <!DOCTYPE html>
@@ -102,12 +104,14 @@ public static class LoginPage
     }
 
     /// <summary>
-    /// El logo del branding se sirve desde /assets; sin logo configurado, solo el nombre.
+    /// El logo del branding se sirve desde /assets; sin logo configurado, solo el nombre. La URL se
+    /// prefija con la base (el PathBase configurado o el que ponga IIS) para que resuelva cuando el
+    /// mock se publica en una ruta relativa.
     /// </summary>
-    private static string Logo(Branding branding) =>
+    private static string Logo(Branding branding, string pathBase) =>
         string.IsNullOrEmpty(branding.LogoUrl)
             ? string.Empty
-            : $"<img src=\"{Escape(branding.LogoUrl)}\" alt=\"{Escape(branding.DisplayName)}\" />";
+            : $"""<img src="{Escape(EndpointUri.Combine(pathBase, branding.LogoUrl))}" alt="{Escape(branding.DisplayName)}" />""";
 
     private static string Escape(string value) => HtmlEncoder.Default.Encode(value);
 }

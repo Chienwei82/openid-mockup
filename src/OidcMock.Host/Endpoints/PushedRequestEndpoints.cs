@@ -1,4 +1,3 @@
-using OidcMock.Core.Configuration;
 using OidcMock.Core.Discovery;
 using OidcMock.Core.PushedRequests;
 
@@ -14,10 +13,7 @@ public static class PushedRequestEndpoints
     {
         ArgumentNullException.ThrowIfNull(endpoints);
 
-        var options = endpoints.ServiceProvider.GetRequiredService<OidcMockOptions>();
-        var group = endpoints.MapGroup(EndpointUri.NormalizePathBase(options.PathBase));
-
-        group.MapPost(EndpointPaths.PushedAuthorizationRequest, Push).DoNotStore();
+        endpoints.MapPost(EndpointPaths.PushedAuthorizationRequest, Push).DoNotStore();
 
         return endpoints;
     }

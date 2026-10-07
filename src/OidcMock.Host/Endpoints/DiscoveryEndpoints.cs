@@ -7,7 +7,8 @@ using OidcMock.Host.Cors;
 namespace OidcMock.Host.Endpoints;
 
 /// <summary>
-/// Endpoints de metadatos del mock: discovery y JWKS, bajo el PathBase configurado.
+/// Endpoints de metadatos del mock: discovery y JWKS. Se registran en la raiz: el prefijo de rutas lo
+/// aporta <c>UsePathBase</c> (o el propio IIS cuando el mock va en una ruta relativa).
 /// </summary>
 public static class DiscoveryEndpoints
 {
@@ -15,12 +16,8 @@ public static class DiscoveryEndpoints
     {
         ArgumentNullException.ThrowIfNull(endpoints);
 
-        var options = endpoints.ServiceProvider.GetRequiredService<OidcMockOptions>();
-        var group = endpoints.MapGroup(EndpointUri.NormalizePathBase(options.PathBase))
-            .RequireCors(OidcMockCors.PolicyName);
-
-        group.MapGet(EndpointPaths.Configuration, PublishDiscovery);
-        group.MapGet(EndpointPaths.Jwks, PublishJsonWebKeySet);
+        endpoints.MapGet(EndpointPaths.Configuration, PublishDiscovery).RequireCors(OidcMockCors.PolicyName);
+        endpoints.MapGet(EndpointPaths.Jwks, PublishJsonWebKeySet).RequireCors(OidcMockCors.PolicyName);
 
         return endpoints;
     }
@@ -28,11 +25,10 @@ public static class DiscoveryEndpoints
     private static IResult PublishDiscovery(
         HttpContext context,
         DiscoveryDocumentBuilder builder,
-        OidcMockOptions options)
-    {
-        var issuer = ResolveIssuer(builder, options, context.Request);
-        return Results.Json(builder.Build(issuer), DiscoveryDocument.SerializerOptions);
-    }
+        OidcMockOptions options) =>
+        Results.Json(
+            builder.Build(IssuerResolver.Resolve(context.Request, builder, options)),
+            DiscoveryDocument.SerializerOptions);
 
     private static IResult PublishJsonWebKeySet(ISigningKeyProvider signingKeyProvider)
     {
@@ -41,7 +37,4 @@ public static class DiscoveryEndpoints
         var signingKey = signingKeyProvider.GetSigningKey();
         return Results.Json(JsonWebKeySetBuilder.Build(signingKey.Key), JsonWebKeySet.SerializerOptions);
     }
-
-    private static string ResolveIssuer(DiscoveryDocumentBuilder builder, OidcMockOptions options, HttpRequest request) =>
-        builder.ResolveIssuer(request.Scheme, request.Host.Value ?? string.Empty);
 }
