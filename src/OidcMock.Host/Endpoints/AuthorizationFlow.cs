@@ -45,7 +45,7 @@ internal sealed class AuthorizationFlow(
                 AuthorizationValidationResult.Failed(decision.Error!, authorized.RedirectUri, authorized.State),
                 authorized.ResponseMode),
             AuthorizationStep.Consent => Consent(authorized, decision.UserName!),
-            AuthorizationStep.Grant => Grant(authorized, decision.UserName!),
+            AuthorizationStep.Grant => Grant(authorized, decision.UserName!, SessionId()),
             _ => Login(authorized, binding.Bound!)
         };
     }
@@ -95,7 +95,7 @@ internal sealed class AuthorizationFlow(
                     authorized.State),
                 authorized.ResponseMode)
             : IsAllowed(form[ConsentPage.DecisionField])
-                ? Grant(authorized, session.UserName)
+                ? Grant(authorized, session.UserName, session.SessionId)
                 : Denied(authorized);
     }
 
@@ -125,7 +125,9 @@ internal sealed class AuthorizationFlow(
 
     /// <summary>
     /// Abre sesion para el usuario que acaba de autenticarse y sigue. Con prompt=consent el login
-    /// solo autentica, asi que la eleccion del usuario va en la pantalla de consentimiento.
+    /// solo autentica, asi que la eleccion del usuario va en la pantalla de consentimiento. La
+    /// sesion recien abierta viaja como parametro porque su cookie se escribe en esta respuesta y
+    /// el navegador no la devuelve hasta la peticion siguiente.
     /// </summary>
     private IResult RememberAndContinue(ValidatedAuthorizationRequest authorized, string userName)
     {
@@ -135,12 +137,12 @@ internal sealed class AuthorizationFlow(
 
         return authorized.Prompt == PromptValues.Consent
             ? Consent(authorized, session.UserName)
-            : Grant(authorized, session.UserName);
+            : Grant(authorized, session.UserName, session.SessionId);
     }
 
-    private IResult Grant(ValidatedAuthorizationRequest authorized, string userName)
+    private IResult Grant(ValidatedAuthorizationRequest authorized, string userName, string? sessionId)
     {
-        var granted = authorization.Approve(new AuthorizationApproval(userName, authorized));
+        var granted = authorization.Approve(new AuthorizationApproval(userName, authorized, sessionId));
 
         if (granted.Succeeded)
         {
@@ -148,7 +150,7 @@ internal sealed class AuthorizationFlow(
         }
 
         return granted.Succeeded
-            ? RespondGranted(granted.Value!, authorized, userName)
+            ? RespondGranted(granted.Value!, authorized, userName, sessionId)
             : RespondToError(
                 AuthorizationValidationResult.Failed(
                     granted.Error!,
@@ -165,15 +167,17 @@ internal sealed class AuthorizationFlow(
     private IResult RespondGranted(
         AuthorizationGranted granted,
         ValidatedAuthorizationRequest authorized,
-        string userName) =>
+        string userName,
+        string? sessionId) =>
         authorized.ResponseType == ResponseTypeNames.CodeIdToken
-            ? RespondHybrid(granted, authorized, userName)
+            ? RespondHybrid(granted, authorized, userName, sessionId)
             : AuthorizationResponder.RedirectWithCode(granted, authorized.ResponseMode, Issuer);
 
     private IResult RespondHybrid(
         AuthorizationGranted granted,
         ValidatedAuthorizationRequest authorized,
-        string userName)
+        string userName,
+        string? sessionId)
     {
         var user = users.FindByUserName(userName);
 
@@ -195,7 +199,8 @@ internal sealed class AuthorizationFlow(
             granted.Code.AuthenticatedAt,
             authorized.Client.TokenLifetimes.IdentityToken,
             authorized.Nonce,
-            AuthorizationCode: granted.Code.Code));
+            AuthorizationCode: granted.Code.Code,
+            SessionId: sessionId));
 
         return AuthorizationResponder.RedirectWithHybrid(
             granted,

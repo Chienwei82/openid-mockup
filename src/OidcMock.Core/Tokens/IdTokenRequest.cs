@@ -14,4 +14,5 @@ public sealed record IdTokenRequest(
     TimeSpan Lifetime,
     string? Nonce = null,
     string? AccessToken = null,
-    string? AuthorizationCode = null);
+    string? AuthorizationCode = null,
+    string? SessionId = null);

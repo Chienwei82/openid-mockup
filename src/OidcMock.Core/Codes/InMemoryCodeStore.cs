@@ -40,7 +40,8 @@ public sealed class InMemoryCodeStore : ICodeStore
             request.CodeChallengeMethod,
             issuedAt,
             issuedAt + request.Lifetime,
-            request.RedirectUri);
+            request.RedirectUri,
+            request.SessionId);
 
         _codes[code.Code] = code;
 

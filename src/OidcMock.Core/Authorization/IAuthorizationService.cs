@@ -18,4 +18,4 @@ public interface IAuthorizationService
 }
 
 /// <summary>Otorgamiento de una autorizacion a nombre de un usuario ya autenticado.</summary>
-public sealed record AuthorizationApproval(string UserName, ValidatedAuthorizationRequest Authorization);
+public sealed record AuthorizationApproval(string UserName, ValidatedAuthorizationRequest Authorization, string? SessionId = null);

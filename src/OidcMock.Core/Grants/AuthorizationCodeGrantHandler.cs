@@ -66,7 +66,8 @@ public sealed class AuthorizationCodeGrantHandler(
             code.Nonce,
             null,
             includeIdToken: IssuesIdToken && IdTokenRules.GrantsIdToken(code.Scopes),
-            includeRefreshToken: GrantsRefreshToken(request.Client, code.Scopes));
+            includeRefreshToken: GrantsRefreshToken(request.Client, code.Scopes),
+            sessionId: code.SessionId);
     }
 
     /// <summary>

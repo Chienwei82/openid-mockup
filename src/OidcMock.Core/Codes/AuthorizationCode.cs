@@ -15,7 +15,8 @@ public sealed record AuthorizationCode(
     string? CodeChallengeMethod,
     DateTimeOffset AuthenticatedAt,
     DateTimeOffset ExpiresAt,
-    string? RedirectUri = null)
+    string? RedirectUri = null,
+    string? SessionId = null)
 {
     public bool IsExpiredAt(DateTimeOffset instant) => instant >= ExpiresAt;
 

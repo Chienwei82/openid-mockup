@@ -7,6 +7,7 @@ public static class OpaqueToken
 {
     private const int TokenByteLength = 32;
     private const int CodeByteLength = 32;
+    private const int SessionIdByteLength = 16;
     private const string CodeSuffix = "-1";
 
     /// <summary>
@@ -23,4 +24,11 @@ public static class OpaqueToken
     /// </summary>
     public static string NewAuthorizationCode() =>
         $"{Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(CodeByteLength))}{CodeSuffix}";
+
+    /// <summary>
+    /// El identificador de sesion en el formato observable del servidor real: 32 hexadecimales en
+    /// mayuscula. Viaja como sid dentro del id_token, donde la forma si es visible para el cliente.
+    /// </summary>
+    public static string NewSessionId() =>
+        Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(SessionIdByteLength));
 }

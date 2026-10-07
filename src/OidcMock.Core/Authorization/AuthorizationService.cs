@@ -38,7 +38,8 @@ public sealed class AuthorizationService(ICodeStore codeStore, IUserStore userSt
             authorization.CodeChallenge,
             authorization.CodeChallengeMethod,
             authorization.Client.TokenLifetimes.AuthorizationCode,
-            authorization.RedirectUri));
+            authorization.RedirectUri,
+            approval.SessionId));
 
         return Result<AuthorizationGranted>.Ok(new AuthorizationGranted(code));
     }

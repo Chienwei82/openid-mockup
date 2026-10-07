@@ -19,4 +19,7 @@ public static class ProtocolClaimNames
     public const string ClientId = "client_id";
     public const string TokenId = "jti";
     public const string SessionId = "sid";
+    public const string IdentityProvider = "idp";
+    public const string AuthenticationContext = "acr";
+    public const string AuthenticationMethods = "amr";
 }
