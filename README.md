@@ -122,6 +122,38 @@ tal cual, con sus clientes, usuarios y scopes de ejemplo. Si prefieres solo publ
 probar, `./scripts/publish.py --skip-tests`; el script `scripts/publish.sh` sigue siendo la publicación
 a pelo, sin build ni tests.
 
+### En IIS (ruta relativa)
+
+El mock se puede hospedar en IIS como **aplicación** dentro de un sitio, en una ruta relativa como
+`https://miserver/oidc`. La forma más simple es fijar la URL pública en `appsettings.json` (viaja junto
+al ejecutable, editable):
+
+```json
+{
+  "OidcMock": {
+    "BaseUrl": "https://miserver/oidc"
+  }
+}
+```
+
+`BaseUrl` fija a la vez el prefijo de rutas (su `path`, aquí `/oidc`) y el emisor anunciado
+(`https://miserver/oidc/`), así que los clientes apuntan al issuer y todo encaja. Manda sobre
+`PathBase` e `Issuer`: usa una opción u otra.
+
+Pasos:
+
+1. Publica `win-x64`: `./scripts/publish.py --runtimes win-x64`. El ejecutable es de un solo archivo y
+   su `web.config` sale con `hostingModel="OutOfProcess"`: el modelo *in-process* no carga ejecutables
+   single-file.
+2. En IIS, crea una **aplicación** bajo el sitio con alias `oidc` y su *physical path* apuntando a
+   `publish/win-x64`. Requiere el **ASP.NET Core Module v2** (viene con el *Hosting Bundle*).
+3. Ajusta el `path` de `BaseUrl` al alias que hayas dado en IIS (`oidc` u `openid`, por ejemplo); deben
+   coincidir.
+
+Bajo IIS el mock **no** fija Kestrel: el puerto y la base de rutas los aporta el módulo (ANCM). La
+sección `OidcMock:Serving` solo aplica cuando el mock corre por su cuenta (`dotnet run` o el ejecutable
+suelto).
+
 ### Entrar
 
 El login es una pantalla HTML con la lista de usuarios de `config/users.json`. Con los datos de ejemplo:
@@ -259,6 +291,7 @@ Los nombres de scope y de claim son los del servidor real (`nombre`, `documentof
 | --- | --- | --- |
 | `OidcMock:PathBase` | `/personafisica` | Prefijo de todas las rutas |
 | `OidcMock:Issuer` | se deduce del host | Emisor anunciado en el discovery |
+| `OidcMock:BaseUrl` | — (se deduce del host) | URL pública (path + issuer) al hospedar bajo una ruta relativa, p. ej. `https://miserver/oidc`; manda sobre `PathBase` e `Issuer` |
 | `OidcMock:SessionLifetime` | `08:00:00` | Vigencia de la sesión de login en el navegador |
 | `OidcMock:ConfigDirectory` | `./config` | Dónde están los JSON |
 | `OidcMock:ReloadOnChange` | `true` | Recarga de los JSON al cambiar |
@@ -355,6 +388,8 @@ Todos cuelgan del `PathBase` (`/personafisica` por defecto). En la tabla, `<base
 | --- | --- | --- | --- |
 | `GET` | `<base>/.well-known/openid-configuration` | Discovery | ninguna |
 | `GET` | `<base>/.well-known/openid-configuration/jwks` | Claves públicas para validar JWT | ninguna |
+| `GET` | `<base>` | Pantalla raíz: clientes configurados y generador de URL de authorize | ninguna |
+| `GET` | `<base>/authorize-url?client=…` | URL de `connect/authorize/callback` precargada, lista para copiar | ninguna |
 | `GET` | `<base>/connect/authorize` | Login con la respuesta en el `redirect_uri` | sesión del navegador |
 | `POST` | `<base>/connect/authorize` | Login y consentimiento (`form_post`) | sesión del navegador |
 | `GET`/`POST` | `<base>/connect/authorize/callback` | Alias del authorize, el destino del `ReturnUrl` del servidor real | sesión del navegador |

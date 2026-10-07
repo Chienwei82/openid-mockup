@@ -1243,3 +1243,64 @@ preguntar en cada authorize".
   autentica": lo que se optimiza es la iteracion, no la seguridad.
 - **En memoria, como los codigos y los tokens** (regla 3): reiniciar el mock borra lo recordado.
 
+
+## Mejoras de UI: nombre del cliente, dos columnas y pantalla raiz (2026-10-07)
+
+Tres mejoras de usabilidad pedidas para el mock como herramienta de desarrollo.
+
+- **El cliente de prueba se llama "OidcMock - Pruebas Open ID".** El texto vive en el `branding`
+  de `config/clients.json` (cliente `fb02079c-…`), no en codigo: cambiar el nombre es editar el dato.
+  El nombre anterior ("Prueba GAUDI") describia la prueba puntual; el nuevo describe lo que el mock
+  es. Un test de integracion fija el nombre visible en la pantalla de login.
+- **Los campos de identidad van a dos columnas.** `IdentityFields` (compartido por el authorize y
+  `/Account/Login`) envuelve el subject y los claims en una grilla `.fields` de dos columnas, y la
+  tarjeta pasa a `.card.wide` (26rem -> 46rem). En pantallas de menos de 34rem la grilla vuelve a una
+  columna para no provocar scroll horizontal. El cambio es solo de presentacion: los `name` de los
+  campos no cambian y el POST sigue igual.
+- **La raiz deja de rechazar la conexion.** `GET /` (y la raiz del `PathBase`) muestra una pantalla
+  con los clientes configurados (`IClientStore.List()`); para los que usan el flujo de authorize,
+  un enlace a `GET /authorize-url?client=<id>`, que compone la URL de `connect/authorize/callback`
+  con los valores precargados y la muestra en un campo de solo lectura para copiar. La composicion
+  vive en Core (`AuthorizeUrlComposer`, dominio puro) y `CodeVerifier` genera el par PKCE cuando el
+  cliente lo exige. Los clientes sin `redirect_uri` (client_credentials) no ofrecen el enlace.
+- **Copiar con micro-JavaScript.** El mock venia siendo "sin JavaScript". Para cumplir "facil de
+  copiar" se anaden un `readonly` seleccionable y un boton que usa `navigator.clipboard`, con
+  JavaScript inline y sin dependencias. Es una desviacion consciente y acotada a esta utilidad de
+  desarrollo; sin JS, el campo sigue siendo seleccionable a mano.
+- **Valores precargados de la URL:** `response_type=code`, `scope` = los scopes estandar permitidos
+  (`openid`/`profile`/`email`/`offline_access`), el primer `redirect_uri` registrado, `state` y
+  `nonce` de ejemplo, y un par PKCE nuevo por peticion cuando el cliente lo exige.
+
+
+## Hosting en IIS bajo una ruta relativa: `BaseUrl` y `UsePathBase` (2026-10-07)
+
+El mock no podia servir bajo `https://miserver/oidc` (aplicacion IIS en una ruta relativa) por tres
+motivos independientes, corregidos de raiz.
+
+- **Las rutas llevaban el `PathBase` cosido.** Los endpoints se registraban con
+  `MapGroup(NormalizePathBase(PathBase))` y nunca se llamaba `UsePathBase`. Bajo IIS, ANCM fija
+  `Request.PathBase` = ruta virtual y **recorta** el path, asi que la ruta `/personafisica/connect/…`
+  no casaba con `/connect/…` y todo daba 404. Ahora las rutas se registran **en la raiz** y el prefijo
+  lo aporta `app.UsePathBase(...)`: en IIS es un no-op (el path ya viene recortado y `PathBase` puesto)
+  y en Kestrel recorta el prefijo configurado. Un mismo binario sirve en `/personafisica` (local) y en
+  `/oidc` (IIS).
+- **`OidcMock:BaseUrl`** (p. ej. `https://miserver/oidc`) fija a la vez el `PathBase` (su `path`) y el
+  issuer (la URL entera). **Manda sobre `PathBase` e `Issuer`**: se usa una opcion u otra, no ambas, y
+  el validador rechaza `BaseUrl` junto con `Issuer`. Sin `BaseUrl`, el emisor sigue deduciendose del
+  host.
+- **El issuer, la cookie y el logo salen de la base real de la peticion**, no de la configurada:
+  `IssuerResolver.PathBase` toma `request.PathBase` (que en IIS es la ruta virtual) con la configurada
+  como respaldo. El `logo_url` de config (una ruta absoluta `/assets/…`) se prefija con esa base para
+  que resuelva bajo `/oidc`.
+- **Un solo archivo, hosting out-of-process.** El modelo *in-process* de IIS **no carga** ejecutables
+  single-file, y en *out-of-process* el modulo asigna a Kestrel un puerto aleatorio (que la app no debe
+  pisar). Decisiones: `AspNetCoreHostingModel=OutOfProcess` (el `web.config` generado sale asi) y
+  `ServingListener` **no configura Kestrel cuando detecta IIS** por las variables que inyecta ANCM
+  (`ASPNETCORE_PORT`, `ASPNETCORE_IIS_*`). El mismo `publish/win-x64` sirve suelto y bajo IIS.
+- **`appsettings.json` viaja como archivo real** junto al ejecutable (mismo contrato que `config/`,
+  `ExcludeFromSingleFile`), que es donde se escribe `BaseUrl` en un despliegue en IIS.
+- **Consecuencia (documentada):** con una base configurada, el mock tambien responde en la raiz del
+  host (la raiz permisiva evita rechazar peticiones); y el `path` de `BaseUrl` debe coincidir con el
+  alias de la aplicacion IIS.
+
+
