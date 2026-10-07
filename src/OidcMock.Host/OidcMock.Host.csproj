@@ -13,7 +13,6 @@
   <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
-    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
 
@@ -21,8 +20,15 @@
     <ProjectReference Include="..\OidcMock.Core\OidcMock.Core.csproj" />
   </ItemGroup>
 
+  <!--
+    La configuracion se publica como archivos reales junto al ejecutable, no empaquetada dentro del
+    binario: tiene que poder verse y editarse sin desempaquetar nada (ExcludeFromSingleFile), y el
+    binario no autoextrae contenido (sin IncludeAllContentForSelfExtract) para que
+    AppContext.BaseDirectory siga siendo la carpeta del ejecutable y el config/ de al lado se
+    encuentre. PublishLayoutTests fija este contrato.
+  -->
   <ItemGroup>
-    <Content Include="..\..\config\*.json" Link="config\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\config\*.json" Link="config\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
   </ItemGroup>
 
   <ItemGroup>
