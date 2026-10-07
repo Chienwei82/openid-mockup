@@ -34,12 +34,15 @@ public sealed class DiscoveryDocumentBuilderTests
     /// <summary>
     /// Las dos listas tienen que seguir siendo distintas. El bug que corrigio D-042 fue usar la
     /// lista de lo anunciado como lista de lo aceptado: si vuelven a ser la misma, el authorize
-    /// acepta combinaciones que no emite.
+    /// acepta combinaciones que no emite. El endpoint emite el code y el hibrido code id_token
+    /// (el flujo del cliente real); lo anunciado sigue siendo el conjunto completo del servidor real.
     /// </summary>
     [Fact]
     public void AnunciarMasResponseTypesDeLosQueEmiteEsIntencionado()
     {
-        Assert.Equal([ResponseTypeNames.Code], ResponseTypeNames.EmittedByAuthorizationEndpoint);
+        Assert.Equal(
+            [ResponseTypeNames.Code, ResponseTypeNames.CodeIdToken],
+            ResponseTypeNames.EmittedByAuthorizationEndpoint);
         Assert.Contains(
             ResponseTypeNames.Code,
             ResponseTypeNames.SupportedCombinations);

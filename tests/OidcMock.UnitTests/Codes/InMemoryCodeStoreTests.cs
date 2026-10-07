@@ -17,6 +17,18 @@ public sealed class InMemoryCodeStoreTests
 
     public InMemoryCodeStoreTests() => _store = new InMemoryCodeStore(_clock);
 
+    /// <summary>
+    /// El formato del codigo no es opaco al azar: el servidor real emite 64 hexadecimales en
+    /// mayuscula con el sufijo -1, y esta prueba lo fija para que la sustitucion sea visible.
+    /// </summary>
+    [Fact]
+    public void ElCodigoTieneElFormatoObservadoEnElServidorReal()
+    {
+        var issued = Issue();
+
+        Assert.Matches("^[0-9A-F]{64}-1$", issued.Code);
+    }
+
     [Fact]
     public void EmiteUnCodigoQueSePuedeCanjear()
     {

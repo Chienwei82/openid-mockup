@@ -25,7 +25,8 @@ public static class TokenResponseFactory
         string? authorizationCode,
         bool includeIdToken,
         bool includeRefreshToken,
-        string? refreshTokenFamilyId = null)
+        string? refreshTokenFamilyId = null,
+        string? sessionId = null)
     {
         ArgumentNullException.ThrowIfNull(tokenFactory);
         ArgumentNullException.ThrowIfNull(refreshTokenStore);
@@ -52,7 +53,8 @@ public static class TokenResponseFactory
                 client.TokenLifetimes.IdentityToken,
                 nonce,
                 accessToken,
-                authorizationCode))
+                authorizationCode,
+                sessionId))
             : null;
 
         var refreshToken = includeRefreshToken

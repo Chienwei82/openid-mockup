@@ -33,6 +33,35 @@
       }
     },
     {
+      "sub": "01-2222-3333",
+      "username": "prueba",
+      "password": "Prueba123!",
+      "claims": {
+        "given_name": "Usuario",
+        "family_name": "De Prueba",
+        "name": "Usuario De Prueba",
+        "preferred_username": "prueba",
+        "email": "prueba@example.cr",
+        "email_verified": true,
+        "phone_number": "+50680000000",
+        "locale": "es-CR",
+        "zoneinfo": "America/Costa_Rica",
+        "updated_at": 1735689600,
+        "login_name": "prueba",
+        "full_name": "Usuario De Prueba",
+        "codTipoId": "01",
+        "documentofva": "1-2222-3333",
+        "nombre": "Usuario",
+        "Bccr.IdUsuario": "us-00002",
+        "Bccr.IdEntidad": "ent-1001",
+        "Bccr.CodTipoId": "01",
+        "Bccr.negocio": "prueba-01",
+        "role": [
+          "persona-fisica"
+        ]
+      }
+    },
+    {
       "sub": "user-persona-juridica",
       "username": "empresa-demo",
       "password": "Passw0rd!",

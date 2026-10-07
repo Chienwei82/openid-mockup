@@ -146,6 +146,15 @@ public sealed class ResponseTypeValidatorTests
     public void AceptaElFlowDeCodigo() => Assert.Null(_validator.Validate(Context()));
 
     /// <summary>
+    /// El flujo hibrido es el que pide el cliente real de la empresa: code id_token. Lo emite el
+    /// endpoint y por eso tiene que estar en la lista de lo aceptado, no solo en la del discovery.
+    /// </summary>
+    [Fact]
+    public void AceptaLaCombinacionHibridaCodeIdToken() =>
+        Assert.Null(_validator.Validate(Context(
+            responseType: $"{ResponseTypeNames.Code} {ResponseTypeNames.IdToken}")));
+
+    /// <summary>
     /// Las combinaciones que el discovery anuncia y el endpoint no emite. Aceptarlas no es
     /// "ser permisivo": es devolver un code donde el cliente pidio tokens, sin ningun error.
     /// </summary>
@@ -153,7 +162,6 @@ public sealed class ResponseTypeValidatorTests
     [InlineData("token")]
     [InlineData("id_token")]
     [InlineData("id_token token")]
-    [InlineData("code id_token")]
     [InlineData("code token")]
     [InlineData("code id_token token")]
     public void RechazaLasCombinacionesQueElDiscoveryAnunciaPeroElEndpointNoEmite(string responseType) =>
@@ -187,6 +195,18 @@ public sealed class ResponseModeValidatorTests
     [InlineData("form_get ")]
     public void RechazaUnResponseModeNoSoportado(string mode) =>
         Assert.Equal("invalid_request", _validator.Validate(Context(responseMode: mode))?.Code);
+
+    /// <summary>
+    /// El query no sirve cuando la respuesta lleva tokens: solo el codigo viaja bien en el query
+    /// string; el id_token y el access token exigen fragmento o form_post (Multi Response Type 3).
+    /// </summary>
+    [Fact]
+    public void RechazaElQueryCuandoElResponseTypeEmiteTokensEnElFragmento() =>
+        Assert.Equal(
+            "invalid_request",
+            _validator.Validate(Context(
+                responseType: $"{ResponseTypeNames.Code} {ResponseTypeNames.IdToken}",
+                responseMode: ResponseModes.Query))?.Code);
 }
 
 /// <summary>Regla: el prompt tiene que estar entre los que anuncia el discovery.</summary>

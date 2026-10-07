@@ -67,11 +67,16 @@ public sealed class JsonUserStoreTests
     }
 
     [Fact]
-    public void CargaLosTresUsuariosDeEjemplo()
+    public void CargaLosUsuariosDeEjemplo()
     {
         var store = new JsonUserStore(RepositoryLayout.ConfigDirectory);
 
-        Assert.Equal(3, store.List().Count);
+        // Se fijan los usuarios concretos y no el numero: agregar uno de ejemplo no debe romper el
+        // test, igual que los clientes de ConfigCoherenceTests.
+        Assert.Contains(store.List(), user => user.UserName == "jperez");
+        Assert.Contains(store.List(), user => user.UserName == "empresa-demo");
+        Assert.Contains(store.List(), user => user.UserName == "prueba");
+        Assert.Contains(store.List(), user => user.UserName == "admin");
     }
 
     [Fact]

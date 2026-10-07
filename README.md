@@ -38,7 +38,8 @@ JWKS. Los secretos que hay en `config/` son de ejemplo y están pensados para es
 | Device Authorization Grant (RFC 8628) | **Simulado** | Emite `device_code`/`user_code` y responde `authorization_pending` / `slow_down` / `expired_token` según el RFC 8628 3.5, pero no hay pantalla de identificación |
 | CIBA | **Simulado** | Solo la API de *poll* del token endpoint, con el mismo ciclo de sondeo; sin entrega push ni pantalla de aprobación |
 | `check_session_iframe` | **Simulado** | Se sirve la página, no implementa OPiFrame (RFC 6614) |
-| Implicit (`response_type=id_token token`) | **Anunciado, no implementado** | El discovery lo declara por paridad con el real, pero el authorize responde `unsupported_response_type`: el mock solo emite `code` |
+| Híbrido (`response_type=code id_token`) | Implementado | Flujo del servidor real: `#code`, `#id_token` (con `c_hash`) y `#session_state` en el fragmento del `redirect_uri` |
+| Implicit (`response_type=id_token token` y demás combinaciones con access token) | **Anunciado, no implementado** | El discovery lo declara por paridad con el real, pero el authorize responde `unsupported_response_type`: solo emite `code` y `code id_token` |
 | `select_account` | **Anunciado, no implementado** | Se acepta el valor pero el flujo es el mismo que sin él: concede con el usuario de la sesión. Ver D-043 |
 | `request` objects firmados, DPoP, mTLS (`ClientCertificate`) | **No implementado** | |
 | Frontchannel logout | Parcial | Se llama al `frontchannel_logout_uri`; no hay aviso de sesión de backchannel |
@@ -124,11 +125,32 @@ a pelo, sin build ni tests.
 
 El login es una pantalla HTML con la lista de usuarios de `config/users.json`. Con los datos de ejemplo:
 
-| Usuario | Contraseña |
-| --- | --- |
-| `jperez` | `Passw0rd!` |
-| `empresa-demo` | `Passw0rd!` |
-| `admin` | `Admin123!` |
+| Usuario | Contraseña | `sub` (subject) |
+| --- | --- | --- |
+| `jperez` | `Passw0rd!` | `user-persona-fisica` |
+| `empresa-demo` | `Passw0rd!` | `user-persona-juridica` |
+| `prueba` | `Prueba123!` | `01-2222-3333` |
+| `admin` | `Admin123!` | `user-administrador` |
+
+### Probar el flujo de GAUDI (`scripts/oidc-test.py`)
+
+`scripts/oidc-test.py` (solo stdlib) reproduce la prueba de login del servidor real GAUDI contra el
+mock: construye la URL de entrada `/Account/Login?ReturnUrl=…` con el híbrido `code id_token` y
+desglosa a color la URL de retorno (`#code`, `#id_token`, `#session_state`), decodificando el JWT.
+
+```bash
+./scripts/oidc-test.py --build                  # URL de entrada lista para el navegador
+./scripts/oidc-test.py "<url-de-retorno>"       # desglose del fragmento + claims
+./scripts/oidc-test.py --decode "<jwt>"         # solo un JWT suelto
+./scripts/oidc-test.py --subject 99-9999-9999 "<url-de-retorno>"
+```
+
+Todo es configurable sin tocar código: `--host`, `--client-id`, `--subject`, `--nonce`,
+`--redirect-uri`, `--new-pkce`, etc. (flags > env `OIDC_*` > `--config` JSON > defecto). El
+**subject** (`--subject` / `OIDC_SUBJECT`) es el que se contrasta contra el claim `sub` del
+`id_token`; por defecto `01-2222-3333`, el del usuario `prueba` de `config/users.json`. Si cambias
+el `sub` de un usuario en `users.json`, cámbialo también aquí (o pásalo por env) para que el
+desglose siga marcando la coincidencia.
 
 ---
 
@@ -210,7 +232,10 @@ config/
 }
 ```
 
-`sub` es el identificador estable; `claims` se proyecta al `id_token` y al `userinfo` según los scopes
+`sub` es el identificador estable — el **subject** que el `id_token` y el `userinfo` declaran en el
+claim `sub` — y es configurable por usuario: cámbialo aquí y el token sale con el nuevo valor. El
+usuario `prueba` usa `01-2222-3333` como subject de ejemplo para el flujo de GAUDI (es un dato
+falso de prueba). `claims` se proyecta al `id_token` y al `userinfo` según los scopes
 concedidos. La contraseña va **en claro**: es un mock para desarrollo.
 
 ### `scopes.json`
@@ -331,6 +356,8 @@ Todos cuelgan del `PathBase` (`/personafisica` por defecto). En la tabla, `<base
 | `GET` | `<base>/.well-known/openid-configuration/jwks` | Claves públicas para validar JWT | ninguna |
 | `GET` | `<base>/connect/authorize` | Login con la respuesta en el `redirect_uri` | sesión del navegador |
 | `POST` | `<base>/connect/authorize` | Login y consentimiento (`form_post`) | sesión del navegador |
+| `GET`/`POST` | `<base>/connect/authorize/callback` | Alias del authorize, el destino del `ReturnUrl` del servidor real | sesión del navegador |
+| `GET`/`POST` | `<base>/Account/Login` | Entrada del servidor real: login con `ReturnUrl` local | ninguna |
 | `POST` | `<base>/connect/par` | Pushed Authorization Request (RFC 9126) | cliente |
 | `POST` | `<base>/connect/token` | Canje de código, refresh, `client_credentials`, `password` | cliente |
 | `GET`/`POST` | `<base>/connect/userinfo` | Claims del usuario del token | `Bearer` |

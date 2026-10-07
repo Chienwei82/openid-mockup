@@ -22,7 +22,7 @@ public sealed class InMemoryAuthSessionStore(TimeProvider timeProvider, OidcMock
 
         var startedAt = timeProvider.GetUtcNow();
         var session = new AuthSession(
-            OpaqueToken.New(),
+            OpaqueToken.NewSessionId(),
             userName,
             subject,
             startedAt,

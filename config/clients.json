@@ -105,6 +105,40 @@
         "logo_url": "/assets/logo-service.svg",
         "primary_color": "#1565C0"
       }
+    },
+    {
+      "client_id": "fb02079c-3143-49e6-a776-dd9b002388d2",
+      "client_secret": null,
+      "redirect_uris": [
+        "http://localhost:5173/pruebas/ves/landing"
+      ],
+      "post_logout_redirect_uris": [
+        "http://localhost:5173/pruebas/ves/"
+      ],
+      "frontchannel_logout_uri": null,
+      "allowed_grant_types": [
+        "authorization_code",
+        "refresh_token"
+      ],
+      "allowed_scopes": [
+        "openid",
+        "profile",
+        "email",
+        "offline_access"
+      ],
+      "require_pkce": true,
+      "require_client_secret": false,
+      "token_lifetimes": {
+        "access_token": "00:30:00",
+        "id_token": "00:30:00",
+        "refresh_token": "08:00:00",
+        "authorization_code": "00:05:00"
+      },
+      "branding": {
+        "display_name": "OidcMock - Prueba GAUDI",
+        "logo_url": "/assets/logo-mock.svg",
+        "primary_color": "#00695C"
+      }
     }
   ]
 }

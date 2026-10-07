@@ -30,7 +30,7 @@ public sealed class InMemoryCodeStore : ICodeStore
 
         var issuedAt = _timeProvider.GetUtcNow();
         var code = new AuthorizationCode(
-            OpaqueToken.New(),
+            OpaqueToken.NewAuthorizationCode(),
             request.ClientId,
             request.UserName,
             request.Scopes,
@@ -40,7 +40,8 @@ public sealed class InMemoryCodeStore : ICodeStore
             request.CodeChallengeMethod,
             issuedAt,
             issuedAt + request.Lifetime,
-            request.RedirectUri);
+            request.RedirectUri,
+            request.SessionId);
 
         _codes[code.Code] = code;
 

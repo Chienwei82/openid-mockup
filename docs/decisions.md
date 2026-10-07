@@ -1086,3 +1086,63 @@ El binario publicado se arranco de verdad, no solo se compilo: `dotnet publish` 
 `OidcMock__Serving__AllowHttp=true` y `HttpPort=5199`. Discovery 200, JWKS 200, y el bug de D-042
 verificado en el binario: `response_type=id_token token` responde 302 con
 `error=unsupported_response_type` al `redirect_uri` registrado.
+
+## Script manual scripts/oidc-test.py
+
+- **Stdlib solo, sin tests ni paquete nuevo.** Es herramienta manual fuera del
+  flujo TDD/build (como `publish.py`): replica la URL de login con su doble
+  codificacion observada y desglosa el retorno (`#code/id_token/session_state`)
+  con color ANSI y JWT decodificado sin verificar firma (solo inspeccion).
+- **Tus valores GAUDI como defecto** (host, client_id, nonce fijo, challenge,
+  landing). Flags > env `OIDC_*` > `--config` JSON > defecto.
+- **Valores fijos, no aleatorios:** nonce y challenge por defecto son los de tu
+  URL; `--random-nonce`/`--new-pkce` generan otros cuando quieras probar.
+- Credenciales/api-keys: el usuario controla su commit (pedido explicito).
+
+## Adaptacion a GAUDI: flujo hibrido y rutas de entrada (2026-10-07)
+
+Para correr la prueba del script contra el mock sustituyendo al servidor real de la empresa
+(GAUDI), con la captura de su URL de salida como especificacion.
+
+### Lo que se implemento y por que
+
+- **`response_type=code id_token` pasa a emitirse** (`EmittedByAuthorizationEndpoint`). La lista de
+  lo aceptado y la del discovery siguen siendo dos (D-042); ahora la diferencia es que el hibrido
+  si se responde y las combinaciones con access token (`code token`, `id_token token`, ...) siguen
+  rechazandose con `unsupported_response_type`.
+- **La respuesta hibrida es exactamente la captura:** `#code=<HEX64>-1&id_token=...&session_state=...`
+  en el fragmento, sin el `?` que antes quedaba tras el `#` (bug de `ToQueryString`) y **sin `iss`**:
+  el servidor real lo omite aqui pese a anunciar
+  `authorization_response_iss_parameter_supported`. El mock imita lo que hace, no lo que dice; el
+  flujo de codigo conserva el `iss` que ya tenia fijado.
+- **Formatos observados, no opacos:** code en 64 hexadecimales mayuscula con sufijo `-1`,
+  `session_state` como `<43 base64url>.<32 HEX>` y `sid` en 32 hexadecimales mayuscula. Son
+  visibles en la URL de retorno y en el id_token, que es justo lo que la prueba desglosa.
+- **Claims de sesion del id_token:** `sid` (la sesion del navegador que hizo login, enhebrada por
+  el `AuthorizationCode` hasta el canje), `amr=["sc"]`, `acr="possessionorinherence"` e
+  `idp="local"`. Los tres ultimos son valores **fijos** observados en la captura: el mock no
+  autentica con tarjeta, imita la forma para que la aplicacion no vea diferencia.
+- **Rutas de entrada:** `/Account/Login?ReturnUrl=` (login con `ReturnUrl` local obligatorio; una
+  URL absoluta se rechaza con 400 para no ser un open redirect) y el alias
+  `/connect/authorize/callback` del authorize, que es el destino del `ReturnUrl` en el servidor
+  real. El HTML del login es propio; el real es el de ASP.NET Identity y no se imita.
+- **`response_mode` por defecto:** fragmento cuando la respuesta lleva tokens y query solo para
+  `code` (Multi Response Type Encoding 3). `response_mode=query` con un hibrido se rechaza con
+  `invalid_request`.
+- **`UserAuthenticator`** concentra la comparacion de credenciales en tiempo constante que usan el
+  authorize y la nueva ruta de login.
+
+### Configuracion de prueba
+
+- Cliente publico `fb02079c-3143-49e6-a776-dd9b002388d2` con PKCE obligatorio y el redirect_uri
+  falso `http://localhost:5173/pruebas/ves/landing` (no hay servidor atras; solo tiene que existir
+  registrado). Usuario `prueba` / `Prueba123!` con `sub` `01-2222-3333`, **dato falso de prueba**.
+- `scripts/oidc-test.py` apunta por defecto a `https://localhost:5443/personafisica/` con ese
+  cliente, un par PKCE fijo (el `code_verifier` vive en los defaults, para poder canjear el code) y
+  el redirect falso. `--host`/`--client-id` lo re-apuntan al servidor real.
+- Los tests dejan de fijar el numero de usuarios del `config/` y fijan los concretos: agregar uno
+  de ejemplo no debe romperlos, igual que ya hacia `ConfigCoherenceTests` con los clientes.
+- **El subject es configurable en ambos lados.** El `sub` del usuario vive en `config/users.json` y
+  el script lo contrasta con `--subject` / `OIDC_SUBJECT` / `subject` en el `--config` (por defecto
+  `01-2222-3333`, el del usuario `prueba`, dato falso). Cambiar el subject no toca codigo: se cambia
+  en la configuracion y el desglose senala si el `sub` del id_token coincide o no.

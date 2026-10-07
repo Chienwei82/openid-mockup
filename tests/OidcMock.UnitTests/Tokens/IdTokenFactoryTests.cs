@@ -67,6 +67,20 @@ public sealed class IdTokenFactoryTests
         Assert.Equal(AuthenticatedAt.ToUnixTimeSeconds(), TokenTestValidator.ReadClaim(token, "iat").GetInt64());
     }
 
+    /// <summary>
+    /// El id_token del servidor real declara como se autentico al usuario y con que proveedor:
+    /// acr=possesionorinherence, amr=[sc] e idp=local, valores observados en la captura de GAUDI.
+    /// </summary>
+    [Fact]
+    public void EmiteLosClaimsDeAutenticacionDelServidorReal()
+    {
+        var token = CreateIdToken();
+
+        Assert.Equal("local", TokenTestValidator.ReadClaim(token, "idp").GetString());
+        Assert.Equal("possessionorinherence", TokenTestValidator.ReadClaim(token, "acr").GetString());
+        Assert.Equal("sc", TokenTestValidator.ReadClaim(token, "amr")[0].GetString());
+    }
+
     [Fact]
     public void ExpiraSegunLaVigenciaDelClienteTomadaDelRelojInyectado()
     {

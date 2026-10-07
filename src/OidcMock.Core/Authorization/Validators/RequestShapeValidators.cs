@@ -24,7 +24,11 @@ public sealed class ResponseTypeValidator : IAuthorizeRequestValidator
     }
 }
 
-/// <summary>Regla: el response_mode tiene que ser query, fragment o form_post.</summary>
+/// <summary>
+/// Regla: el response_mode tiene que ser query, fragment o form_post, y el query solo vale cuando
+/// la respuesta es un codigo de autorizacion. Los tokens no viajan en el query string (Multi
+/// Response Type Encoding 3): un id_token en el query se filtra en historiales y cabeceras.
+/// </summary>
 public sealed class ResponseModeValidator : IAuthorizeRequestValidator
 {
     public bool ErrorIsRedirectable => true;
@@ -33,9 +37,15 @@ public sealed class ResponseModeValidator : IAuthorizeRequestValidator
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        return ResponseModes.Supported.Contains(context.Request.ResponseMode, StringComparer.Ordinal)
-            ? null
-            : ProtocolErrors.InvalidRequest($"El response_mode '{context.Request.ResponseMode}' no esta soportado.");
+        if (!ResponseModes.Supported.Contains(context.Request.ResponseMode, StringComparer.Ordinal))
+        {
+            return ProtocolErrors.InvalidRequest($"El response_mode '{context.Request.ResponseMode}' no esta soportado.");
+        }
+
+        return string.Equals(context.Request.ResponseMode, ResponseModes.Query, StringComparison.Ordinal)
+            && !string.Equals(context.Request.ResponseType, ResponseTypeNames.Code, StringComparison.Ordinal)
+            ? ProtocolErrors.InvalidRequest("El response_mode 'query' no admite tokens en la respuesta.")
+            : null;
     }
 }
 

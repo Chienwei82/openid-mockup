@@ -26,7 +26,7 @@ public static class AuthorizationRequestBinder
             values.GetValueOrDefault("code_challenge_method"),
             values.GetValueOrDefault("prompt"),
             values.GetValueOrDefault("grant_type") ?? GrantTypes.AuthorizationCode,
-            values.GetValueOrDefault("response_mode") ?? ResponseModes.Query,
+            values.GetValueOrDefault("response_mode") ?? ResponseModes.DefaultFor(values.GetValueOrDefault("response_type")),
             values.GetValueOrDefault(RequestUriField));
     }
 

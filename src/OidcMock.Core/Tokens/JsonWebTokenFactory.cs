@@ -13,6 +13,15 @@ namespace OidcMock.Core.Tokens;
 /// </summary>
 public sealed class JsonWebTokenFactory : ITokenFactory
 {
+    /// <summary>
+    /// Valores de los claims de autenticacion que el servidor real emite siempre en el id_token y
+    /// que la captura de GAUDI confirma: el mock los fija porque no autentica de otra forma, y sin
+    /// ellos una aplicacion que los lea veria una diferencia entre el mock y el servidor real.
+    /// </summary>
+    private const string LocalIdentityProvider = "local";
+    private const string PossessionOrInherence = "possessionorinherence";
+    private const string SmartcardAuthentication = "sc";
+
     private readonly ISigningKeyProvider _signingKeyProvider;
     private readonly IClaimsProjector _claimsProjector;
     private readonly TimeProvider _timeProvider;
@@ -52,10 +61,14 @@ public sealed class JsonWebTokenFactory : ITokenFactory
         var claims = new Dictionary<string, object>(StringComparer.Ordinal)
         {
             [ProtocolClaimNames.Subject] = request.User.Subject,
-            [ProtocolClaimNames.AuthTime] = ToEpochSeconds(request.AuthenticationTime)
+            [ProtocolClaimNames.AuthTime] = ToEpochSeconds(request.AuthenticationTime),
+            [ProtocolClaimNames.IdentityProvider] = LocalIdentityProvider,
+            [ProtocolClaimNames.AuthenticationContext] = PossessionOrInherence,
+            [ProtocolClaimNames.AuthenticationMethods] = new[] { SmartcardAuthentication }
         };
 
         AddWhenPresent(claims, ProtocolClaimNames.Nonce, request.Nonce);
+        AddWhenPresent(claims, ProtocolClaimNames.SessionId, request.SessionId);
         AddHashWhenPresent(claims, ProtocolClaimNames.AccessTokenHash, request.AccessToken, TokenHash.FromAccessToken);
         AddHashWhenPresent(claims, ProtocolClaimNames.AuthorizationCodeHash, request.AuthorizationCode, TokenHash.FromAuthorizationCode);
         AddProjectedUserClaims(claims, request.User, request.GrantedScopes);
