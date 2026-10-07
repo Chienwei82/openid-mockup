@@ -168,6 +168,63 @@ public sealed class AuthorizeEndpointTests
     }
 
     [Fact]
+    public async Task SelectAccountMuestraLaPantallaDeEleccionDeCuentaConSesion()
+    {
+        using var client = Create();
+        await SignInAsync(client, AuthorizeUrl());
+
+        using var response = await client.GetAsync(
+            AuthorizeUrl(prompt: PromptValues.SelectAccount),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var html = await ReadBodyAsync(response);
+        Assert.Contains("Elige una cuenta", html, StringComparison.Ordinal);
+        Assert.Contains("jperez", html, StringComparison.Ordinal);
+        Assert.Contains("empresa-demo", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task SelectAccountPrecargaLaCuentaDeLaSesion()
+    {
+        const string PerfilUserName = "prueba";
+        const string PerfilSubject = "01-2222-3333";
+
+        using var client = Create();
+        await SignInAsync(client, $"{AuthorizeUrl()}&perfil={PerfilUserName}");
+
+        using var chooser = await client.GetAsync(
+            AuthorizeUrl(prompt: PromptValues.SelectAccount),
+            TestContext.Current.CancellationToken);
+        var fields = LoginFormFields.Parse(await ReadBodyAsync(chooser));
+
+        Assert.Equal(PerfilSubject, fields["sub"]);
+    }
+
+    [Fact]
+    public async Task SelectAccountElegidoConcedeConEsaIdentidad()
+    {
+        const string PerfilUserName = "prueba";
+        const string PerfilSubject = "01-2222-3333";
+
+        using var client = Create();
+        await SignInAsync(client, AuthorizeUrl());
+
+        using var chooser = await client.GetAsync(
+            $"{AuthorizeUrl(prompt: PromptValues.SelectAccount)}&perfil={PerfilUserName}",
+            TestContext.Current.CancellationToken);
+        var fields = LoginFormFields.Parse(await ReadBodyAsync(chooser));
+        fields["action"] = "accept";
+
+        using var granted = await PostFormAsync(client, EndpointPaths.Authorize, fields);
+        var code = HttpUtility.ParseQueryString(AssertRedirectedToClient(granted))["code"]!;
+
+        var tokens = await RequestTokensAsync(client, GrantTypes.AuthorizationCode, code);
+
+        Assert.Equal(PerfilSubject, ReadJwtPayload(tokens.IdToken!).GetProperty("sub").GetString());
+    }
+
+    [Fact]
     public async Task ResponseModeFormPostDevuelveUnFormularioAutoEnviable()
     {
         using var client = Create();

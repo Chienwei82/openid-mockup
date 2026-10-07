@@ -71,22 +71,21 @@ public sealed class AuthorizationInteractionTests
         Assert.Equal(AuthorizationStep.Login, Decide(sessionId: "sesion-inventada").Step);
 
     /// <summary>
-    /// <c>select_account</c> se anuncia en el discovery por paridad con el servidor real, pero el
-    /// mock no implementa la eleccion de cuenta (D-043): el authorize se comporta como si el prompt
-    /// no fuera. Con sesion concede en silencio con el usuario de la sesion; sin sesion pide login.
-    /// El test fija ese comportamiento a proposito: es la decision de no implementar la
-    /// pantalla de eleccion, y cambiarlo tiene que ser un acto deliberado, no un efecto colateral.
+    /// <c>select_account</c> pide elegir cuenta <b>siempre</b>, con o sin sesion: es lo que el prompt
+    /// promete. La pantalla de identidad es la eleccion de cuenta (los perfiles son las cuentas), asi
+    /// que el paso es un <see cref="AuthorizationStep.SelectAccount"/> propio y no un login. La
+    /// decision lleva el usuario de la sesion para precargar su cuenta como la actual.
     /// </summary>
     [Fact]
-    public void SelectAccountSeTrataComoSinPrompt() =>
-        Assert.Equal(AuthorizationStep.Grant, Decide(sessionId: OpenSession(), prompt: PromptValues.SelectAccount).Step);
+    public void SelectAccountPideElegirCuentaAunqueHayaSesion() =>
+        Assert.Equal(AuthorizationStep.SelectAccount, Decide(sessionId: OpenSession(), prompt: PromptValues.SelectAccount).Step);
 
     [Fact]
-    public void SelectAccountSinSesionPideLogin() =>
-        Assert.Equal(AuthorizationStep.Login, Decide(prompt: PromptValues.SelectAccount).Step);
+    public void SelectAccountSinSesionTambienPideElegirCuenta() =>
+        Assert.Equal(AuthorizationStep.SelectAccount, Decide(prompt: PromptValues.SelectAccount).Step);
 
     [Fact]
-    public void SelectAccountConcedeConElUsuarioDeLaSesion() =>
+    public void SelectAccountPrecargaAlUsuarioDeLaSesion() =>
         Assert.Equal("jperez", Decide(sessionId: OpenSession(), prompt: PromptValues.SelectAccount).UserName);
 
     private AuthorizationDecision Decide(string? sessionId = null, string? prompt = null) =>
