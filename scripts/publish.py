@@ -124,6 +124,13 @@ def relevant_lines(log: Path, limit: int = 15) -> list[str]:
     return [line for line in text.splitlines() if line.strip()][-limit:]
 
 
+def report_failure(label: str, log: Path) -> None:
+    """Resume el fallo con las lineas del log que explican que paso."""
+    print(f"\n{label} fallo. Lineas relevantes de {log.relative_to(ROOT)}:")
+    for line in relevant_lines(log):
+        print(f"      {line}")
+
+
 def build(configuration: str, console: Console, logs: Path) -> bool:
     console.step(f"Compilando la solucion en {configuration}")
     command = ["dotnet", "build", str(SOLUTION), "--configuration", configuration, "--nologo"]
@@ -271,9 +278,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-
-
-def report_failure(label: str, log: Path) -> None:
-    print(f"\n{label} fallo. Lineas relevantes de {log.relative_to(ROOT)}:")
-    for line in relevant_lines(log):
-        print(f"      {line}")
