@@ -1,0 +1,28 @@
+<template>
+  <div
+    class="scene-root"
+    data-composition-id="scene-08-sesion"
+    data-width="1920"
+    data-height="1080"
+    data-duration="16.72"
+  >
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim>Sesión</span><h2 class="headline" data-anim>Sesión y Logout</h2></header><div class="grid grid--3"><article class="card" data-anim><h3 class="card__title">Sesión del OP</h3><ul class="list"><li>Habilita el SSO</li><li>Cookie del navegador</li><li>Vida por defecto 8 h</li></ul></article><article class="card" data-anim><h3 class="card__title">Sesión del cliente</h3><ul class="list"><li>Cookie propia de la aplicación</li><li>Independiente del OP</li><li>Se cierra con el logout</li></ul></article><article class="card" data-anim><h3 class="card__title">sid</h3><ul class="list"><li>Conecta el id_token con la sesión</li><li>Viaja también en el logout</li><li>Permite front-channel logout</li></ul></article></div><div class="grid grid--2 grid--tight"><article class="card" data-anim><h3 class="card__title">prompt</h3><div class="chiprow"><span class="chip">none</span><span class="chip">login</span><span class="chip">consent</span><span class="chip">select_account</span></div></article><article class="card" data-anim><h3 class="card__title">RP-Initiated Logout</h3><p class="mono">/connect/endsession · id_token_hint · post_logout_redirect_uri</p></article></div></section>
+
+    <script>
+      (function () {
+        var root = document.querySelector('[data-composition-id="scene-08-sesion"]');
+        if (!root || typeof gsap === 'undefined') { return; }
+        var items = root.querySelectorAll('[data-anim]');
+        var timeline = gsap.timeline({ paused: true });
+        for (var index = 0; index < items.length; index += 1) {
+          timeline.from(
+            items[index],
+            { opacity: 0, y: 36, duration: 0.65, ease: 'power3.out' },
+            0.45 + index * 0.16
+          );
+        }
+        window.__timelines['scene-08-sesion'] = timeline;
+      })();
+    </script>
+  </div>
+</template>

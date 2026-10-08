@@ -1,0 +1,10 @@
+# Dependencias y entorno virtual (solo hacen falta para regenerar el video).
+node_modules/
+.venv/
+
+# Salidas de render: el MP4 final se publica aparte, no se versiona.
+renders/
+dist/
+
+# Temporales de ffmpeg/edge-tts.
+audio/concat.txt

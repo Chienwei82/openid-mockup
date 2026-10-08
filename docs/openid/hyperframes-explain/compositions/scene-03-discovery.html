@@ -1,0 +1,28 @@
+<template>
+  <div
+    class="scene-root"
+    data-composition-id="scene-03-discovery"
+    data-width="1920"
+    data-height="1080"
+    data-duration="16.408"
+  >
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim>Discovery</span><h2 class="headline" data-anim>Discovery y JWKS</h2></header><div class="grid grid--2"><article class="card" data-anim><h3 class="card__title">Discovery Document</h3><p class="mono">GET /.well-known/openid-configuration</p><ul class="list"><li>issuer — comparado literalmente por el cliente</li><li>authorization · token · userinfo · introspect · revocation</li><li>scopes_supported y grant_types_supported</li></ul></article><article class="card" data-anim><h3 class="card__title">JWKS</h3><p class="mono">GET /.well-known/openid-configuration/jwks</p><ul class="list"><li>JSON Web Key Set — claves públicas del emisor</li><li>kid identifica qué clave firmó el JWT</li><li>Algoritmo de firma: RS256</li></ul></article></div></section>
+
+    <script>
+      (function () {
+        var root = document.querySelector('[data-composition-id="scene-03-discovery"]');
+        if (!root || typeof gsap === 'undefined') { return; }
+        var items = root.querySelectorAll('[data-anim]');
+        var timeline = gsap.timeline({ paused: true });
+        for (var index = 0; index < items.length; index += 1) {
+          timeline.from(
+            items[index],
+            { opacity: 0, y: 36, duration: 0.65, ease: 'power3.out' },
+            0.45 + index * 0.16
+          );
+        }
+        window.__timelines['scene-03-discovery'] = timeline;
+      })();
+    </script>
+  </div>
+</template>

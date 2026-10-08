@@ -1,0 +1,28 @@
+<template>
+  <div
+    class="scene-root"
+    data-composition-id="scene-02-actores"
+    data-width="1920"
+    data-height="1080"
+    data-duration="16.624"
+  >
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim>Actores</span><h2 class="headline" data-anim>Actores y Tokens</h2></header><div class="grid grid--2"><article class="card" data-anim><h3 class="card__title">Cuatro roles (OAuth 2.0)</h3><ul class="list"><li><strong>Resource Owner</strong> — el usuario</li><li><strong>Client</strong> — la aplicación</li><li><strong>Authorization Server</strong> — emite los tokens</li><li><strong>Resource Server</strong> — sirve la API protegida</li></ul></article><article class="card" data-anim><h3 class="card__title">Cuatro tokens</h3><ul class="list"><li><span class="tok tok--code">code</span> Authorization Code — opaco, un solo uso</li><li><span class="tok tok--access">access</span> Access Token — JWT para la API</li><li><span class="tok tok--id">id</span> ID Token — JWT de identidad</li><li><span class="tok tok--refresh">refresh</span> Refresh Token — vida larga</li></ul></article></div></section>
+
+    <script>
+      (function () {
+        var root = document.querySelector('[data-composition-id="scene-02-actores"]');
+        if (!root || typeof gsap === 'undefined') { return; }
+        var items = root.querySelectorAll('[data-anim]');
+        var timeline = gsap.timeline({ paused: true });
+        for (var index = 0; index < items.length; index += 1) {
+          timeline.from(
+            items[index],
+            { opacity: 0, y: 36, duration: 0.65, ease: 'power3.out' },
+            0.45 + index * 0.16
+          );
+        }
+        window.__timelines['scene-02-actores'] = timeline;
+      })();
+    </script>
+  </div>
+</template>

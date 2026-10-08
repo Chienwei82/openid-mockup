@@ -1,16 +1,22 @@
 {
   "name": "hyperframes-explain",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
+  "description": "Explicador OIDC en video (HyperFrames) para OidcMock",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "audio": "node scripts/generate_audio.mjs",
+    "build": "python3 scripts/build_composition.py",
+    "check": "hyperframes check .",
+    "render": "hyperframes render . --quality standard -o dist/oidc-explainer.mp4",
+    "preview": "hyperframes preview ."
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "devDependencies": {
-    "hyperframes": "^0.8.140"
+    "hyperframes": "^0.8.140",
+    "yauzl": "^3.4.0"
+  },
+  "dependencies": {
+    "@lobehub/tts": "^5.2.1",
+    "ws": "^8.22.0"
   }
 }

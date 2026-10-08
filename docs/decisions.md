@@ -1315,3 +1315,51 @@ documenta el flujo OIDC y, sobre todo, **mapea cada pieza del protocolo al codig
   raiz enlaza la serie y la matriz (11) es la vista de paridad de un solo golpe.
 
 
+## Explicador en video del flujo OIDC (`docs/openid/hyperframes-explain/`) (2026-10-08)
+
+Se anade un video explicativo de 16:9 (1920x1080, 30 fps, 177 s) que recorre los doce
+documentos de `docs/openid/` y muestra como OidcMock implementa cada pieza del
+protocolo. Se compone con HyperFrames y vive junto a la serie, no en el codigo del mock:
+es documentacion generada, y por eso no entra a compilar ni a las suites.
+
+- **Arquitectura modular, no un solo HTML.** El contrato de HyperFrames pide un
+  orquestador y una sub-composicion por escena cuando hay contenido anidado; el lint lo
+  exige explicitamente (`nested_structure_needs_subcomposition`). `index.html` declara
+  los 12 slots en el tiempo, monta los 12 audios y registra un timeline raiz minimo
+  (riel de progreso y barra de marca); cada escena en `compositions/` tiene su propio
+  timeline registrado en `window.__timelines["<scene-id>"]`.
+- **Sincronia calculada, no estimada.** El guion se sintetiza **por escena** y cada clip
+  se mide con `ffprobe` (`audio/timings.json`). La ventana de la escena es
+  `lead-in 0,9 s + voz + tail 0,7 s` y el MP3 se ancla en `data-start = inicio + lead-in`.
+  Cambiar un texto recalcula los tiempos; nunca se desincroniza la voz.
+- **Duracion 177 s en lugar de los ~118 s del plan inicial.** Los ~3300 caracteres del
+  guion no caben en 118 s sin ~38 caracteres/s (unas 2,4x de la velocidad natural). Se
+  prefirio un ritmo de presentador (~19 caracteres/s, ~190 palabras/min) antes que un
+  video atropellado. La duracion es una consecuencia del guion, no una meta fija.
+- **Motor de voz: `@lobehub/tts`**, la libreria pedida. Habla el protocolo de las voces
+  neuronales de Microsoft Edge (`EdgeSpeechTTS.createRequest`), pero asume navegador:
+  su transporte usa el `WebSocket` global y el servicio exige un `Origin` de extension
+  de Chrome. Se resolvio inyectando `ws` como `globalThis.WebSocket` con las cabeceras
+  del handshake; sin el `Origin` correcto el upgrade se queda colgado y no hay error.
+  Descartado kokoro-onnx (los pesos no se pueden descargar desde este entorno) y
+  explicitamente sustituido el `edge-tts` de Python que se uso en un primer intento.
+- **`rate` comprimido.** `@lobehub/tts` lo traduce a `prosody rate="<rate*100>%"` y el
+  servicio lo aplica de forma comprimida, recortandolo por encima de `1`: con `rate: 1`
+  la voz sale a ~29 caracteres/s y con `rate: 0.3` a ~19. Queda fijado en `0.3`.
+- **Un solo runner, sin entorno virtual.** El audio lo genera Node
+  (`scripts/generate_audio.mjs`) y el HTML lo genera `scripts/build_composition.py`, que
+  solo usa la libreria estandar. Se elimino el venv de Python que existia para el primer
+  motor de voz.
+- **Tema visual: el Material You oscuro del prototipo.** Tokens y clases viven en
+  `scripts/theme.css` (teal/azul, superficies por elevacion, radios, tipografia Inter) y
+  salen de `docs/UI-Prototype/`. El fondo, la marca y el riel de progreso son
+  persistentes; las escenas solo aportan contenido.
+- **Determinismo estricto.** Nada de transiciones ni animaciones CSS, ni relojes de
+  render: toda la animacion es GSAP pausado y direccionable, y los elementos animados
+  van marcados con `data-anim`. `npx hyperframes check .` pasa con 0 errores y 0 avisos
+  en lint, runtime, layout, motion y contraste (89/89 comprobaciones WCAG AA).
+- **El MP4 no se versiona.** `dist/` y `renders/` quedan ignorados; se regeneran con
+  `npm run render`. Los MP3 de la narracion si se versionan para poder montar el video
+  sin red.
+
+

@@ -1,0 +1,28 @@
+<template>
+  <div
+    class="scene-root"
+    data-composition-id="scene-05-idtoken"
+    data-width="1920"
+    data-height="1080"
+    data-duration="17.224"
+  >
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim>Claims</span><h2 class="headline" data-anim>ID Token y Claims</h2></header><div class="grid grid--2"><article class="card" data-anim><h3 class="card__title">Claims del JWT</h3><p class="card__label">Obligatorios</p><div class="chiprow"><span class="chip chip--accent">iss</span><span class="chip chip--accent">sub</span><span class="chip chip--accent">aud</span><span class="chip chip--accent">exp</span><span class="chip chip--accent">iat</span><span class="chip chip--accent">nonce</span></div><p class="card__label">Binding</p><div class="chiprow"><span class="chip">at_hash</span><span class="chip">c_hash</span><span class="chip">sid</span></div></article><article class="card" data-anim><h3 class="card__title">Proyección por scope</h3><ul class="list"><li><strong>openid</strong> → sub</li><li><strong>profile</strong> → name, given_name, family_name, locale</li><li><strong>email</strong> → email, email_verified</li><li><strong>address</strong> → address</li></ul></article></div></section>
+
+    <script>
+      (function () {
+        var root = document.querySelector('[data-composition-id="scene-05-idtoken"]');
+        if (!root || typeof gsap === 'undefined') { return; }
+        var items = root.querySelectorAll('[data-anim]');
+        var timeline = gsap.timeline({ paused: true });
+        for (var index = 0; index < items.length; index += 1) {
+          timeline.from(
+            items[index],
+            { opacity: 0, y: 36, duration: 0.65, ease: 'power3.out' },
+            0.45 + index * 0.16
+          );
+        }
+        window.__timelines['scene-05-idtoken'] = timeline;
+      })();
+    </script>
+  </div>
+</template>

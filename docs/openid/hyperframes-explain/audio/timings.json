@@ -1,0 +1,151 @@
+{
+  "total": 177.216,
+  "leadIn": 0.9,
+  "tail": 0.7,
+  "scenes": [
+    {
+      "id": "scene-01-title",
+      "index": 1,
+      "kicker": "Introducción",
+      "title": "OpenID Connect Explicado",
+      "text": "Bienvenidos a esta explicación de OpenID Connect, el estándar moderno de autenticación que usaremos para desarrollo local. Veremos la teoría, el servidor real del BCCR, y cómo OidcMock lo imita.",
+      "audio": "audio/segments/seg-01.mp3",
+      "start": 0,
+      "duration": 11.824,
+      "audioStart": 0.9,
+      "audioDuration": 10.224
+    },
+    {
+      "id": "scene-02-actores",
+      "index": 2,
+      "kicker": "Actores",
+      "title": "Actores y Tokens",
+      "text": "OpenID Connect define cuatro actores: el Resource Owner, que es el usuario; el Cliente, que es la aplicación; el Authorization Server, que emite los tokens; y el Resource Server, que sirve los datos protegidos. Y cuatro tokens: authorization code, access token, id token y refresh token.",
+      "audio": "audio/segments/seg-02.mp3",
+      "start": 11.824,
+      "duration": 16.624,
+      "audioStart": 12.724,
+      "audioDuration": 15.024
+    },
+    {
+      "id": "scene-03-discovery",
+      "index": 3,
+      "kicker": "Discovery",
+      "title": "Discovery y JWKS",
+      "text": "Antes de enviar a nadie a login, el cliente descubre los endpoints en punto well-known barra openid-configuration. Allí encuentra el issuer, las URLs de cada endpoint y las capacidades soportadas. El JWKS contiene las claves públicas para validar las firmas de los JWT.",
+      "audio": "audio/segments/seg-03.mp3",
+      "start": 28.448,
+      "duration": 16.408,
+      "audioStart": 29.348,
+      "audioDuration": 14.808
+    },
+    {
+      "id": "scene-04-pkce",
+      "index": 4,
+      "kicker": "Flujo principal",
+      "title": "Authorization Code + PKCE",
+      "text": "El flujo principal es Authorization Code con PKCE. El cliente genera un code verifier y su challenge, y los envía al authorize endpoint. Al canjear el código, el servidor compara el verifier en tiempo constante. Los métodos son plain y S256, siendo S256 el recomendado.",
+      "audio": "audio/segments/seg-04.mp3",
+      "start": 44.856,
+      "duration": 18.04,
+      "audioStart": 45.756,
+      "audioDuration": 16.44
+    },
+    {
+      "id": "scene-05-idtoken",
+      "index": 5,
+      "kicker": "Claims",
+      "title": "ID Token y Claims",
+      "text": "El ID Token es lo que convierte OAuth en OpenID Connect. Es un JWT con claims obligatorios: iss, sub, aud, exp, iat y nonce. Los claims de binding, at hash y c hash, lo vinculan con el access token y con el código. Los claims del usuario salen del scope concedido.",
+      "audio": "audio/segments/seg-05.mp3",
+      "start": 62.896,
+      "duration": 17.224,
+      "audioStart": 63.796,
+      "audioDuration": 15.624
+    },
+    {
+      "id": "scene-06-grants",
+      "index": 6,
+      "kicker": "Grants",
+      "title": "Token Endpoint y Grant Types",
+      "text": "El token endpoint, en connect token, es donde cada grant type obtiene sus tokens. Soportamos siete: authorization code, refresh token, client credentials, password, device code, ciba y el tipo de dispositivo. Un patrón strategy despacha cada grant a su handler.",
+      "audio": "audio/segments/seg-06.mp3",
+      "start": 80.12,
+      "duration": 16.024,
+      "audioStart": 81.02,
+      "audioDuration": 14.424
+    },
+    {
+      "id": "scene-07-userinfo",
+      "index": 7,
+      "kicker": "Gestión",
+      "title": "UserInfo, Introspection y Revocation",
+      "text": "UserInfo devuelve los claims del usuario a partir del access token. Introspection responde siempre con active verdadero o falso, sin revelar si el token existía. Revocation registra el jti o revoca toda la familia de refresh tokens.",
+      "audio": "audio/segments/seg-07.mp3",
+      "start": 96.144,
+      "duration": 13.36,
+      "audioStart": 97.044,
+      "audioDuration": 11.76
+    },
+    {
+      "id": "scene-08-sesion",
+      "index": 8,
+      "kicker": "Sesión",
+      "title": "Sesión y Logout",
+      "text": "Hay tres sesiones: la del OP, que habilita el SSO; la del cliente, con su propia cookie; y el sid, que conecta el id token con la sesión del OP. El logout usa connect end session con id token hint y post logout redirect uri. El prompt admite none, login, consent o select account.",
+      "audio": "audio/segments/seg-08.mp3",
+      "start": 109.504,
+      "duration": 16.72,
+      "audioStart": 110.404,
+      "audioDuration": 15.12
+    },
+    {
+      "id": "scene-09-avanzados",
+      "index": 9,
+      "kicker": "Avanzado",
+      "title": "Flujos Avanzados",
+      "text": "Tenemos PAR implementado, el flujo híbrido code id token para GAUDI, y device y CIBA simulados para completar el discovery. PAR usa request uri y envía los parámetros sensibles por back-channel.",
+      "audio": "audio/segments/seg-09.mp3",
+      "start": 126.224,
+      "duration": 11.176,
+      "audioStart": 127.124,
+      "audioDuration": 9.576
+    },
+    {
+      "id": "scene-10-matriz",
+      "index": 10,
+      "kicker": "Resumen",
+      "title": "Matriz de Paridad",
+      "text": "La matriz de paridad compara la teoría, el BCCR real y OidcMock. Los tokens tienen vidas definidas: el código cinco minutos, el access token y el id token treinta minutos, y el refresh token ocho horas. Los errores siguen los códigos HTTP definidos por RFC.",
+      "audio": "audio/segments/seg-10.mp3",
+      "start": 137.4,
+      "duration": 16.072,
+      "audioStart": 138.3,
+      "audioDuration": 14.472
+    },
+    {
+      "id": "scene-11-arranque",
+      "index": 11,
+      "kicker": "Práctico",
+      "title": "Arrancar OidcMock",
+      "text": "Para arrancar OidcMock ejecutamos dotnet run sobre el proyecto Host, con el issuer configurado por opciones, HTTPS o HTTP, y los clientes de ejemplo declarados en JSON. Todo el estado vive en memoria, sin base de datos.",
+      "audio": "audio/segments/seg-11.mp3",
+      "start": 153.472,
+      "duration": 13.24,
+      "audioStart": 154.372,
+      "audioDuration": 11.64
+    },
+    {
+      "id": "scene-12-outro",
+      "index": 12,
+      "kicker": "Cierre",
+      "title": "Desarrolla sin dependencias externas",
+      "text": "OidcMock replica el comportamiento del BCCR para desarrollo local, con configuración JSON y estado en memoria, y nunca debe exponerse fuera de localhost. Gracias por ver.",
+      "audio": "audio/segments/seg-12.mp3",
+      "start": 166.712,
+      "duration": 10.504,
+      "audioStart": 167.612,
+      "audioDuration": 8.904
+    }
+  ]
+}

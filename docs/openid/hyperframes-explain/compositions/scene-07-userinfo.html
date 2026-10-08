@@ -1,0 +1,28 @@
+<template>
+  <div
+    class="scene-root"
+    data-composition-id="scene-07-userinfo"
+    data-width="1920"
+    data-height="1080"
+    data-duration="13.36"
+  >
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim>Gestión</span><h2 class="headline" data-anim>UserInfo, Introspection y Revocation</h2></header><div class="grid grid--3"><article class="card" data-anim><h3 class="card__title">UserInfo</h3><p class="mono">GET /connect/userinfo</p><ul class="list"><li>Devuelve los claims del usuario</li><li>Requiere <code>Authorization: Bearer</code></li><li>Reto <code>WWW-Authenticate</code> si el token no vale</li></ul></article><article class="card" data-anim><h3 class="card__title">Introspection</h3><p class="mono">POST /connect/introspect</p><ul class="list"><li>Responde <code>active: true</code> o <code>false</code></li><li>Nunca revela si el token existía</li><li>RFC 7662, autenticado como cliente</li></ul></article><article class="card" data-anim><h3 class="card__title">Revocation</h3><p class="mono">POST /connect/revocation</p><ul class="list"><li>Access token: registra su <code>jti</code></li><li>Refresh token: revoca la familia completa</li><li>RFC 7009, idempotente</li></ul></article></div></section>
+
+    <script>
+      (function () {
+        var root = document.querySelector('[data-composition-id="scene-07-userinfo"]');
+        if (!root || typeof gsap === 'undefined') { return; }
+        var items = root.querySelectorAll('[data-anim]');
+        var timeline = gsap.timeline({ paused: true });
+        for (var index = 0; index < items.length; index += 1) {
+          timeline.from(
+            items[index],
+            { opacity: 0, y: 36, duration: 0.65, ease: 'power3.out' },
+            0.45 + index * 0.16
+          );
+        }
+        window.__timelines['scene-07-userinfo'] = timeline;
+      })();
+    </script>
+  </div>
+</template>

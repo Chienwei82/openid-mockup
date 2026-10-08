@@ -1,0 +1,28 @@
+<template>
+  <div
+    class="scene-root"
+    data-composition-id="scene-01-title"
+    data-width="1920"
+    data-height="1080"
+    data-duration="11.824"
+  >
+<section class="scene scene--center"><span class="kicker" data-anim>Introducción</span><h1 class="headline headline--xl"><span class="headline__line" data-anim>OpenID Connect</span><span class="headline__line headline__line--accent" data-anim>Explicado</span></h1><p class="lede" data-anim>Del protocolo al mock para desarrollo local, con OidcMock</p><div class="chiprow"><span class="chip">OidcMock</span><span class="chip">1920 × 1080</span><span class="chip">Narración en español</span></div></section>
+
+    <script>
+      (function () {
+        var root = document.querySelector('[data-composition-id="scene-01-title"]');
+        if (!root || typeof gsap === 'undefined') { return; }
+        var items = root.querySelectorAll('[data-anim]');
+        var timeline = gsap.timeline({ paused: true });
+        for (var index = 0; index < items.length; index += 1) {
+          timeline.from(
+            items[index],
+            { opacity: 0, y: 36, duration: 0.65, ease: 'power3.out' },
+            0.45 + index * 0.16
+          );
+        }
+        window.__timelines['scene-01-title'] = timeline;
+      })();
+    </script>
+  </div>
+</template>

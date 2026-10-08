@@ -1,169 +1,114 @@
-# Video Explicativo HyperFrames - OpenID Connect + OidcMock
+# Explicador OIDC en video (HyperFrames)
 
-## Resumen
+Video explicativo de 16:9, en español, que recorre los 12 documentos de
+[`docs/openid/`](../) y muestra cómo OidcMock implementa cada pieza del protocolo.
 
-Este proyecto genera un video explicativo de OpenID Connect que explica todo el contenido de la serie `docs/openid/` utilizando el framework HyperFrames. El video utiliza narración TTS en español con la voz ef_dora de Kokoro, tiene una duración de 118 segundos y un aspecto de 16:9 (1920x1080).
+- **Formato:** 1920 × 1080 · 30 fps · H.264
+- **Duración:** 177,2 s (12 escenas)
+- **Voz:** TTS en español con [`@lobehub/tts`](https://www.npmjs.com/package/@lobehub/tts)
+  (voces neuronales de Microsoft Edge) — `es-ES-AlvaroNeural`, `rate: 0.3`
+- **Salida:** `dist/oidc-explainer.mp4`
 
-## Estructura del Proyecto
+## Requisitos
 
-```
-docs/openid/hyperframes-explain/
-├── hyperframes.json           # Configuración del video
-├── index.html                # Composición HTML con navegación por tiempo
-├── audio/
-│   ├── narration.txt         # Texto de narración en español
-│   └── narration.wav         # Audio TTS (generado con HyperFrames TTS)
-├── README.md                 # Este archivo
-└── package.json
-```
-
-## Procesamiento de Audio TTS
-
-### Instalación de Dependencias
-
-Para generar el audio TTS, necesitas:
+| Herramienta | Para qué |
+| --- | --- |
+| Node.js ≥ 22 | HyperFrames, `@lobehub/tts` y `ws` (el WebSocket nativo hace falta para la voz) |
+| `ffmpeg` / `ffprobe` | medir y concatenar la narración |
+| Python ≥ 3.9 (solo stdlib) | `scripts/build_composition.py` genera el HTML |
 
 ```bash
-# Instala las dependencias de HyperFrames
-npm install
-
-# Instala las dependencias de Python para TTS
-# En un entorno Debian/Ubuntu:
-apt-get install python3-venv
-# Luego en un venv:
-pip3 install kokoro-onnx soundfile
+npm install        # hyperframes, @lobehub/tts, ws, yauzl
 ```
 
-### Generación de Audio TTS
+## Estructura
+
+```
+index.html              orquestador: root, fondo/marca/progreso, 12 slots + 12 audios
+compositions/           una sub-composición por escena (markup + timeline GSAP)
+scripts/narration.json  guion por escena: id, kicker, título, texto; voz y rate
+scripts/scene_content.py  markup de cada escena (helpers card/list/chips/steps)
+scripts/theme.css       tokens y clases compartidas (Material You oscuro)
+scripts/generate_audio.mjs    TTS por escena con @lobehub/tts → audio/segments + timings.json
+scripts/build_composition.py  timings + markup → index.html y compositions/*.html
+audio/segments/         un MP3 por escena (lo que suena en el video)
+audio/timings.json      ventana y clip de audio de cada escena (medidos)
+audio/narration.mp3     narración completa, solo para revisión
+```
+
+Cada escena es una **sub-composición HyperFrames** independiente: el orquestador
+solo declara los slots en el tiempo, monta los audios y registra un timeline raíz
+mínimo (barra de progreso y barra de marca). Toda la animación de escena vive en
+su propio archivo y se registra en `window.__timelines["<scene-id>"]`.
+
+## Regenerar
 
 ```bash
-# Genera audio TTS en español usando la voz ef_dora
-npx hyperframes tts audio/narration.txt \
-  --voice ef_dora \
-  --output audio/narration.wav \
-  --speed 1.0
+npm run audio    # 1. Voz: sintetiza cada escena y mide su duración real
+npm run build    # 2. Composición: escribe index.html y compositions/*.html
+npm run check    # 3. Validar: lint + runtime + layout + motion + contraste
+npm run render   # 4. Renderizar a dist/oidc-explainer.mp4
 ```
 
-La voz ef_dora usa phonemización española para naturalidad en español.
+El paso 2 es determinista: si no se toca `narration.json` ni `scene_content.py`,
+regenerar produce exactamente los mismos archivos.
 
-### Voz y Localización
+> El render tarda unos minutos. Lánzalo con `setsid`/`nohup` si cierras la
+> terminal: el proceso de render cancela si detecta que el proceso padre murió.
 
-- **Voz**: ef_dora (Kokoro TTS para español)
-- **Tipo**: El prefijo 'e' selecciona la phonemización en español
-- **Naturalidad**: Voz con tono natural en español
+## Editar una escena
 
-## Navegación del Video
+- **Solo el texto narrado:** `scripts/narration.json` → pasos 1 y 2.
+- **Solo el contenido en pantalla:** `scripts/scene_content.py` → paso 2
+  (los tiempos y la voz no cambian).
+- **El estilo de todo el video:** `scripts/theme.css` → paso 2.
+- Todo elemento que deba animarse lleva `data-anim`; la escena lo revela en
+  cascada (0,45 s + 0,16 s por elemento).
 
-El video está dividido en 13 slides, cada uno correspondiente a una sección de la serie OpenID Connect:
+## Motor de voz
 
-1. **0-7s**: Introducción a OIDC
-2. **7-17s**: Actores y Tokens
-3. **17-27s**: Discovery y JWKS
-4. **27-39s**: Flujo de Autorización + PKCE
-5. **39-49s**: ID Token y Claims
-6. **49-60s**: Token Endpoint y Grant Types
-7. **60-71s**: UserInfo, Introspection, Revocation
-8. **71-81s**: Sesión y Logout
-9. **81-91s**: Flujos Avanzados
-10. **91-101s**: Matriz de Paridad
-11. **101-111s**: Configuración y Comandos
-12. **111-118s**: Conclusión
+La narración se sintetiza con **`@lobehub/tts`** (`EdgeSpeechTTS.createRequest`),
+que habla el protocolo de las voces neuronales de Microsoft Edge. Dos detalles
+que costaron descubrir y quedan documentados en el código:
 
-## Generación del Video
+1. **Transporte.** `@lobehub/tts` asume un navegador: su `createEdgeSpeech` usa el
+   `WebSocket` global y el servicio exige un `Origin` de extensión de Chrome. En
+   Node se inyecta `ws` como `globalThis.WebSocket` con las cabeceras del
+   handshake; sin el `Origin` correcto el upgrade se queda colgado.
+2. **`rate`.** Se traduce a `prosody rate="<rate*100>%"`, pero el servicio lo
+   aplica de forma comprimida y lo recorta por encima de `1`. Por eso
+   `rate: 0.3` (~19 caracteres/s, ~190 palabras/min) narra a ritmo natural,
+   mientras que `rate: 1` se dispara a ~29 caracteres/s.
 
-```bash
-# Renderiza el video con FFmpeg
-npx hyperframes render --config hyperframes.json
-```
+## Sincronía de audio
 
-El video resultante se guarda como `dist/oidc-explainer.mp4` con resolución 1920x1080.
+`scripts/generate_audio.mjs` sintetiza cada escena por separado y mide su
+duración real con `ffprobe`; la ventana de la escena es
+`lead-in (0,9 s) + voz + tail (0,7 s)` y el MP3 se ancla dentro de esa ventana
+(`data-start` = inicio de la escena + lead-in). Por eso la voz y la imagen no se
+desincronizan aunque cambie el texto: los tiempos se recalculan, no se estiman.
 
-## Contenido Explicado
+## Cobertura del contenido
 
-El video explica todo el contenido de `docs/openid/`:
+| Escena | Documento |
+| --- | --- |
+| 01 Título | introducción a la serie |
+| 02 Actores y tokens | [`01-actores-y-tokens`](../01-actores-y-tokens.md) |
+| 03 Discovery y JWKS | [`02-discovery-y-jwks`](../02-discovery-y-jwks.md) |
+| 04 Authorization Code + PKCE | [`03-authorization-code-y-pkce`](../03-authorization-code-y-pkce.md) |
+| 05 ID Token y claims | [`04-id-token-y-claims`](../04-id-token-y-claims.md) |
+| 06 Token endpoint y grants | [`05-token-endpoint-y-grants`](../05-token-endpoint-y-grants.md) |
+| 07 UserInfo, introspection y revocation | [`06-userinfo`](../06-userinfo.md) · [`07-introspection-y-revocation`](../07-introspection-y-revocation.md) |
+| 08 Sesión y logout | [`08-sesion-y-logout`](../08-sesion-y-logout.md) |
+| 09 Flujos avanzados | [`09-flujo-hibrido`](../09-flujo-hibrido.md) · [`10-par-device-ciba`](../10-par-device-ciba.md) |
+| 10 Matriz de paridad | [`11-matriz-de-paridad`](../11-matriz-de-paridad.md) |
+| 11 Arranque y uso | [`12-cheatsheet`](../12-cheatsheet.md) |
+| 12 Cierre | resumen y recordatorio de `localhost` |
 
-### 1. docs/openid/01-actores-y-tokens.md
-Actores OAuth/OIDC, roles, los cuatro tokens y la estructura de JWT.
+## Criterios de calidad
 
-### 2. docs/openid/02-discovery-y-jwks.md
-Proceso de discovery, límites del issuer, consulta de JWKS.
+`npx hyperframes check .` pasa sin errores ni avisos: lint, runtime, layout
+(9 muestras), motion y contraste (89/89 comprobaciones AA).
 
-### 3. docs/openid/03-authorization-code-y-pkce.md
-Flujo Authorization Code con PKCE, parámetros como state y nonce.
-
-### 4. docs/openid/04-id-token-y-claims.md
-Claims del id_token, at_hash, c_hash, proyección de claims por scope.
-
-### 5. docs/openid/05-token-endpoint-y-grants.md
-Todos los grant types, cliente confidencial vs público, autorización.
-
-### 6. docs/openid/06-userinfo.md
-Endpoint UserInfo, reto Bearer, consistencia con id_token.
-
-### 7. docs/openid/07-introspection-y-revocation.md
-Introspection (active:true/false), revocación con store jti.
-
-### 8. docs/openid/08-sesion-y-logout.md
-Gestión de sesión, front-channel logout, cookie oidc_mock_session.
-
-### 9. docs/openid/09-flujo-hibrido.md
-Flujo híbrido para GAUDI, parámetros de respuesta id_token con c_hash.
-
-### 10. docs/openid/10-par-device-ciba.md
-PAR resuelto, Device y CIBA simulados para compatibilidad de discovery.
-
-### 11. docs/openid/11-matriz-de-paridad.md
-Tabla de paridad completa: teoría, servidor real y OidcMock.
-
-### 12. docs/openid/12-cheatsheet.md
-Hoja de referencia de comandos y configuración.
-
-## Características Implementadas
-
-### Animaciones
-- Animación suave entre slides (transición de opacidad)
-- Progreso visual continuo
-- Zoom y desenfoque suave en elementos
-
-### Audio Visuales
-- Narración TTS en español con ef_dora
-- Velocidad de 1.0 (normal)
-- Códigos de error completados con retardo o error
-
-### Diseño
-- Utiliza colores de marca: degradado azul-púrpura
-- Tipografía clara para legibilidad
-- Controles intuitivos para lo explicable visualmente
-
-### Navegación por Tiempo
-- 118 segundos de duración total
-- 13 secciones perfectamente sincronizadas
-- Usuarios pueden saltar usando navegación por teclado
-
-## Finalización y Calidad
-
-1. **Completitud**: El video cubre todo el contenido de la serie OpenID Connect
-2. **Requisitos**: 16:9 aspect ratio, español TTS, duración ~118s, voz natural
-3. **Integridad**: Navegación por tiempo sincronizada con script TTS, design visual
-4. **Compatibilidad**: Utiliza estándares HTML y CSS para reproducibilidad máxima
-
-## Próximos Pasos (Para el Usuario)
-
-1. **Instalar dependencias**: Asegurar acceso a las herramientas de HyperFrames
-2. **Generar audio**: Ejecutar TTS en español con ef_dora en el script de narración
-3. **Renderizar video**: Usar npx hyperframes render o npx hyperframes-cli render
-4. **Validar**: Probar el video en reproductores compatibles
-
-## Contribuciones
-
-Este proyecto demuestra cómo HyperFrames se puede usar para crear videos explicativos:
-- Flexibilidad con HTML y animación basada en CSS
-- Sincronización de audio con múltiples escenas
-- Uso de frameworks TTS para narración multilingüe
-- Demostración de una solución SaaS centrada en desarrolladores
-
-## Aprendizaje y Contexto
-
-El video es una demostración de cómo la navegación por tiempo basada en HTML puede crear presentaciones complejas y sincronizadas, de forma intuitiva, mostrando el poder del enfoque "HTML-first" de HyperFrames para la creación de videos.
-
-Para más información sobre HyperFrames, visita [heygen.com/hyperframes](https://heygen.com/hyperframes).
+Ver también [`docs/decisions.md`](../../decisions.md) para el porqué de la
+duración y del motor de voz.

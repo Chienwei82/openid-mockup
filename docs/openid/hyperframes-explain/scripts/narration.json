@@ -1,0 +1,78 @@
+{
+  "voice": "es-ES-AlvaroNeural",
+  "rate": 0.3,
+  "scenes": [
+    {
+      "id": "scene-01-title",
+      "kicker": "Introducción",
+      "title": "OpenID Connect Explicado",
+      "text": "Bienvenidos a esta explicación de OpenID Connect, el estándar moderno de autenticación que usaremos para desarrollo local. Veremos la teoría, el servidor real del BCCR, y cómo OidcMock lo imita."
+    },
+    {
+      "id": "scene-02-actores",
+      "kicker": "Actores",
+      "title": "Actores y Tokens",
+      "text": "OpenID Connect define cuatro actores: el Resource Owner, que es el usuario; el Cliente, que es la aplicación; el Authorization Server, que emite los tokens; y el Resource Server, que sirve los datos protegidos. Y cuatro tokens: authorization code, access token, id token y refresh token."
+    },
+    {
+      "id": "scene-03-discovery",
+      "kicker": "Discovery",
+      "title": "Discovery y JWKS",
+      "text": "Antes de enviar a nadie a login, el cliente descubre los endpoints en punto well-known barra openid-configuration. Allí encuentra el issuer, las URLs de cada endpoint y las capacidades soportadas. El JWKS contiene las claves públicas para validar las firmas de los JWT."
+    },
+    {
+      "id": "scene-04-pkce",
+      "kicker": "Flujo principal",
+      "title": "Authorization Code + PKCE",
+      "text": "El flujo principal es Authorization Code con PKCE. El cliente genera un code verifier y su challenge, y los envía al authorize endpoint. Al canjear el código, el servidor compara el verifier en tiempo constante. Los métodos son plain y S256, siendo S256 el recomendado."
+    },
+    {
+      "id": "scene-05-idtoken",
+      "kicker": "Claims",
+      "title": "ID Token y Claims",
+      "text": "El ID Token es lo que convierte OAuth en OpenID Connect. Es un JWT con claims obligatorios: iss, sub, aud, exp, iat y nonce. Los claims de binding, at hash y c hash, lo vinculan con el access token y con el código. Los claims del usuario salen del scope concedido."
+    },
+    {
+      "id": "scene-06-grants",
+      "kicker": "Grants",
+      "title": "Token Endpoint y Grant Types",
+      "text": "El token endpoint, en connect token, es donde cada grant type obtiene sus tokens. Soportamos siete: authorization code, refresh token, client credentials, password, device code, ciba y el tipo de dispositivo. Un patrón strategy despacha cada grant a su handler."
+    },
+    {
+      "id": "scene-07-userinfo",
+      "kicker": "Gestión",
+      "title": "UserInfo, Introspection y Revocation",
+      "text": "UserInfo devuelve los claims del usuario a partir del access token. Introspection responde siempre con active verdadero o falso, sin revelar si el token existía. Revocation registra el jti o revoca toda la familia de refresh tokens."
+    },
+    {
+      "id": "scene-08-sesion",
+      "kicker": "Sesión",
+      "title": "Sesión y Logout",
+      "text": "Hay tres sesiones: la del OP, que habilita el SSO; la del cliente, con su propia cookie; y el sid, que conecta el id token con la sesión del OP. El logout usa connect end session con id token hint y post logout redirect uri. El prompt admite none, login, consent o select account."
+    },
+    {
+      "id": "scene-09-avanzados",
+      "kicker": "Avanzado",
+      "title": "Flujos Avanzados",
+      "text": "Tenemos PAR implementado, el flujo híbrido code id token para GAUDI, y device y CIBA simulados para completar el discovery. PAR usa request uri y envía los parámetros sensibles por back-channel."
+    },
+    {
+      "id": "scene-10-matriz",
+      "kicker": "Resumen",
+      "title": "Matriz de Paridad",
+      "text": "La matriz de paridad compara la teoría, el BCCR real y OidcMock. Los tokens tienen vidas definidas: el código cinco minutos, el access token y el id token treinta minutos, y el refresh token ocho horas. Los errores siguen los códigos HTTP definidos por RFC."
+    },
+    {
+      "id": "scene-11-arranque",
+      "kicker": "Práctico",
+      "title": "Arrancar OidcMock",
+      "text": "Para arrancar OidcMock ejecutamos dotnet run sobre el proyecto Host, con el issuer configurado por opciones, HTTPS o HTTP, y los clientes de ejemplo declarados en JSON. Todo el estado vive en memoria, sin base de datos."
+    },
+    {
+      "id": "scene-12-outro",
+      "kicker": "Cierre",
+      "title": "Desarrolla sin dependencias externas",
+      "text": "OidcMock replica el comportamiento del BCCR para desarrollo local, con configuración JSON y estado en memoria, y nunca debe exponerse fuera de localhost. Gracias por ver."
+    }
+  ]
+}

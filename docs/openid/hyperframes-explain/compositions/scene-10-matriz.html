@@ -1,0 +1,28 @@
+<template>
+  <div
+    class="scene-root"
+    data-composition-id="scene-10-matriz"
+    data-width="1920"
+    data-height="1080"
+    data-duration="16.072"
+  >
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim>Resumen</span><h2 class="headline" data-anim>Matriz de Paridad</h2></header><div class="grid grid--matrix"><table class="table" data-anim><thead><tr><th>Token</th><th>Vida</th><th>Notas</th></tr></thead><tbody><tr><td class="mono">authorization_code</td><td>5 min</td><td>opaco, un solo uso</td></tr><tr><td class="mono">access_token</td><td>30 min</td><td>JWT RS256, aud = client_id</td></tr><tr><td class="mono">id_token</td><td>30 min</td><td>solo con scope openid</td></tr><tr><td class="mono">refresh_token</td><td>8 h</td><td>rota, requiere offline_access</td></tr></tbody></table><article class="card" data-anim><h3 class="card__title">Errores de protocolo</h3><p class="errow"><span class="chip chip--accent">invalid_request</span><span class="errow__http">400</span>falta o estorba un parámetro</p><p class="errow"><span class="chip chip--accent">invalid_client</span><span class="errow__http">401</span>credenciales de cliente inválidas</p><p class="errow"><span class="chip chip--accent">invalid_grant</span><span class="errow__http">400</span>code, refresh o PKCE no válidos</p><p class="errow"><span class="chip chip--accent">unsupported_grant_type</span><span class="errow__http">400</span>grant desconocido</p><p class="errow"><span class="chip chip--accent">invalid_scope</span><span class="errow__http">400</span>scope no permitido</p><p class="errow"><span class="chip chip--accent">invalid_token</span><span class="errow__http">401</span>reto Bearer en /userinfo</p></article></div><p class="note" data-anim>El usuario denegó: <code>access_denied</code> · <code>request_uri</code> caducado: <code>invalid_request_uri</code>.</p></section>
+
+    <script>
+      (function () {
+        var root = document.querySelector('[data-composition-id="scene-10-matriz"]');
+        if (!root || typeof gsap === 'undefined') { return; }
+        var items = root.querySelectorAll('[data-anim]');
+        var timeline = gsap.timeline({ paused: true });
+        for (var index = 0; index < items.length; index += 1) {
+          timeline.from(
+            items[index],
+            { opacity: 0, y: 36, duration: 0.65, ease: 'power3.out' },
+            0.45 + index * 0.16
+          );
+        }
+        window.__timelines['scene-10-matriz'] = timeline;
+      })();
+    </script>
+  </div>
+</template>

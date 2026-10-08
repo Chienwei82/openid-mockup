@@ -1,280 +1,449 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Explicación OpenID Connect - OidcMock</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>OpenID Connect Explicado — OidcMock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
     <style>
-        *{margin:0;padding:0;box-sizing:border-box}
-        html,body{width:1920px;height:1080px;overflow:hidden;font-family:'Segoe UI',sans-serif;color:#fff}
-        body{background:linear-gradient(135deg,#1e3c72 0%,#2a5298 100%)}
-        #root{position:relative;width:100%;height:100%;overflow:hidden}
-        .slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px;opacity:0;transition:opacity 1s ease}
-        .slide.active{opacity:1}
-        .title{font-size:46px;font-weight:bold;margin-bottom:30px;text-shadow:0 2px 15px rgba(0,0,0,.5)}
-        .subtitle{font-size:26px;margin-bottom:20px;opacity:.85}
-        .content{font-size:22px;line-height:1.8;max-width:1200px}
-        .highlight{background:rgba(255,255,255,.12);padding:20px;border-radius:12px;margin:15px 0;border:1px solid rgba(255,255,255,.15)}
-        .stats{display:flex;justify-content:space-around;margin:30px 0;flex-wrap:wrap}
-        .stat-box{background:rgba(255,255,255,.15);padding:18px;border-radius:12px;text-align:center;min-width:180px;margin:8px}
-        .stat-number{font-size:32px;font-weight:bold;display:block}
-        .stat-label{font-size:18px;opacity:.8}
-        .footer{position:absolute;bottom:30px;width:100%;text-align:center;font-size:18px;opacity:.7}
-        .progress-bar{position:absolute;top:0;left:0;height:6px;background:rgba(255,255,255,.2)}
-        .progress-fill{height:100%;background:linear-gradient(90deg,#00c6ff,#0072ff);width:0;transition:width .3s}
-        .phase-badge{position:absolute;top:30px;left:30px;background:rgba(255,255,255,.2);padding:10px 20px;border-radius:20px;font-size:16px}
-    </style>
-</head>
-<body>
-<div id="root">
-    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-    
-    <!-- Slide 1: Título -->
-    <div class="slide active" id="slide1" data-start="0" data-duration="7">
-        <div class="phase-badge">Introducción</div>
-        <div class="title">OpenID Connect Explicado</div>
-        <div class="subtitle">Del protocolo al mock para desarrollo local</div>
-        <div class="content">Una guía visual sobre OIDC, su flujo y cómo OidcMock lo simula</div>
-    </div>
-    
-    <!-- Slide 2: Actores y Tokens -->
-    <div class="slide" id="slide2" data-start="7" data-duration="10">
-        <div class="phase-badge">Actores</div>
-        <div class="title">Actores y Tokens en OIDC</div>
-        <div class="subtitle">Los componentes esenciales del protocolo</div>
-        <div class="content">
-            <div class="highlight">
-                <strong>Roles (OAuth 2.0):</strong><br>
-                • Resource Owner — el usuario<br>
-                • Client — la aplicación<br>
-                • Authorization Server / OP — emite tokens<br>
-                • Resource Server — API protegida
-            </div>
-            <div class="highlight">
-                <strong>Los 4 tokens:</strong><br>
-                • Authorization Code (opaco, un uso)<br>
-                • Access Token (JWT, para la API)<br>
-                • ID Token (JWT, identidad al cliente)<br>
-                • Refresh Token (opaco, larga vida)
-            </div>
-        </div>
-    </div>
-    
-    <!-- Slide 3: Discovery y JWKS -->
-    <div class="slide" id="slide3" data-start="17" data-duration="9">
-        <div class="phase-badge">Discovery</div>
-        <div class="title">Discovery y JWKS</div>
-        <div class="subtitle">Cómo un cliente descubre al OP</div>
-        <div class="content">
-            <div class="highlight">
-                <strong>Discovery Document:</strong><br>
-                GET /.well-known/openid-configuration<br>
-                issuer, endpoints, capabilities, scopes_supported
-            </div>
-            <div class="highlight">
-                <strong>JWKS:</strong><br>
-                JSON Web Key Set — claves públicas para validar firmas<br>
-                kid identifica qué clave firmó el JWT
-            </div>
-        </div>
-    </div>
-    
-    <!-- Slide 4: Authorization Code + PKCE -->
-    <div class="slide" id="slide4" data-start="26" data-duration="14">
-        <div class="phase-badge">Flujo Principal</div>
-        <div class="title">Authorization Code + PKCE</div>
-        <div class="subtitle">El flujo de login principal</div>
-        <div class="content">
-            <div class="highlight">
-                1. Cliente solicita /authorize?code_challenge<br>
-                2. OP muestra login + consentimiento<br>
-                3. Usuario autoriza<br>
-                4. OP redirige con ?code y state<br>
-                5. Cliente canjea en /token con code_verifier<br>
-                6. OP devuelve access_token + id_token (+refresh)
-            </div>
-            <div class="highlight">
-                <strong>PKCE:</strong> proof key for code exchange — el code_verifier nunca viaja por el front-channel<br>
-                <strong>state:</strong> anti-CSRF • <strong>nonce:</strong> anti-replay del id_token
-            </div>
-        </div>
-    </div>
-    
-    <!-- Slide 5: ID Token y Claims -->
-    <div class="slide" id="slide5" data-start="40" data-duration="10">
-        <div class="phase-badge">Claims</div>
-        <div class="title">ID Token y Claims</div>
-        <div class="subtitle">La tarjeta de identidad del usuario</div>
-        <div class="content">
-            <div class="highlight">
-                <strong>Claims obligatorios:</strong> iss, sub, aud, exp, iat, nonce<br>
-                <strong>Claims de binding:</strong> at_hash, c_hash, sid
-            </div>
-            <div class="highlight">
-                <strong>Claims por scope:</strong><br>
-                • openid → sub<br>
-                • profile → name, given_name, family_name, locale...<br>
-                • email → email, email_verified<br>
-                • address → address
-            </div>
-        </div>
-    </div>
-    
-    <!-- Slide 6: Token Endpoint y Grants -->
-    <div class="slide" id="slide6" data-start="50" data-duration="11">
-        <div class="phase-badge">Grants</div>
-        <div class="title">Token Endpoint y Grant Types</div>
-        <div class="subtitle">Dónde se transforma un código en tokens</div>
-        <div class="content">
-            <div class="stats">
-                <div class="stat-box"><span class="stat-number">7</span><span class="stat-label">Grant Types</span></div>
-                <div class="stat-box"><span class="stat-number">3</span><span class="stat-label">Client Types</span></div>
-                <div class="stat-box"><span class="stat-number">100%</span><span class="stat-label">Strategy Pattern</span></div>
-            </div>
-            <div class="highlight">
-                <strong>Grants soportados:</strong><br>
-                authorization_code, refresh_token, client_credentials, password, device_code, ciba
-            </div>
-        </div>
-    </div>
-    
-    <!-- Slide 7: UserInfo, Introspection, Revocation -->
-    <div class="slide" id="slide7" data-start="61" data-duration="10">
-        <div class="phase-badge">Gestión</div>
-        <div class="title">UserInfo, Introspection y Revocation</div>
-        <div class="subtitle">Consultas y corte de tokens</div>
-        <div class="content">
-            <div class="highlight">
-                <strong>UserInfo:</strong> GET /connect/userinfo — devuelve claims del usuario con Bearer token
-            </div>
-            <div class="highlight">
-                <strong>Introspection:</strong> POST /connect/introspect — verifica si token está activo. Responde active: true/false, nunca revela existencia de tokens ajenos.
-            </div>
-            <div class="highlight">
-                <strong>Revocation:</strong> POST /connect/revocation — invalida tokens. Access token: registra jti como revocado. Refresh token: revoca familia completa.
-            </div>
-        </div>
-    </div>
-    
-    <!-- Slide 8: Sesión y Logout -->
-    <div class="slide" id="slide8" data-start="71" data-duration="10">
-        <div class="phase-badge">Sesión</div>
-        <div class="title">Gestión de Sesión y Logout</div>
-        <div class="subtitle">SSO, prompts y cierre de sesión</div>
-        <div class="content">
-            <div class="highlight">
-                <strong>Tres tipos de sesión:</strong><br>
-                1. Sesión del OP (SSO — login silencioso)<br>
-                2. Sesión del cliente (cookie propia)<br>
-                3. sid (conecta id_token con la sesión del OP)
-            </div>
-            <div class="highlight">
-                <strong>prompt:</strong> none (silencioso), login, consent, select_account<br>
-                <strong>end_session:</strong> RP-Initiated Logout con id_token_hint
-            </div>
-        </div>
-    </div>
-    
-    <!-- Slide 9: Flujos Avanzados -->
-    <div class="slide" id="slide9" data-start="81" data-duration="10">
-        <div class="phase-badge">Avanzado</div>
-        <div class="title">Flujos Avanzados</div>
-        <div class="subtitle">PAR, Device, CIBA e Híbrido</div>
-        <div class="content">
-            <div class="highlight">
-                <strong>PAR (RFC 9126):</strong> ✅ Implementado — empuja parámetros por back-channel, recibe request_uri
-            </div>
-            <div class="highlight">
-                <strong>Flujo Híbrido (code id_token):</strong> ✅ Para GAUDI — devuelve id_token en fragmento con c_hash
-            </div>
-            <div class="highlight">
-                <strong>Device & CIBA:</strong> 🟡 Simulados — ciclo de sondeo sin pantalla real de autorización
-            </div>
-        </div>
-    </div>
-    
-    <!-- Slide 10: Matriz de Paridad -->
-    <div class="slide" id="slide10" data-start="91" data-duration="10">
-        <div class="phase-badge">Resumen</div>
-        <div class="title">Matriz de Paridad</div>
-        <div class="subtitle">Teoría vs Real vs Mock</div>
-        <div class="content">
-            <div class="highlight">
-                <strong>Tokens:</strong><br>
-                • authorization_code: 5 min (InMemoryCodeStore)<br>
-                • access_token: 30 min (JWT RS256)<br>
-                • id_token: 30 min (solo con scope openid)<br>
-                • refresh_token: 8 h (rota, solo con offline_access)
-            </div>
-            <div class="highlight">
-                <strong>Erros de protocolo (RFC 6749/7662/7009):</strong><br>
-                invalid_request, invalid_client, invalid_grant, unsupported_grant_type, invalid_scope
-            </div>
-        </div>
-    </div>
-    
-    <!-- Slide 11: Configuración y Comandos -->
-    <div class="slide" id="slide11" data-start="101" data-duration="10">
-        <div class="phase-badge">Práctico</div>
-        <div class="title">Arrancar y Usar OidcMock</div>
-        <div class="subtitle">Comandos y configuración</div>
-        <div class="content">
-            <div class="highlight">
-                <strong>Arranque:</strong><br>
-                dotnet run --project src/OidcMock.Host<br>
-                --OidcMock:Issuer=https://localhost:5443/personafisica/
-            </div>
-            <div class="highlight">
-                <strong>Clientes de ejemplo:</strong><br>
-                • web-app-spa (público, PKCE)<br>
-                • web-app-confidencial (confidencial)<br>
-                • backend-service (client_credentials)
-            </div>
-        </div>
-    </div>
-    
-    <!-- Slide 12: Conclusión -->
-    <div class="slide" id="slide12" data-start="111" data-duration="7">
-        <div class="title">¡Listo!</div>
-        <div class="subtitle">OpenID Connect domina la autenticación moderna</div>
-        <div class="content">
-            <div class="highlight">
-                OidcMock replica el comportamiento del BCCR para desarrollo local<br>
-                Sin base de datos · JSON config · Estado en memoria<br>
-                <strong>Nunca exponer fuera de localhost</strong>
-            </div>
-            <div class="footer">docs/openid/ · scripts/test.sh · OidcMock v1.0</div>
-        </div>
-    </div>
-</div>
+:root {
+  --primary: #4DD0E1;
+  --on-primary: #00363A;
+  --secondary: #80CBC4;
+  --tertiary: #80CBF4;
+  --success: #81C784;
+  --warn: #FFD54F;
+  --error: #FFB4AB;
+  --surface: #0E1015;
+  --surface-1: #15181D;
+  --surface-2: #1D2024;
+  --surface-3: #282A2E;
+  --on-surface: #E6E8EE;
+  --on-surface-dim: #A9AEB8;
+  --outline: #3A3F47;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 20px;
+  --r-full: 9999px;
+  --pad: 84px;
+}
 
-<script>
-document.addEventListener('DOMContentLoaded',function(){
-    const s=document.querySelectorAll('.slide');
-    const pf=document.getElementById('progressFill');
-    const td=118;
-    const st=performance.now();
-    function up(){
-        const el=(performance.now()-st)/1000;
-        const pr=Math.min((el/td)*100,100);
-        pf.style.width=pr+'%';
-        let i=0;
-        if(el>=111)i=12;
-        else if(el>=101)i=11;
-        else if(el>=91)i=10;
-        else if(el>=81)i=9;
-        else if(el>=71)i=8;
-        else if(el>=61)i=7;
-        else if(el>=50)i=6;
-        else if(el>=40)i=5;
-        else if(el>=26)i=4;
-        else if(el>=17)i=3;
-        else if(el>=7)i=2;
-        s.forEach((sld,idx)=>sld.classList.toggle('active',idx===i));
-        if(el<td)requestAnimationFrame(up);
-    }
-    up();
-});
-</script>
-</body>
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--surface);
+  color: var(--on-surface);
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root { position: relative; width: 100%; height: 100%; overflow: hidden; }
+
+/* Fondo persistente: rejilla tenue + dos halos tonales */
+.hf-backdrop { position: absolute; inset: 0; overflow: hidden; }
+.hf-backdrop__grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(141, 145, 153, .07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(141, 145, 153, .07) 1px, transparent 1px);
+  background-size: 96px 96px;
+}
+.hf-backdrop__glow { position: absolute; border-radius: 50%; filter: blur(120px); opacity: .32; }
+.hf-backdrop__glow--primary { width: 1100px; height: 1100px; top: -420px; left: -260px; background: #0E6B75; }
+.hf-backdrop__glow--tertiary { width: 900px; height: 900px; bottom: -420px; right: -220px; background: #12405C; }
+
+/* Barra superior persistente */
+.hf-brandbar {
+  position: absolute; top: 52px; left: var(--pad); right: var(--pad);
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 20px; letter-spacing: 2.4px; text-transform: uppercase;
+  color: var(--on-surface-dim);
+}
+.hf-brandbar__mark { display: flex; align-items: center; gap: 16px; color: var(--on-surface); }
+.hf-brandbar__dot { width: 14px; height: 14px; border-radius: 50%; background: var(--primary); }
+.hf-brandbar__tag { color: var(--primary); }
+
+/* Riel de progreso persistente */
+.hf-rail {
+  position: absolute; left: var(--pad); right: var(--pad); bottom: 54px; height: 6px;
+  background: rgba(226, 232, 238, .1); border-radius: var(--r-full);
+}
+.hf-rail__fill {
+  height: 100%; width: 100%; border-radius: var(--r-full);
+  transform-origin: left center;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+}
+.hf-rail__label {
+  position: absolute; left: var(--pad); bottom: 78px;
+  font-size: 17px; letter-spacing: 2px; text-transform: uppercase; color: var(--on-surface-dim);
+}
+
+/* Escenas */
+.scene-root { position: absolute; inset: 0; width: 100%; height: 100%; }
+.scene {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 200px var(--pad) 170px;
+}
+.scene--center { align-items: center; text-align: center; }
+.scene__head { margin-bottom: 44px; }
+
+.kicker {
+  display: block; width: fit-content;
+  padding: 9px 22px; margin-bottom: 26px; border-radius: var(--r-full);
+  background: rgba(77, 208, 225, .13); color: var(--primary);
+  font-size: 19px; font-weight: 600; letter-spacing: 2.6px; text-transform: uppercase;
+}
+.scene--center .kicker { margin-inline: auto; }
+
+.headline { margin: 0; font-size: 62px; font-weight: 600; letter-spacing: -1.6px; line-height: 1.06; }
+.headline--xl { font-size: 118px; letter-spacing: -3.6px; }
+.headline__line { display: block; }
+.headline__line--accent { color: var(--primary); }
+
+.lede { margin: 26px 0 0; max-width: 1180px; font-size: 30px; line-height: 1.5; color: var(--on-surface-dim); }
+.scene--center .lede { margin-inline: auto; }
+
+.grid { display: grid; gap: 26px; width: 100%; max-width: 1560px; }
+.grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid--matrix { grid-template-columns: 1.2fr .8fr; }
+.grid--tight { margin-top: 26px; }
+
+.card {
+  min-width: 0;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface-1));
+  border: 1px solid var(--outline); border-radius: var(--r-lg);
+  padding: 32px 36px;
+}
+.card__title {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  margin: 0 0 18px; font-size: 27px; font-weight: 600; letter-spacing: -.4px;
+}
+.card__label {
+  margin: 22px 0 12px; font-size: 16px; font-weight: 600;
+  letter-spacing: 2px; text-transform: uppercase; color: var(--on-surface-dim);
+}
+
+.list { display: flex; flex-direction: column; gap: 13px; margin: 0; padding: 0; list-style: none; }
+.list li { position: relative; padding-left: 30px; font-size: 24px; line-height: 1.45; color: var(--on-surface-dim); }
+.list li::before {
+  content: ""; position: absolute; left: 0; top: 13px;
+  width: 11px; height: 11px; border-radius: 50%; background: var(--primary);
+}
+.list strong { color: var(--on-surface); font-weight: 600; }
+
+code {
+  font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  font-size: .86em; color: var(--primary);
+  background: rgba(77, 208, 225, .1); padding: 1px 8px; border-radius: var(--r-sm);
+}
+.mono {
+  margin: 0 0 18px; font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  font-size: 22px; color: var(--secondary); overflow-wrap: anywhere;
+}
+.code {
+  margin: 0 0 12px; padding: 16px 20px; overflow-wrap: anywhere;
+  background: rgba(0, 0, 0, .34); border: 1px solid var(--outline);
+  border-radius: var(--r-md);
+}
+.code code { background: none; padding: 0; font-size: 19px; color: var(--on-surface); }
+
+.chiprow { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
+.scene--center .chiprow { justify-content: center; }
+.chip {
+  padding: 9px 20px; border-radius: var(--r-full);
+  background: var(--surface-3); border: 1px solid var(--outline);
+  font-size: 20px; font-family: "JetBrains Mono", ui-monospace, monospace;
+  color: var(--on-surface-dim);
+}
+.chip--accent { background: rgba(77, 208, 225, .14); border-color: rgba(77, 208, 225, .42); color: var(--primary); }
+
+.badge {
+  padding: 5px 14px; border-radius: var(--r-full);
+  font-size: 15px; font-weight: 600; letter-spacing: 1.6px; text-transform: uppercase;
+}
+.badge--ok { background: rgba(129, 199, 132, .16); color: var(--success); }
+.badge--warn { background: rgba(255, 213, 79, .16); color: var(--warn); }
+
+.steps { display: flex; flex-direction: column; gap: 16px; margin: 0; padding: 0; list-style: none; max-width: 1500px; }
+.steps li {
+  display: flex; align-items: center; gap: 22px;
+  padding: 18px 26px; border-radius: var(--r-md);
+  background: linear-gradient(90deg, var(--surface-2), var(--surface-1));
+  border: 1px solid var(--outline);
+  font-size: 25px; color: var(--on-surface-dim);
+}
+.steps__n {
+  flex: 0 0 auto; display: grid; place-items: center;
+  width: 46px; height: 46px; border-radius: 50%;
+  background: rgba(77, 208, 225, .14); color: var(--primary);
+  font-size: 22px; font-weight: 600;
+}
+
+.statrow { display: flex; gap: 26px; margin: 12px 0 26px; }
+.stat {
+  flex: 1; display: flex; flex-direction: column; gap: 6px;
+  padding: 26px 32px; border-radius: var(--r-lg);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface-1));
+  border: 1px solid var(--outline);
+}
+.stat__num { font-size: 58px; font-weight: 600; color: var(--primary); letter-spacing: -2px; }
+.stat__label { font-size: 20px; color: var(--on-surface-dim); }
+
+.table { width: 100%; border-collapse: collapse; font-size: 23px; }
+.table th, .table td { padding: 14px 18px; text-align: left; border-bottom: 1px solid var(--outline); }
+.table th { font-size: 17px; letter-spacing: 1.8px; text-transform: uppercase; color: var(--on-surface-dim); font-weight: 600; }
+.table td { color: var(--on-surface-dim); }
+.table td.mono { margin: 0; font-size: 21px; color: var(--secondary); }
+.table tr:last-child td { border-bottom: none; }
+
+.errow { display: flex; align-items: center; gap: 14px; margin: 0 0 12px; font-size: 21px; color: var(--on-surface-dim); }
+.errow:last-child { margin-bottom: 0; }
+.errow .chip { padding: 6px 14px; font-size: 18px; }
+.errow__http { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 19px; color: var(--error); }
+
+.note { margin: 26px 0 0; font-size: 22px; color: var(--on-surface-dim); max-width: 1500px; }
+
+.tok {
+  display: inline-block; padding: 2px 12px; border-radius: var(--r-full);
+  font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 17px; margin-right: 6px;
+}
+.tok--code { background: rgba(77, 208, 225, .16); color: var(--primary); }
+.tok--access { background: rgba(128, 203, 196, .16); color: var(--secondary); }
+.tok--id { background: rgba(128, 203, 244, .16); color: var(--tertiary); }
+.tok--refresh { background: rgba(255, 213, 79, .16); color: var(--warn); }
+
+      [data-composition-src] { position: absolute; inset: 0; width: 100%; height: 100%; }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-width="1920"
+      data-height="1080"
+      data-fps="30"
+      data-duration="177.216"
+    >
+      <!-- Fondo, marca y riel de progreso: viven toda la composición -->
+      <div class="hf-backdrop" data-layout-allow-overflow>
+        <div class="hf-backdrop__glow hf-backdrop__glow--primary"></div>
+        <div class="hf-backdrop__glow hf-backdrop__glow--tertiary"></div>
+        <div class="hf-backdrop__grid"></div>
+      </div>
+      <header class="hf-brandbar">
+        <span class="hf-brandbar__mark"><span class="hf-brandbar__dot"></span>OidcMock · OpenID Connect</span>
+        <span class="hf-brandbar__tag">/personafisica</span>
+      </header>
+      <div class="hf-rail__label">Explicador OIDC · 12 escenas</div>
+      <div class="hf-rail"><div class="hf-rail__fill"></div></div>
+
+      <!-- Escenas: cada una es una sub-composición independiente -->
+      <div
+        id="el-scene-01-title"
+        data-composition-id="scene-01-title"
+        data-composition-src="compositions/scene-01-title.html"
+        data-start="0"
+        data-duration="11.824"
+        data-track-index="1"
+      ></div>
+      <div
+        id="el-scene-02-actores"
+        data-composition-id="scene-02-actores"
+        data-composition-src="compositions/scene-02-actores.html"
+        data-start="11.824"
+        data-duration="16.624"
+        data-track-index="1"
+      ></div>
+      <div
+        id="el-scene-03-discovery"
+        data-composition-id="scene-03-discovery"
+        data-composition-src="compositions/scene-03-discovery.html"
+        data-start="28.448"
+        data-duration="16.408"
+        data-track-index="1"
+      ></div>
+      <div
+        id="el-scene-04-pkce"
+        data-composition-id="scene-04-pkce"
+        data-composition-src="compositions/scene-04-pkce.html"
+        data-start="44.856"
+        data-duration="18.04"
+        data-track-index="1"
+      ></div>
+      <div
+        id="el-scene-05-idtoken"
+        data-composition-id="scene-05-idtoken"
+        data-composition-src="compositions/scene-05-idtoken.html"
+        data-start="62.896"
+        data-duration="17.224"
+        data-track-index="1"
+      ></div>
+      <div
+        id="el-scene-06-grants"
+        data-composition-id="scene-06-grants"
+        data-composition-src="compositions/scene-06-grants.html"
+        data-start="80.12"
+        data-duration="16.024"
+        data-track-index="1"
+      ></div>
+      <div
+        id="el-scene-07-userinfo"
+        data-composition-id="scene-07-userinfo"
+        data-composition-src="compositions/scene-07-userinfo.html"
+        data-start="96.144"
+        data-duration="13.36"
+        data-track-index="1"
+      ></div>
+      <div
+        id="el-scene-08-sesion"
+        data-composition-id="scene-08-sesion"
+        data-composition-src="compositions/scene-08-sesion.html"
+        data-start="109.504"
+        data-duration="16.72"
+        data-track-index="1"
+      ></div>
+      <div
+        id="el-scene-09-avanzados"
+        data-composition-id="scene-09-avanzados"
+        data-composition-src="compositions/scene-09-avanzados.html"
+        data-start="126.224"
+        data-duration="11.176"
+        data-track-index="1"
+      ></div>
+      <div
+        id="el-scene-10-matriz"
+        data-composition-id="scene-10-matriz"
+        data-composition-src="compositions/scene-10-matriz.html"
+        data-start="137.4"
+        data-duration="16.072"
+        data-track-index="1"
+      ></div>
+      <div
+        id="el-scene-11-arranque"
+        data-composition-id="scene-11-arranque"
+        data-composition-src="compositions/scene-11-arranque.html"
+        data-start="153.472"
+        data-duration="13.24"
+        data-track-index="1"
+      ></div>
+      <div
+        id="el-scene-12-outro"
+        data-composition-id="scene-12-outro"
+        data-composition-src="compositions/scene-12-outro.html"
+        data-start="166.712"
+        data-duration="10.504"
+        data-track-index="1"
+      ></div>
+
+      <!-- Narración: un clip de audio por escena, alineado con su ventana -->
+      <audio
+        id="audio-scene-01-title"
+        src="audio/segments/seg-01.mp3"
+        data-start="0.9"
+        data-duration="10.224"
+        data-track-index="10"
+      ></audio>
+      <audio
+        id="audio-scene-02-actores"
+        src="audio/segments/seg-02.mp3"
+        data-start="12.724"
+        data-duration="15.024"
+        data-track-index="10"
+      ></audio>
+      <audio
+        id="audio-scene-03-discovery"
+        src="audio/segments/seg-03.mp3"
+        data-start="29.348"
+        data-duration="14.808"
+        data-track-index="10"
+      ></audio>
+      <audio
+        id="audio-scene-04-pkce"
+        src="audio/segments/seg-04.mp3"
+        data-start="45.756"
+        data-duration="16.44"
+        data-track-index="10"
+      ></audio>
+      <audio
+        id="audio-scene-05-idtoken"
+        src="audio/segments/seg-05.mp3"
+        data-start="63.796"
+        data-duration="15.624"
+        data-track-index="10"
+      ></audio>
+      <audio
+        id="audio-scene-06-grants"
+        src="audio/segments/seg-06.mp3"
+        data-start="81.02"
+        data-duration="14.424"
+        data-track-index="10"
+      ></audio>
+      <audio
+        id="audio-scene-07-userinfo"
+        src="audio/segments/seg-07.mp3"
+        data-start="97.044"
+        data-duration="11.76"
+        data-track-index="10"
+      ></audio>
+      <audio
+        id="audio-scene-08-sesion"
+        src="audio/segments/seg-08.mp3"
+        data-start="110.404"
+        data-duration="15.12"
+        data-track-index="10"
+      ></audio>
+      <audio
+        id="audio-scene-09-avanzados"
+        src="audio/segments/seg-09.mp3"
+        data-start="127.124"
+        data-duration="9.576"
+        data-track-index="10"
+      ></audio>
+      <audio
+        id="audio-scene-10-matriz"
+        src="audio/segments/seg-10.mp3"
+        data-start="138.3"
+        data-duration="14.472"
+        data-track-index="10"
+      ></audio>
+      <audio
+        id="audio-scene-11-arranque"
+        src="audio/segments/seg-11.mp3"
+        data-start="154.372"
+        data-duration="11.64"
+        data-track-index="10"
+      ></audio>
+      <audio
+        id="audio-scene-12-outro"
+        src="audio/segments/seg-12.mp3"
+        data-start="167.612"
+        data-duration="8.904"
+        data-track-index="10"
+      ></audio>
+
+      <script>
+        (function () {
+          var root = document.getElementById('root');
+          var total = parseFloat(root.getAttribute('data-duration'));
+          var timeline = gsap.timeline({ paused: true });
+          timeline.fromTo('.hf-rail__fill', { scaleX: 0 }, { scaleX: 1, duration: total, ease: 'none' }, 0);
+          timeline.from('.hf-brandbar', { opacity: 0, y: -18, duration: 0.7, ease: 'power2.out' }, 0.15);
+          timeline.from('.hf-rail__label', { opacity: 0, duration: 0.6, ease: 'power2.out' }, 0.35);
+          window.__timelines['main'] = timeline;
+        })();
+      </script>
+    </div>
+  </body>
 </html>

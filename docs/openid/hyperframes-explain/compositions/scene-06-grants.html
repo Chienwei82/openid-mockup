@@ -1,0 +1,28 @@
+<template>
+  <div
+    class="scene-root"
+    data-composition-id="scene-06-grants"
+    data-width="1920"
+    data-height="1080"
+    data-duration="16.024"
+  >
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim>Grants</span><h2 class="headline" data-anim>Token Endpoint y Grant Types</h2></header><p class="mono" data-anim>POST /connect/token</p><div class="statrow"><div class="stat" data-anim><span class="stat__num">7</span><span class="stat__label">grant types anunciados</span></div><div class="stat" data-anim><span class="stat__num">6</span><span class="stat__label">endpoints de protocolo</span></div><div class="stat" data-anim><span class="stat__num">1</span><span class="stat__label">handler por grant</span></div></div><div class="chiprow"><span class="chip">authorization_code</span><span class="chip">refresh_token</span><span class="chip">client_credentials</span><span class="chip">password</span><span class="chip">device_code</span><span class="chip">ciba</span></div></section>
+
+    <script>
+      (function () {
+        var root = document.querySelector('[data-composition-id="scene-06-grants"]');
+        if (!root || typeof gsap === 'undefined') { return; }
+        var items = root.querySelectorAll('[data-anim]');
+        var timeline = gsap.timeline({ paused: true });
+        for (var index = 0; index < items.length; index += 1) {
+          timeline.from(
+            items[index],
+            { opacity: 0, y: 36, duration: 0.65, ease: 'power3.out' },
+            0.45 + index * 0.16
+          );
+        }
+        window.__timelines['scene-06-grants'] = timeline;
+      })();
+    </script>
+  </div>
+</template>

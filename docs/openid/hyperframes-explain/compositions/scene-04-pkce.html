@@ -1,0 +1,28 @@
+<template>
+  <div
+    class="scene-root"
+    data-composition-id="scene-04-pkce"
+    data-width="1920"
+    data-height="1080"
+    data-duration="18.04"
+  >
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim>Flujo principal</span><h2 class="headline" data-anim>Authorization Code + PKCE</h2></header><ol class="steps"><li data-anim><span class="steps__n">1</span>El cliente genera <code>code_verifier</code> y <code>code_challenge</code></li><li data-anim><span class="steps__n">2</span>Redirige a <code>/connect/authorize</code> con el challenge y <code>state</code></li><li data-anim><span class="steps__n">3</span>El OP autentica al usuario y pide consentimiento</li><li data-anim><span class="steps__n">4</span>Vuelve al cliente con el <code>authorization_code</code></li><li data-anim><span class="steps__n">5</span>El cliente canjea en <code>/connect/token</code> con el <code>code_verifier</code></li><li data-anim><span class="steps__n">6</span>Comparación en tiempo constante · S256 recomendado sobre plain</li></ol></section>
+
+    <script>
+      (function () {
+        var root = document.querySelector('[data-composition-id="scene-04-pkce"]');
+        if (!root || typeof gsap === 'undefined') { return; }
+        var items = root.querySelectorAll('[data-anim]');
+        var timeline = gsap.timeline({ paused: true });
+        for (var index = 0; index < items.length; index += 1) {
+          timeline.from(
+            items[index],
+            { opacity: 0, y: 36, duration: 0.65, ease: 'power3.out' },
+            0.45 + index * 0.16
+          );
+        }
+        window.__timelines['scene-04-pkce'] = timeline;
+      })();
+    </script>
+  </div>
+</template>

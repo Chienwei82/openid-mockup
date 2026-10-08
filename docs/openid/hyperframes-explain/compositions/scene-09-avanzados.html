@@ -1,0 +1,28 @@
+<template>
+  <div
+    class="scene-root"
+    data-composition-id="scene-09-avanzados"
+    data-width="1920"
+    data-height="1080"
+    data-duration="11.176"
+  >
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim>Avanzado</span><h2 class="headline" data-anim>Flujos Avanzados</h2></header><div class="grid grid--3"><article class="card" data-anim><h3 class="card__title">PAR <span class="badge badge--ok">implementado</span></h3><ul class="list"><li>RFC 9126, un solo uso</li><li>Envía los parámetros por back-channel</li><li>Devuelve <code>request_uri</code> al cliente</li></ul></article><article class="card" data-anim><h3 class="card__title">Híbrido <span class="badge badge--ok">implementado</span></h3><ul class="list"><li><code>code id_token</code> en el fragmento</li><li>Incluye <code>c_hash</code> y <code>session_state</code></li><li>Pensado para GAUDI</li></ul></article><article class="card" data-anim><h3 class="card__title">Device y CIBA <span class="badge badge--warn">simulados</span></h3><ul class="list"><li>Ciclo de sondeo, sin pantalla ni push</li><li><code>authorization_pending</code>, <code>slow_down</code></li><li>Validan el discovery anunciado</li></ul></article></div><p class="note" data-anim>Implicit (<code>id_token token</code>) se anuncia pero no se responde: devuelve <code>unsupported_response_type</code>.</p></section>
+
+    <script>
+      (function () {
+        var root = document.querySelector('[data-composition-id="scene-09-avanzados"]');
+        if (!root || typeof gsap === 'undefined') { return; }
+        var items = root.querySelectorAll('[data-anim]');
+        var timeline = gsap.timeline({ paused: true });
+        for (var index = 0; index < items.length; index += 1) {
+          timeline.from(
+            items[index],
+            { opacity: 0, y: 36, duration: 0.65, ease: 'power3.out' },
+            0.45 + index * 0.16
+          );
+        }
+        window.__timelines['scene-09-avanzados'] = timeline;
+      })();
+    </script>
+  </div>
+</template>

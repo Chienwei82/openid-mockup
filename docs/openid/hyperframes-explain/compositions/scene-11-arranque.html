@@ -1,0 +1,28 @@
+<template>
+  <div
+    class="scene-root"
+    data-composition-id="scene-11-arranque"
+    data-width="1920"
+    data-height="1080"
+    data-duration="13.24"
+  >
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim>Práctico</span><h2 class="headline" data-anim>Arrancar OidcMock</h2></header><div class="grid grid--2"><article class="card" data-anim><h3 class="card__title">Comandos</h3><pre class="code"><code>dotnet run --project src/OidcMock.Host</code></pre><pre class="code"><code>--OidcMock:Issuer=https://localhost:5443/personafisica/</code></pre><pre class="code"><code>--OidcMock:Serving:UseHttps=false --OidcMock:Serving:AllowHttp=true</code></pre></article><article class="card" data-anim><h3 class="card__title">Clientes de ejemplo (config/)</h3><ul class="list"><li><span class="tok tok--code">público</span> web-app-spa — PKCE, sin secreto</li><li><span class="tok tok--access">confidencial</span> web-app-confidencial</li><li><span class="tok tok--refresh">servicio</span> backend-service — client_credentials</li></ul><p class="card__label">Opciones clave</p><div class="chiprow"><span class="chip">PathBase /personafisica</span><span class="chip">ConfigDirectory ./config</span><span class="chip">ReloadOnChange true</span></div></article></div></section>
+
+    <script>
+      (function () {
+        var root = document.querySelector('[data-composition-id="scene-11-arranque"]');
+        if (!root || typeof gsap === 'undefined') { return; }
+        var items = root.querySelectorAll('[data-anim]');
+        var timeline = gsap.timeline({ paused: true });
+        for (var index = 0; index < items.length; index += 1) {
+          timeline.from(
+            items[index],
+            { opacity: 0, y: 36, duration: 0.65, ease: 'power3.out' },
+            0.45 + index * 0.16
+          );
+        }
+        window.__timelines['scene-11-arranque'] = timeline;
+      })();
+    </script>
+  </div>
+</template>
