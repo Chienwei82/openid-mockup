@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explicación OpenID Connect - OidcMock</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        html,body{width:1920px;height:1080px;overflow:hidden;font-family:'Segoe UI',sans-serif;color:#fff}
+        body{background:linear-gradient(135deg,#1e3c72 0%,#2a5298 100%)}
+        #root{position:relative;width:100%;height:100%;overflow:hidden}
+        .slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px;opacity:0;transition:opacity 1s ease}
+        .slide.active{opacity:1}
+        .title{font-size:46px;font-weight:bold;margin-bottom:30px;text-shadow:0 2px 15px rgba(0,0,0,.5)}
+        .subtitle{font-size:26px;margin-bottom:20px;opacity:.85}
+        .content{font-size:22px;line-height:1.8;max-width:1200px}
+        .highlight{background:rgba(255,255,255,.12);padding:20px;border-radius:12px;margin:15px 0;border:1px solid rgba(255,255,255,.15)}
+        .stats{display:flex;justify-content:space-around;margin:30px 0;flex-wrap:wrap}
+        .stat-box{background:rgba(255,255,255,.15);padding:18px;border-radius:12px;text-align:center;min-width:180px;margin:8px}
+        .stat-number{font-size:32px;font-weight:bold;display:block}
+        .stat-label{font-size:18px;opacity:.8}
+        .footer{position:absolute;bottom:30px;width:100%;text-align:center;font-size:18px;opacity:.7}
+        .progress-bar{position:absolute;top:0;left:0;height:6px;background:rgba(255,255,255,.2)}
+        .progress-fill{height:100%;background:linear-gradient(90deg,#00c6ff,#0072ff);width:0;transition:width .3s}
+        .phase-badge{position:absolute;top:30px;left:30px;background:rgba(255,255,255,.2);padding:10px 20px;border-radius:20px;font-size:16px}
+    </style>
+</head>
+<body>
+<div id="root">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    
+    <!-- Slide 1: Título -->
+    <div class="slide active" id="slide1" data-start="0" data-duration="7">
+        <div class="phase-badge">Introducción</div>
+        <div class="title">OpenID Connect Explicado</div>
+        <div class="subtitle">Del protocolo al mock para desarrollo local</div>
+        <div class="content">Una guía visual sobre OIDC, su flujo y cómo OidcMock lo simula</div>
+    </div>
+    
+    <!-- Slide 2: Actores y Tokens -->
+    <div class="slide" id="slide2" data-start="7" data-duration="10">
+        <div class="phase-badge">Actores</div>
+        <div class="title">Actores y Tokens en OIDC</div>
+        <div class="subtitle">Los componentes esenciales del protocolo</div>
+        <div class="content">
+            <div class="highlight">
+                <strong>Roles (OAuth 2.0):</strong><br>
+                • Resource Owner — el usuario<br>
+                • Client — la aplicación<br>
+                • Authorization Server / OP — emite tokens<br>
+                • Resource Server — API protegida
+            </div>
+            <div class="highlight">
+                <strong>Los 4 tokens:</strong><br>
+                • Authorization Code (opaco, un uso)<br>
+                • Access Token (JWT, para la API)<br>
+                • ID Token (JWT, identidad al cliente)<br>
+                • Refresh Token (opaco, larga vida)
+            </div>
+        </div>
+    </div>
+    
+    <!-- Slide 3: Discovery y JWKS -->
+    <div class="slide" id="slide3" data-start="17" data-duration="9">
+        <div class="phase-badge">Discovery</div>
+        <div class="title">Discovery y JWKS</div>
+        <div class="subtitle">Cómo un cliente descubre al OP</div>
+        <div class="content">
+            <div class="highlight">
+                <strong>Discovery Document:</strong><br>
+                GET /.well-known/openid-configuration<br>
+                issuer, endpoints, capabilities, scopes_supported
+            </div>
+            <div class="highlight">
+                <strong>JWKS:</strong><br>
+                JSON Web Key Set — claves públicas para validar firmas<br>
+                kid identifica qué clave firmó el JWT
+            </div>
+        </div>
+    </div>
+    
+    <!-- Slide 4: Authorization Code + PKCE -->
+    <div class="slide" id="slide4" data-start="26" data-duration="14">
+        <div class="phase-badge">Flujo Principal</div>
+        <div class="title">Authorization Code + PKCE</div>
+        <div class="subtitle">El flujo de login principal</div>
+        <div class="content">
+            <div class="highlight">
+                1. Cliente solicita /authorize?code_challenge<br>
+                2. OP muestra login + consentimiento<br>
+                3. Usuario autoriza<br>
+                4. OP redirige con ?code y state<br>
+                5. Cliente canjea en /token con code_verifier<br>
+                6. OP devuelve access_token + id_token (+refresh)
+            </div>
+            <div class="highlight">
+                <strong>PKCE:</strong> proof key for code exchange — el code_verifier nunca viaja por el front-channel<br>
+                <strong>state:</strong> anti-CSRF • <strong>nonce:</strong> anti-replay del id_token
+            </div>
+        </div>
+    </div>
+    
+    <!-- Slide 5: ID Token y Claims -->
+    <div class="slide" id="slide5" data-start="40" data-duration="10">
+        <div class="phase-badge">Claims</div>
+        <div class="title">ID Token y Claims</div>
+        <div class="subtitle">La tarjeta de identidad del usuario</div>
+        <div class="content">
+            <div class="highlight">
+                <strong>Claims obligatorios:</strong> iss, sub, aud, exp, iat, nonce<br>
+                <strong>Claims de binding:</strong> at_hash, c_hash, sid
+            </div>
+            <div class="highlight">
+                <strong>Claims por scope:</strong><br>
+                • openid → sub<br>
+                • profile → name, given_name, family_name, locale...<br>
+                • email → email, email_verified<br>
+                • address → address
+            </div>
+        </div>
+    </div>
+    
+    <!-- Slide 6: Token Endpoint y Grants -->
+    <div class="slide" id="slide6" data-start="50" data-duration="11">
+        <div class="phase-badge">Grants</div>
+        <div class="title">Token Endpoint y Grant Types</div>
+        <div class="subtitle">Dónde se transforma un código en tokens</div>
+        <div class="content">
+            <div class="stats">
+                <div class="stat-box"><span class="stat-number">7</span><span class="stat-label">Grant Types</span></div>
+                <div class="stat-box"><span class="stat-number">3</span><span class="stat-label">Client Types</span></div>
+                <div class="stat-box"><span class="stat-number">100%</span><span class="stat-label">Strategy Pattern</span></div>
+            </div>
+            <div class="highlight">
+                <strong>Grants soportados:</strong><br>
+                authorization_code, refresh_token, client_credentials, password, device_code, ciba
+            </div>
+        </div>
+    </div>
+    
+    <!-- Slide 7: UserInfo, Introspection, Revocation -->
+    <div class="slide" id="slide7" data-start="61" data-duration="10">
+        <div class="phase-badge">Gestión</div>
+        <div class="title">UserInfo, Introspection y Revocation</div>
+        <div class="subtitle">Consultas y corte de tokens</div>
+        <div class="content">
+            <div class="highlight">
+                <strong>UserInfo:</strong> GET /connect/userinfo — devuelve claims del usuario con Bearer token
+            </div>
+            <div class="highlight">
+                <strong>Introspection:</strong> POST /connect/introspect — verifica si token está activo. Responde active: true/false, nunca revela existencia de tokens ajenos.
+            </div>
+            <div class="highlight">
+                <strong>Revocation:</strong> POST /connect/revocation — invalida tokens. Access token: registra jti como revocado. Refresh token: revoca familia completa.
+            </div>
+        </div>
+    </div>
+    
+    <!-- Slide 8: Sesión y Logout -->
+    <div class="slide" id="slide8" data-start="71" data-duration="10">
+        <div class="phase-badge">Sesión</div>
+        <div class="title">Gestión de Sesión y Logout</div>
+        <div class="subtitle">SSO, prompts y cierre de sesión</div>
+        <div class="content">
+            <div class="highlight">
+                <strong>Tres tipos de sesión:</strong><br>
+                1. Sesión del OP (SSO — login silencioso)<br>
+                2. Sesión del cliente (cookie propia)<br>
+                3. sid (conecta id_token con la sesión del OP)
+            </div>
+            <div class="highlight">
+                <strong>prompt:</strong> none (silencioso), login, consent, select_account<br>
+                <strong>end_session:</strong> RP-Initiated Logout con id_token_hint
+            </div>
+        </div>
+    </div>
+    
+    <!-- Slide 9: Flujos Avanzados -->
+    <div class="slide" id="slide9" data-start="81" data-duration="10">
+        <div class="phase-badge">Avanzado</div>
+        <div class="title">Flujos Avanzados</div>
+        <div class="subtitle">PAR, Device, CIBA e Híbrido</div>
+        <div class="content">
+            <div class="highlight">
+                <strong>PAR (RFC 9126):</strong> ✅ Implementado — empuja parámetros por back-channel, recibe request_uri
+            </div>
+            <div class="highlight">
+                <strong>Flujo Híbrido (code id_token):</strong> ✅ Para GAUDI — devuelve id_token en fragmento con c_hash
+            </div>
+            <div class="highlight">
+                <strong>Device & CIBA:</strong> 🟡 Simulados — ciclo de sondeo sin pantalla real de autorización
+            </div>
+        </div>
+    </div>
+    
+    <!-- Slide 10: Matriz de Paridad -->
+    <div class="slide" id="slide10" data-start="91" data-duration="10">
+        <div class="phase-badge">Resumen</div>
+        <div class="title">Matriz de Paridad</div>
+        <div class="subtitle">Teoría vs Real vs Mock</div>
+        <div class="content">
+            <div class="highlight">
+                <strong>Tokens:</strong><br>
+                • authorization_code: 5 min (InMemoryCodeStore)<br>
+                • access_token: 30 min (JWT RS256)<br>
+                • id_token: 30 min (solo con scope openid)<br>
+                • refresh_token: 8 h (rota, solo con offline_access)
+            </div>
+            <div class="highlight">
+                <strong>Erros de protocolo (RFC 6749/7662/7009):</strong><br>
+                invalid_request, invalid_client, invalid_grant, unsupported_grant_type, invalid_scope
+            </div>
+        </div>
+    </div>
+    
+    <!-- Slide 11: Configuración y Comandos -->
+    <div class="slide" id="slide11" data-start="101" data-duration="10">
+        <div class="phase-badge">Práctico</div>
+        <div class="title">Arrancar y Usar OidcMock</div>
+        <div class="subtitle">Comandos y configuración</div>
+        <div class="content">
+            <div class="highlight">
+                <strong>Arranque:</strong><br>
+                dotnet run --project src/OidcMock.Host<br>
+                --OidcMock:Issuer=https://localhost:5443/personafisica/
+            </div>
+            <div class="highlight">
+                <strong>Clientes de ejemplo:</strong><br>
+                • web-app-spa (público, PKCE)<br>
+                • web-app-confidencial (confidencial)<br>
+                • backend-service (client_credentials)
+            </div>
+        </div>
+    </div>
+    
+    <!-- Slide 12: Conclusión -->
+    <div class="slide" id="slide12" data-start="111" data-duration="7">
+        <div class="title">¡Listo!</div>
+        <div class="subtitle">OpenID Connect domina la autenticación moderna</div>
+        <div class="content">
+            <div class="highlight">
+                OidcMock replica el comportamiento del BCCR para desarrollo local<br>
+                Sin base de datos · JSON config · Estado en memoria<br>
+                <strong>Nunca exponer fuera de localhost</strong>
+            </div>
+            <div class="footer">docs/openid/ · scripts/test.sh · OidcMock v1.0</div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+    const s=document.querySelectorAll('.slide');
+    const pf=document.getElementById('progressFill');
+    const td=118;
+    const st=performance.now();
+    function up(){
+        const el=(performance.now()-st)/1000;
+        const pr=Math.min((el/td)*100,100);
+        pf.style.width=pr+'%';
+        let i=0;
+        if(el>=111)i=12;
+        else if(el>=101)i=11;
+        else if(el>=91)i=10;
+        else if(el>=81)i=9;
+        else if(el>=71)i=8;
+        else if(el>=61)i=7;
+        else if(el>=50)i=6;
+        else if(el>=40)i=5;
+        else if(el>=26)i=4;
+        else if(el>=17)i=3;
+        else if(el>=7)i=2;
+        s.forEach((sld,idx)=>sld.classList.toggle('active',idx===i));
+        if(el<td)requestAnimationFrame(up);
+    }
+    up();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+OpenID Connect Explicado - OidcMock
+
+Bienvenidos a esta explicación sobre OpenID Connect, el estándar moderno de autenticación que usaremos para nuestro desarrollo local.
+
+En esta serie documentamos cómo funciona OpenID Connect, tanto en teoría, como en servidores reales como el del BCCR, y cómo OidcMock lo imita para nuestros propósitos.
+
+--- Actores y Tokens ---
+
+Comencemos con los roles fundamentales. OpenID Connect define cuatro actores principales: el Resource Owner, que es el usuario dueño de los datos; el Cliente, que es la aplicación que quiere acceder a esos datos; el Authorization Server, que emite los tokens tras autenticar y autorizar; y el Resource Server, que sirve los datos protegidos.
+
+En OIDC, además del OAuth, aparece el id_token, que es un JWT firmado con la identidad del usuario. Los cuatro tokens esenciales son: el authorization_code, opaco y de un solo uso; el access_token, JWT firmado que autoriza llamadas a la API; el id_token, JWT que afirma la identidad del usuario; y el refresh_token, opaco y con vida larga para renovar sin volver a pedir credenciales.
+
+--- Discovery y JWKS ---
+
+Antes de mandar a nadie a login, el cliente necesita saber dónde están los endpoints y con qué clave validar la firma. El Discovery Document, obtenido con GET en /.well-known/openid-configuration, contiene el issuer, las URLs de cada endpoint y las capacidades soportadas. El JWKS, o JSON Web Key Set, contiene las claves públicas para validar las firmas de los JWT.
+
+--- Flujo de Autorización con PKCE ---
+
+El flujo principal es el Authorization Code con PKCE. Para clientes públicos como SPA o móviles, el PKCE protege contra ataques donde un atacante roba el código. El cliente genera un code_verifier y un challenge, que se envía al authorize endpoint. El OP guarda el challenge y, al canjear el código, lo compara en tiempo constante. Dos métodos: plain y S256, siendo S256 el recomendado.
+
+--- ID Token y Claims ---
+
+El ID Token es lo que convierte un flujo OAuth en OpenID Connect. Es un JWT con claims obligatorios: iss debe coincidir literalmente con el issuer del discovery; sub es el identificador estable del usuario; aud es el client_id; exp e iat son expiración y emisión; nonce es anti-replay. Claims de binding como at_hash y c_hash vinculan el token al access token o al código. Los claims del usuario se proyectan según el scope concedido: openid trae sub, profile trae nombre y apellidos, email trae el email.
+
+--- Token Endpoint y Grant Types ---
+
+El token endpoint POST /connect/token es donde cada grant_type elige cómo obtener los tokens. Soportamos seven grant types: authorization_code, refresh_token, client_credentials, password, device_code, ciba, y el tipo específico para dispositivos. El patrón strategy despacha cada grant a su handler correspondiente.
+
+--- UserInfo, Introspection y Revocation ---
+
+El endpoint UserInfo devuelve los claims del usuario a partir del access_token. Introspection verifica si un token está activo, respondiendo siempre con active true o false, sin revelar si el token existía. Revocation invalida un token registrando su jti o revocando toda la familia de refresh tokens.
+
+--- Sesión y Logout ---
+
+Distinguimos tres tipos de sesión: la sesión del OP para SSO, la sesión del cliente con su propia cookie, y el sid que conecta el id_token con la sesión del OP. El logout usa el endpoint /connect/endsession con parámetros como id_token_hint y post_logout_redirect_uri. El prompt controla la interacción: none, login, consent o select_account.
+
+--- Flujos Avanzados ---
+
+Tenemos PAR implementado, el flujo híbrido code id_token para GAUDI, y device y CIBA simulados para validar el discovery. PAR usa request_uri y permite empujar parámetros sensibles por back-channel.
+
+--- Matriz de Paridad y Comandos ---
+
+En resumen, nuestra matriz de paridad compara teoría, el servidor real BCCR y OidcMock. Los tokens tienen vidas específicas, los errores siguen códigos HTTP definidos por RFC, y los endpoints soportan capacidades completas. Para arrancar OidcMock: dotnet run con opciones para el issuer, HTTPS o HTTP, y config personalizada.
+
+--- Conclusión ---
+
+OidcMock replica el comportamiento del BCCR para desarrollo local, trabaja con JSON config, estado en memoria y jamás debe exponerse fuera de localhost. Concluimos esta visión completa sobre OpenID Connect y cómo podemos desarrollar sin dependencias externas.
+
+¡Gracias por ver!
