@@ -1,0 +1,89 @@
+diff --git a/DESIGN.md b/DESIGN.md
+index 80e5c11..b715888 100644
+--- a/DESIGN.md
++++ b/DESIGN.md
+@@ -422,3 +422,12 @@ referencias documentales y el memory-bank; ver `SPEC.md` §13. En la práctica:
+   `aria-label` en controles de icono, `aria-live` en contadores, `fieldset`/`legend` en filtros,
+   `aria-labelledby`/`describedby` + foco inicial en el diálogo, `prefers-reduced-motion`.
+   Cubierto por `tests/SmtpMockup.Web.Tests/AccessibilityTests.cs`.
++
++### v2.4 — se agregó (2026-10-09)
++- `NuGet.Config` en la raíz con `<clear />` y **una sola fuente**: `nuget.org` (SPEC §12 v2.4).
++  Restaura limpio desde la raíz incluso en máquinas con feeds privados heredados habilitados.
++  Causa: con `ManagePackageVersionsCentrally=true` y varias fuentes sin *package source mapping*,
++  NuGet emite NU1507 y `TreatWarningsAsErrors=true` lo convierte en error (bloqueaba
++  `dotnet restore`); con feeds heredados inalcanzables se sumaba NU1301. El `<clear />` aplica
++  **solo al repo**: la configuración global de NuGet y los feeds del equipo no se tocan. Sin
++  `NoWarn`, sin tocar `TreatWarningsAsErrors` y sin cambiar versiones de paquetes ni de SDK.
+diff --git a/NuGet.Config b/NuGet.Config
+new file mode 100644
+index 0000000..765346e
+--- /dev/null
++++ b/NuGet.Config
+@@ -0,0 +1,7 @@
++<?xml version="1.0" encoding="utf-8"?>
++<configuration>
++  <packageSources>
++    <clear />
++    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
++  </packageSources>
++</configuration>
+diff --git a/README.md b/README.md
+index f88c166..ddbbfe8 100644
+--- a/README.md
++++ b/README.md
+@@ -22,6 +22,34 @@ conexiones SMTP salientes). Es una herramienta local de desarrollo.
+ | Para usar el binario publicado | ninguno: es *self-contained* |
+ | Plataformas | Windows y Linux (sin dependencias nativas) |
+ 
++### Paquetes NuGet: una sola fuente
++
++Para restaurar y compilar este repositorio se usa **una única fuente de paquetes: `nuget.org`**,
++fijada por el [`NuGet.Config`](NuGet.Config) de la raíz:
++
++```xml
++<configuration>
++  <packageSources>
++    <clear />
++    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
++  </packageSources>
++</configuration>
++```
++
++El `<clear />` descarta **las fuentes heredadas de la máquina o del usuario** (por ejemplo feeds
++privados de red) *sólo dentro de este repositorio*: la configuración global no se toca y esos
++feeds siguen habilitados para el resto de proyectos.
++
++**Por qué existe.** Este proyecto usa administración central de versiones
++(`ManagePackageVersionsCentrally=true` en `Directory.Build.props`) y `TreatWarningsAsErrors=true`.
++Con varias fuentes habilitadas y sin *package source mapping*, NuGet emite el aviso **NU1507**
++(«map your package sources … or specify a single package source»), que el `-warnaserror` convierte
++en **error**: `dotnet restore` se rompe en la raíz antes de bajar un solo paquete. En una máquina
++con feeds privados inalcanzables desde donde se compila, además aparece **NU1301** (no se puede
++cargar el índice del servicio) por cada fuente caída. Todas las dependencias de este repo son
++públicas y están en `nuget.org`, así que la solución es dejar esa sola fuente a nivel de repo, sin
++suprimir NU1507, sin tocar `TreatWarningsAsErrors` y sin cambiar versiones de paquetes ni de SDK.
++
+ ## Arranque rápido
+ 
+ Desde el código:
+diff --git a/SPEC.md b/SPEC.md
+index 1a9d778..1bf3ef3 100644
+--- a/SPEC.md
++++ b/SPEC.md
+@@ -671,6 +671,15 @@ memory-bank; ver §13.
+ | Excepciones al export | El rol *warning* (ámbar `#FFCF66`) no existe en el prototipo y se añade para estados de aviso; la escala tipográfica se reparte en los huecos de MudBlazor |
+ | Tests | `tests/SmtpMockup.Web.Tests/AccessibilityTests.cs`: landmarks del layout, un solo `h1` por página, grupo de filtros etiquetado, región viva del resumen, `th scope="row"` en el sobre |
+ 
++### v2.4 — 2026-10-09 — Fuente única de paquetes NuGet (`NuGet.Config`)
++
++| Ítem | Detalle |
++|------|---------|
++| `NuGet.Config` (raíz) | Nuevo archivo con `<clear />` + `nuget.org` como **única** fuente de paquetes del repo. `dotnet restore` desde la raíz funciona igual en una máquina con feeds privados heredados (p. ej. «Institucional» y «WebAPI») |
++| Causa del fallo | Con `ManagePackageVersionsCentrally=true` y varias fuentes sin *package source mapping*, NuGet emite **NU1507**; `TreatWarningsAsErrors=true` lo convierte en error y la restauración se bloquea. Con feeds heredados inalcanzables además aparecía **NU1301** por cada fuente caída |
++| Alcance del `<clear />` | Sólo afecta a este repositorio: la configuración global de NuGet (y los feeds privados del equipo) **no se modifica** y siguen habilitados para el resto de proyectos |
++| Lo que no cambia | No se suprime NU1507 (`NoWarn`/`WarningsNotAsErrors`), no se toca `TreatWarningsAsErrors` y no se cambian versiones de paquetes ni del SDK (`global.json` intacto). Todas las dependencias son públicas y están en `nuget.org` |
++
+ ---
+ 
+ ## 13. Elementos obsoletos por el cambio y acción propuesta
