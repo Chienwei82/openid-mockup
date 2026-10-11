@@ -4,23 +4,79 @@
     data-composition-id="scene-04-pkce"
     data-width="1920"
     data-height="1080"
-    data-duration="18.04"
+    data-duration="27.148"
   >
-<section class="scene"><header class="scene__head"><span class="kicker" data-anim>Flujo principal</span><h2 class="headline" data-anim>Authorization Code + PKCE</h2></header><ol class="steps"><li data-anim><span class="steps__n">1</span>El cliente genera <code>code_verifier</code> y <code>code_challenge</code></li><li data-anim><span class="steps__n">2</span>Redirige a <code>/connect/authorize</code> con el challenge y <code>state</code></li><li data-anim><span class="steps__n">3</span>El OP autentica al usuario y pide consentimiento</li><li data-anim><span class="steps__n">4</span>Vuelve al cliente con el <code>authorization_code</code></li><li data-anim><span class="steps__n">5</span>El cliente canjea en <code>/connect/token</code> con el <code>code_verifier</code></li><li data-anim><span class="steps__n">6</span>Comparación en tiempo constante · S256 recomendado sobre plain</li></ol></section>
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Flujo principal</span><h2 class="headline" data-anim="rise">Authorization Code + PKCE</h2></header><ol class="steps"><li data-anim="slide" data-hl="step-verifier"><span class="steps__n">1</span>El cliente genera <code>code_verifier</code> y <code>code_challenge</code></li><li data-anim="slide" data-hl="step-authorize"><span class="steps__n">2</span>Redirige a <code>/connect/authorize</code> con el challenge y <code>state</code></li><li data-anim="slide"><span class="steps__n">3</span>El OP autentica al usuario y pide consentimiento</li><li data-anim="slide"><span class="steps__n">4</span>Vuelve al cliente con el <code>authorization_code</code></li><li data-anim="slide" data-hl="step-canje"><span class="steps__n">5</span>El cliente canjea en <code>/connect/token</code> con el <code>code_verifier</code></li><li data-anim="slide" data-hl="step-compara"><span class="steps__n">6</span>Comparación en tiempo constante · S256 recomendado sobre plain</li></ol></section>
 
     <script>
       (function () {
         var root = document.querySelector('[data-composition-id="scene-04-pkce"]');
         if (!root || typeof gsap === 'undefined') { return; }
-        var items = root.querySelectorAll('[data-anim]');
         var timeline = gsap.timeline({ paused: true });
+
+        var FROM = {
+          rise: { opacity: 0, y: 36 },
+          pop: { opacity: 0, y: 22, scale: 0.92 },
+          slide: { opacity: 0, x: -40 },
+          fade: { opacity: 0 },
+        };
+        var items = root.querySelectorAll('[data-anim]');
         for (var index = 0; index < items.length; index += 1) {
+          var from = FROM[items[index].getAttribute('data-anim')] || FROM.rise;
           timeline.from(
             items[index],
-            { opacity: 0, y: 36, duration: 0.65, ease: 'power3.out' },
-            0.45 + index * 0.16
+            Object.assign({ duration: 0.65, ease: 'power3.out' }, from),
+            0.45 + index * 0.24
           );
         }
+
+        var HIGHLIGHTS = {"step-verifier": [[7.116, 8.734]], "step-authorize": [[9.763, 10.998]], "step-canje": [[12.013, 13.469]], "step-compara": [[14.499, 17.16], [23.994, 25.082]]};
+        var targets = [];
+        Object.keys(HIGHLIGHTS).forEach(function (key) {
+          var el = root.querySelector('[data-hl="' + key + '"]');
+          if (el) { targets.push({ el: el, windows: HIGHLIGHTS[key] }); }
+        });
+        var ATTACK = 0.22;
+        var RELEASE = 0.55;
+        function envelope(time, start, end) {
+          if (time < start) { return 0; }
+          if (time < end) { return Math.min((time - start) / ATTACK, 1); }
+          if (time < end + RELEASE) { return 1 - (time - end) / RELEASE; }
+          return 0;
+        }
+        function paint(target, env) {
+          var el = target.el;
+          if (env <= 0.001) {
+            el.style.borderColor = '';
+            el.style.boxShadow = '';
+            el.style.textShadow = '';
+            return;
+          }
+          el.style.borderColor =
+            'rgb(' + Math.round(58 + 19 * env) + ', ' + Math.round(63 + 145 * env) + ', ' + Math.round(71 + 154 * env) + ')';
+          el.style.boxShadow = '0 0 ' + (36 * env).toFixed(1) + 'px rgba(77, 208, 225, ' + (0.28 * env).toFixed(3) + ')';
+          el.style.textShadow = '0 0 ' + (16 * env).toFixed(1) + 'px rgba(77, 208, 225, ' + (0.4 * env).toFixed(3) + ')';
+        }
+        var driver = { t: 0 };
+        timeline.to(
+          driver,
+          {
+            t: 27.148,
+            duration: 27.148,
+            ease: 'none',
+            onUpdate: function () {
+              for (var i = 0; i < targets.length; i += 1) {
+                var env = 0;
+                for (var w = 0; w < targets[i].windows.length; w += 1) {
+                  env = Math.max(env, envelope(driver.t, targets[i].windows[w][0], targets[i].windows[w][1]));
+                }
+                paint(targets[i], env);
+              }
+            },
+          },
+          0
+        );
+
         window.__timelines['scene-04-pkce'] = timeline;
       })();
     </script>

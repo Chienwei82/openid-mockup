@@ -1,19 +1,178 @@
 {
-  "total": 177.216,
+  "total": 264.888,
   "leadIn": 0.9,
-  "tail": 0.7,
+  "tail": 1,
   "scenes": [
     {
       "id": "scene-01-title",
       "index": 1,
       "kicker": "Introducción",
       "title": "OpenID Connect Explicado",
-      "text": "Bienvenidos a esta explicación de OpenID Connect, el estándar moderno de autenticación que usaremos para desarrollo local. Veremos la teoría, el servidor real del BCCR, y cómo OidcMock lo imita.",
+      "text": "Bienvenidos a esta explicación de OpenID Connect, el estándar moderno de autenticación que usaremos para desarrollo local. Veremos la teoría, el servidor de referencia, y cómo OidcMock lo imita.",
       "audio": "audio/segments/seg-01.mp3",
       "start": 0,
-      "duration": 11.824,
+      "duration": 16.972,
       "audioStart": 0.9,
-      "audioDuration": 10.224
+      "audioDuration": 15.072,
+      "highlights": [
+        {
+          "key": "title-oidc",
+          "start": 2.119125,
+          "end": 3.09
+        },
+        {
+          "key": "title-mock",
+          "start": 12.789708,
+          "end": 13.275
+        }
+      ],
+      "words": [
+        {
+          "text": "Bienvenidos",
+          "start": 0.104,
+          "duration": 0.838
+        },
+        {
+          "text": "a",
+          "start": 0.957,
+          "duration": 0.059
+        },
+        {
+          "text": "esta",
+          "start": 1.031,
+          "duration": 0.221
+        },
+        {
+          "text": "explicación",
+          "start": 1.266,
+          "duration": 0.706
+        },
+        {
+          "text": "de",
+          "start": 1.987,
+          "duration": 0.118
+        },
+        {
+          "text": "OpenID",
+          "start": 2.119,
+          "duration": 0.515
+        },
+        {
+          "text": "Connect",
+          "start": 2.649,
+          "duration": 0.441
+        },
+        {
+          "text": "el",
+          "start": 3.407,
+          "duration": 0.25
+        },
+        {
+          "text": "estándar",
+          "start": 3.672,
+          "duration": 0.515
+        },
+        {
+          "text": "moderno",
+          "start": 4.201,
+          "duration": 0.456
+        },
+        {
+          "text": "de",
+          "start": 4.672,
+          "duration": 0.103
+        },
+        {
+          "text": "autenticación",
+          "start": 4.79,
+          "duration": 0.897
+        },
+        {
+          "text": "que",
+          "start": 5.701,
+          "duration": 0.118
+        },
+        {
+          "text": "usaremos",
+          "start": 5.834,
+          "duration": 0.588
+        },
+        {
+          "text": "para",
+          "start": 6.437,
+          "duration": 0.191
+        },
+        {
+          "text": "desarrollo",
+          "start": 6.643,
+          "duration": 0.574
+        },
+        {
+          "text": "local",
+          "start": 7.231,
+          "duration": 0.632
+        },
+        {
+          "text": "Veremos",
+          "start": 8.878,
+          "duration": 0.559
+        },
+        {
+          "text": "la",
+          "start": 9.451,
+          "duration": 0.103
+        },
+        {
+          "text": "teoría",
+          "start": 9.569,
+          "duration": 0.559
+        },
+        {
+          "text": "el",
+          "start": 10.451,
+          "duration": 0.147
+        },
+        {
+          "text": "servidor",
+          "start": 10.613,
+          "duration": 0.544
+        },
+        {
+          "text": "de",
+          "start": 11.172,
+          "duration": 0.088
+        },
+        {
+          "text": "referencia",
+          "start": 11.275,
+          "duration": 0.794
+        },
+        {
+          "text": "y",
+          "start": 12.437,
+          "duration": 0.044
+        },
+        {
+          "text": "cómo",
+          "start": 12.496,
+          "duration": 0.279
+        },
+        {
+          "text": "OidcMock",
+          "start": 12.79,
+          "duration": 0.485
+        },
+        {
+          "text": "lo",
+          "start": 13.29,
+          "duration": 0.118
+        },
+        {
+          "text": "imita",
+          "start": 13.422,
+          "duration": 0.603
+        }
+      ]
     },
     {
       "id": "scene-02-actores",
@@ -22,34 +181,796 @@
       "title": "Actores y Tokens",
       "text": "OpenID Connect define cuatro actores: el Resource Owner, que es el usuario; el Cliente, que es la aplicación; el Authorization Server, que emite los tokens; y el Resource Server, que sirve los datos protegidos. Y cuatro tokens: authorization code, access token, id token y refresh token.",
       "audio": "audio/segments/seg-02.mp3",
-      "start": 11.824,
-      "duration": 16.624,
-      "audioStart": 12.724,
-      "audioDuration": 15.024
+      "start": 16.972,
+      "duration": 24.868,
+      "audioStart": 17.872,
+      "audioDuration": 22.968,
+      "highlights": [
+        {
+          "key": "role-owner",
+          "start": 3.026458,
+          "end": 3.909
+        },
+        {
+          "key": "role-client",
+          "start": 5.6,
+          "end": 6.203
+        },
+        {
+          "key": "role-as",
+          "start": 8.255875,
+          "end": 9.638
+        },
+        {
+          "key": "role-rs",
+          "start": 11.726458,
+          "end": 12.741
+        },
+        {
+          "key": "tok-code",
+          "start": 17.491166,
+          "end": 18.609
+        },
+        {
+          "key": "tok-access",
+          "start": 18.873541,
+          "end": 19.741
+        },
+        {
+          "key": "tok-id",
+          "start": 20.13825,
+          "end": 20.741
+        },
+        {
+          "key": "tok-refresh",
+          "start": 20.814708,
+          "end": 21.903
+        }
+      ],
+      "words": [
+        {
+          "text": "OpenID",
+          "start": 0.1,
+          "duration": 0.765
+        },
+        {
+          "text": "Connect",
+          "start": 0.879,
+          "duration": 0.368
+        },
+        {
+          "text": "define",
+          "start": 1.262,
+          "duration": 0.426
+        },
+        {
+          "text": "cuatro",
+          "start": 1.703,
+          "duration": 0.294
+        },
+        {
+          "text": "actores",
+          "start": 2.012,
+          "duration": 0.588
+        },
+        {
+          "text": "el",
+          "start": 2.894,
+          "duration": 0.118
+        },
+        {
+          "text": "Resource",
+          "start": 3.026,
+          "duration": 0.412
+        },
+        {
+          "text": "Owner",
+          "start": 3.453,
+          "duration": 0.456
+        },
+        {
+          "text": "que",
+          "start": 4.203,
+          "duration": 0.132
+        },
+        {
+          "text": "es",
+          "start": 4.35,
+          "duration": 0.147
+        },
+        {
+          "text": "el",
+          "start": 4.512,
+          "duration": 0.103
+        },
+        {
+          "text": "usuario",
+          "start": 4.629,
+          "duration": 0.618
+        },
+        {
+          "text": "el",
+          "start": 5.468,
+          "duration": 0.118
+        },
+        {
+          "text": "Cliente",
+          "start": 5.6,
+          "duration": 0.603
+        },
+        {
+          "text": "que",
+          "start": 6.482,
+          "duration": 0.147
+        },
+        {
+          "text": "es",
+          "start": 6.644,
+          "duration": 0.132
+        },
+        {
+          "text": "la",
+          "start": 6.791,
+          "duration": 0.088
+        },
+        {
+          "text": "aplicación",
+          "start": 6.894,
+          "duration": 0.779
+        },
+        {
+          "text": "el",
+          "start": 7.976,
+          "duration": 0.265
+        },
+        {
+          "text": "Authorization",
+          "start": 8.256,
+          "duration": 0.838
+        },
+        {
+          "text": "Server",
+          "start": 9.109,
+          "duration": 0.529
+        },
+        {
+          "text": "que",
+          "start": 9.918,
+          "duration": 0.132
+        },
+        {
+          "text": "emite",
+          "start": 10.065,
+          "duration": 0.324
+        },
+        {
+          "text": "los",
+          "start": 10.403,
+          "duration": 0.176
+        },
+        {
+          "text": "tokens",
+          "start": 10.594,
+          "duration": 0.632
+        },
+        {
+          "text": "y",
+          "start": 11.506,
+          "duration": 0.074
+        },
+        {
+          "text": "el",
+          "start": 11.594,
+          "duration": 0.118
+        },
+        {
+          "text": "Resource",
+          "start": 11.726,
+          "duration": 0.485
+        },
+        {
+          "text": "Server",
+          "start": 12.226,
+          "duration": 0.515
+        },
+        {
+          "text": "que",
+          "start": 13.021,
+          "duration": 0.132
+        },
+        {
+          "text": "sirve",
+          "start": 13.168,
+          "duration": 0.324
+        },
+        {
+          "text": "los",
+          "start": 13.506,
+          "duration": 0.176
+        },
+        {
+          "text": "datos",
+          "start": 13.697,
+          "duration": 0.338
+        },
+        {
+          "text": "protegidos",
+          "start": 14.05,
+          "duration": 0.941
+        },
+        {
+          "text": "Y",
+          "start": 16.006,
+          "duration": 0.206
+        },
+        {
+          "text": "cuatro",
+          "start": 16.226,
+          "duration": 0.368
+        },
+        {
+          "text": "tokens",
+          "start": 16.609,
+          "duration": 0.632
+        },
+        {
+          "text": "authorization",
+          "start": 17.491,
+          "duration": 0.794
+        },
+        {
+          "text": "code",
+          "start": 18.3,
+          "duration": 0.309
+        },
+        {
+          "text": "access",
+          "start": 18.874,
+          "duration": 0.412
+        },
+        {
+          "text": "token",
+          "start": 19.3,
+          "duration": 0.441
+        },
+        {
+          "text": "id",
+          "start": 20.138,
+          "duration": 0.206
+        },
+        {
+          "text": "token",
+          "start": 20.359,
+          "duration": 0.382
+        },
+        {
+          "text": "y",
+          "start": 20.756,
+          "duration": 0.044
+        },
+        {
+          "text": "refresh",
+          "start": 20.815,
+          "duration": 0.456
+        },
+        {
+          "text": "token",
+          "start": 21.285,
+          "duration": 0.618
+        }
+      ]
     },
     {
       "id": "scene-03-discovery",
       "index": 3,
       "kicker": "Discovery",
       "title": "Discovery y JWKS",
-      "text": "Antes de enviar a nadie a login, el cliente descubre los endpoints en punto well-known barra openid-configuration. Allí encuentra el issuer, las URLs de cada endpoint y las capacidades soportadas. El JWKS contiene las claves públicas para validar las firmas de los JWT.",
+      "text": "Antes de redirigir a nadie a login, el cliente descubre los endpoints en el well-known de openid-configuration. Allí encuentra el issuer, las URLs de cada endpoint y las capacidades soportadas. El JWKS contiene las claves públicas para validar las firmas de los JWT.",
       "audio": "audio/segments/seg-03.mp3",
-      "start": 28.448,
-      "duration": 16.408,
-      "audioStart": 29.348,
-      "audioDuration": 14.808
+      "start": 41.84,
+      "duration": 24.292,
+      "audioStart": 42.74,
+      "audioDuration": 22.392,
+      "highlights": [
+        {
+          "key": "card-discovery",
+          "start": 3.260291,
+          "end": 4.584
+        },
+        {
+          "key": "card-jwks",
+          "start": 15.142666,
+          "end": 17.29
+        }
+      ],
+      "words": [
+        {
+          "text": "Antes",
+          "start": 0.1,
+          "duration": 0.471
+        },
+        {
+          "text": "de",
+          "start": 0.585,
+          "duration": 0.088
+        },
+        {
+          "text": "redirigir",
+          "start": 0.688,
+          "duration": 0.618
+        },
+        {
+          "text": "a",
+          "start": 1.321,
+          "duration": 0.029
+        },
+        {
+          "text": "nadie",
+          "start": 1.365,
+          "duration": 0.309
+        },
+        {
+          "text": "a",
+          "start": 1.688,
+          "duration": 0.044
+        },
+        {
+          "text": "login",
+          "start": 1.747,
+          "duration": 0.426
+        },
+        {
+          "text": "el",
+          "start": 2.554,
+          "duration": 0.265
+        },
+        {
+          "text": "cliente",
+          "start": 2.834,
+          "duration": 0.412
+        },
+        {
+          "text": "descubre",
+          "start": 3.26,
+          "duration": 0.5
+        },
+        {
+          "text": "los",
+          "start": 3.775,
+          "duration": 0.191
+        },
+        {
+          "text": "endpoints",
+          "start": 3.981,
+          "duration": 0.603
+        },
+        {
+          "text": "en",
+          "start": 4.599,
+          "duration": 0.103
+        },
+        {
+          "text": "el",
+          "start": 4.716,
+          "duration": 0.103
+        },
+        {
+          "text": "well-known",
+          "start": 4.834,
+          "duration": 0.5
+        },
+        {
+          "text": "de",
+          "start": 5.349,
+          "duration": 0.088
+        },
+        {
+          "text": "openid-configuration",
+          "start": 5.451,
+          "duration": 1.632
+        },
+        {
+          "text": "Allí",
+          "start": 8.099,
+          "duration": 0.426
+        },
+        {
+          "text": "encuentra",
+          "start": 8.54,
+          "duration": 0.544
+        },
+        {
+          "text": "el",
+          "start": 9.099,
+          "duration": 0.103
+        },
+        {
+          "text": "issuer",
+          "start": 9.216,
+          "duration": 0.515
+        },
+        {
+          "text": "las",
+          "start": 10.01,
+          "duration": 0.206
+        },
+        {
+          "text": "URLs",
+          "start": 10.231,
+          "duration": 0.824
+        },
+        {
+          "text": "de",
+          "start": 11.069,
+          "duration": 0.103
+        },
+        {
+          "text": "cada",
+          "start": 11.187,
+          "duration": 0.294
+        },
+        {
+          "text": "endpoint",
+          "start": 11.496,
+          "duration": 0.603
+        },
+        {
+          "text": "y",
+          "start": 12.113,
+          "duration": 0.044
+        },
+        {
+          "text": "las",
+          "start": 12.172,
+          "duration": 0.191
+        },
+        {
+          "text": "capacidades",
+          "start": 12.378,
+          "duration": 0.75
+        },
+        {
+          "text": "soportadas",
+          "start": 13.143,
+          "duration": 0.985
+        },
+        {
+          "text": "El",
+          "start": 15.143,
+          "duration": 0.265
+        },
+        {
+          "text": "JWKS",
+          "start": 15.422,
+          "duration": 1.368
+        },
+        {
+          "text": "contiene",
+          "start": 16.804,
+          "duration": 0.485
+        },
+        {
+          "text": "las",
+          "start": 17.304,
+          "duration": 0.206
+        },
+        {
+          "text": "claves",
+          "start": 17.525,
+          "duration": 0.382
+        },
+        {
+          "text": "públicas",
+          "start": 17.922,
+          "duration": 0.544
+        },
+        {
+          "text": "para",
+          "start": 18.481,
+          "duration": 0.206
+        },
+        {
+          "text": "validar",
+          "start": 18.701,
+          "duration": 0.441
+        },
+        {
+          "text": "las",
+          "start": 19.157,
+          "duration": 0.206
+        },
+        {
+          "text": "firmas",
+          "start": 19.378,
+          "duration": 0.412
+        },
+        {
+          "text": "de",
+          "start": 19.804,
+          "duration": 0.088
+        },
+        {
+          "text": "los",
+          "start": 19.907,
+          "duration": 0.191
+        },
+        {
+          "text": "JWT",
+          "start": 20.113,
+          "duration": 1.235
+        }
+      ]
     },
     {
       "id": "scene-04-pkce",
       "index": 4,
       "kicker": "Flujo principal",
       "title": "Authorization Code + PKCE",
-      "text": "El flujo principal es Authorization Code con PKCE. El cliente genera un code verifier y su challenge, y los envía al authorize endpoint. Al canjear el código, el servidor compara el verifier en tiempo constante. Los métodos son plain y S256, siendo S256 el recomendado.",
+      "text": "El flujo principal es Authorization Code con PKCE. El cliente genera un code verifier y su challenge, y los envía al authorize endpoint. Al canjear el código, el servidor compara el verifier en tiempo constante. Los métodos son plain y S256, siendo el S256 el recomendado.",
       "audio": "audio/segments/seg-04.mp3",
-      "start": 44.856,
-      "duration": 18.04,
-      "audioStart": 45.756,
-      "audioDuration": 16.44
+      "start": 66.132,
+      "duration": 27.148,
+      "audioStart": 67.032,
+      "audioDuration": 25.248,
+      "highlights": [
+        {
+          "key": "step-verifier",
+          "start": 6.216166,
+          "end": 7.834
+        },
+        {
+          "key": "step-authorize",
+          "start": 8.86325,
+          "end": 10.098
+        },
+        {
+          "key": "step-canje",
+          "start": 11.11325,
+          "end": 12.569
+        },
+        {
+          "key": "step-compara",
+          "start": 13.598541,
+          "end": 16.26
+        },
+        {
+          "key": "step-compara",
+          "start": 23.094125,
+          "end": 24.182
+        }
+      ],
+      "words": [
+        {
+          "text": "El",
+          "start": 0.104,
+          "duration": 0.265
+        },
+        {
+          "text": "flujo",
+          "start": 0.384,
+          "duration": 0.382
+        },
+        {
+          "text": "principal",
+          "start": 0.781,
+          "duration": 0.588
+        },
+        {
+          "text": "es",
+          "start": 1.384,
+          "duration": 0.147
+        },
+        {
+          "text": "Authorization",
+          "start": 1.546,
+          "duration": 0.794
+        },
+        {
+          "text": "Code",
+          "start": 2.354,
+          "duration": 0.324
+        },
+        {
+          "text": "con",
+          "start": 2.693,
+          "duration": 0.235
+        },
+        {
+          "text": "PKCE",
+          "start": 2.943,
+          "duration": 0.912
+        },
+        {
+          "text": "El",
+          "start": 4.878,
+          "duration": 0.265
+        },
+        {
+          "text": "cliente",
+          "start": 5.157,
+          "duration": 0.456
+        },
+        {
+          "text": "genera",
+          "start": 5.628,
+          "duration": 0.426
+        },
+        {
+          "text": "un",
+          "start": 6.069,
+          "duration": 0.132
+        },
+        {
+          "text": "code",
+          "start": 6.216,
+          "duration": 0.265
+        },
+        {
+          "text": "verifier",
+          "start": 6.496,
+          "duration": 0.544
+        },
+        {
+          "text": "y",
+          "start": 7.054,
+          "duration": 0.059
+        },
+        {
+          "text": "su",
+          "start": 7.128,
+          "duration": 0.147
+        },
+        {
+          "text": "challenge",
+          "start": 7.29,
+          "duration": 0.544
+        },
+        {
+          "text": "y",
+          "start": 8.157,
+          "duration": 0.029
+        },
+        {
+          "text": "los",
+          "start": 8.201,
+          "duration": 0.191
+        },
+        {
+          "text": "envía",
+          "start": 8.407,
+          "duration": 0.324
+        },
+        {
+          "text": "al",
+          "start": 8.746,
+          "duration": 0.103
+        },
+        {
+          "text": "authorize",
+          "start": 8.863,
+          "duration": 0.544
+        },
+        {
+          "text": "endpoint",
+          "start": 9.422,
+          "duration": 0.676
+        },
+        {
+          "text": "Al",
+          "start": 11.113,
+          "duration": 0.25
+        },
+        {
+          "text": "canjear",
+          "start": 11.378,
+          "duration": 0.515
+        },
+        {
+          "text": "el",
+          "start": 11.907,
+          "duration": 0.132
+        },
+        {
+          "text": "código",
+          "start": 12.054,
+          "duration": 0.515
+        },
+        {
+          "text": "el",
+          "start": 12.893,
+          "duration": 0.147
+        },
+        {
+          "text": "servidor",
+          "start": 13.054,
+          "duration": 0.529
+        },
+        {
+          "text": "compara",
+          "start": 13.599,
+          "duration": 0.485
+        },
+        {
+          "text": "el",
+          "start": 14.099,
+          "duration": 0.088
+        },
+        {
+          "text": "verifier",
+          "start": 14.201,
+          "duration": 0.574
+        },
+        {
+          "text": "en",
+          "start": 14.79,
+          "duration": 0.162
+        },
+        {
+          "text": "tiempo",
+          "start": 14.966,
+          "duration": 0.382
+        },
+        {
+          "text": "constante",
+          "start": 15.363,
+          "duration": 0.897
+        },
+        {
+          "text": "Los",
+          "start": 17.271,
+          "duration": 0.382
+        },
+        {
+          "text": "métodos",
+          "start": 17.668,
+          "duration": 0.426
+        },
+        {
+          "text": "son",
+          "start": 18.109,
+          "duration": 0.221
+        },
+        {
+          "text": "plain",
+          "start": 18.344,
+          "duration": 0.309
+        },
+        {
+          "text": "y",
+          "start": 18.668,
+          "duration": 0.059
+        },
+        {
+          "text": "S256",
+          "start": 18.741,
+          "duration": 1.853
+        },
+        {
+          "text": "siendo",
+          "start": 20.844,
+          "duration": 0.382
+        },
+        {
+          "text": "el",
+          "start": 21.241,
+          "duration": 0.088
+        },
+        {
+          "text": "S256",
+          "start": 21.344,
+          "duration": 1.735
+        },
+        {
+          "text": "el",
+          "start": 23.094,
+          "duration": 0.132
+        },
+        {
+          "text": "recomendado",
+          "start": 23.241,
+          "duration": 0.941
+        }
+      ]
     },
     {
       "id": "scene-05-idtoken",
@@ -58,22 +979,560 @@
       "title": "ID Token y Claims",
       "text": "El ID Token es lo que convierte OAuth en OpenID Connect. Es un JWT con claims obligatorios: iss, sub, aud, exp, iat y nonce. Los claims de binding, at hash y c hash, lo vinculan con el access token y con el código. Los claims del usuario salen del scope concedido.",
       "audio": "audio/segments/seg-05.mp3",
-      "start": 62.896,
-      "duration": 17.224,
-      "audioStart": 63.796,
-      "audioDuration": 15.624
+      "start": 93.28,
+      "duration": 25.78,
+      "audioStart": 94.18,
+      "audioDuration": 23.88,
+      "highlights": [
+        {
+          "key": "chip-iss",
+          "start": 7.86325,
+          "end": 8.584
+        },
+        {
+          "key": "chip-sub",
+          "start": 8.848541,
+          "end": 9.246
+        },
+        {
+          "key": "chip-aud",
+          "start": 9.525,
+          "end": 9.746
+        },
+        {
+          "key": "chip-exp",
+          "start": 10.054416,
+          "end": 10.363
+        },
+        {
+          "key": "chip-iat",
+          "start": 10.730875,
+          "end": 10.966
+        },
+        {
+          "key": "chip-nonce",
+          "start": 11.039708,
+          "end": 11.672
+        },
+        {
+          "key": "chiprow-binding",
+          "start": 12.68675,
+          "end": 13.996
+        },
+        {
+          "key": "card-scope",
+          "start": 21.564708,
+          "end": 22.815
+        }
+      ],
+      "words": [
+        {
+          "text": "El",
+          "start": 0.138,
+          "duration": 0.191
+        },
+        {
+          "text": "ID",
+          "start": 0.344,
+          "duration": 0.221
+        },
+        {
+          "text": "Token",
+          "start": 0.579,
+          "duration": 0.397
+        },
+        {
+          "text": "es",
+          "start": 0.991,
+          "duration": 0.147
+        },
+        {
+          "text": "lo",
+          "start": 1.153,
+          "duration": 0.103
+        },
+        {
+          "text": "que",
+          "start": 1.271,
+          "duration": 0.118
+        },
+        {
+          "text": "convierte",
+          "start": 1.403,
+          "duration": 0.574
+        },
+        {
+          "text": "OAuth",
+          "start": 1.991,
+          "duration": 0.426
+        },
+        {
+          "text": "en",
+          "start": 2.432,
+          "duration": 0.132
+        },
+        {
+          "text": "OpenID",
+          "start": 2.579,
+          "duration": 0.529
+        },
+        {
+          "text": "Connect",
+          "start": 3.124,
+          "duration": 0.515
+        },
+        {
+          "text": "Es",
+          "start": 4.657,
+          "duration": 0.294
+        },
+        {
+          "text": "un",
+          "start": 4.966,
+          "duration": 0.132
+        },
+        {
+          "text": "JWT",
+          "start": 5.113,
+          "duration": 1.103
+        },
+        {
+          "text": "con",
+          "start": 6.231,
+          "duration": 0.235
+        },
+        {
+          "text": "claims",
+          "start": 6.481,
+          "duration": 0.294
+        },
+        {
+          "text": "obligatorios",
+          "start": 6.79,
+          "duration": 0.824
+        },
+        {
+          "text": "iss",
+          "start": 7.863,
+          "duration": 0.721
+        },
+        {
+          "text": "sub",
+          "start": 8.849,
+          "duration": 0.397
+        },
+        {
+          "text": "aud",
+          "start": 9.525,
+          "duration": 0.221
+        },
+        {
+          "text": "exp",
+          "start": 10.054,
+          "duration": 0.309
+        },
+        {
+          "text": "iat",
+          "start": 10.731,
+          "duration": 0.235
+        },
+        {
+          "text": "y",
+          "start": 10.981,
+          "duration": 0.044
+        },
+        {
+          "text": "nonce",
+          "start": 11.04,
+          "duration": 0.632
+        },
+        {
+          "text": "Los",
+          "start": 12.687,
+          "duration": 0.338
+        },
+        {
+          "text": "claims",
+          "start": 13.04,
+          "duration": 0.294
+        },
+        {
+          "text": "de",
+          "start": 13.349,
+          "duration": 0.088
+        },
+        {
+          "text": "binding",
+          "start": 13.451,
+          "duration": 0.544
+        },
+        {
+          "text": "at",
+          "start": 14.29,
+          "duration": 0.118
+        },
+        {
+          "text": "hash",
+          "start": 14.422,
+          "duration": 0.324
+        },
+        {
+          "text": "y",
+          "start": 14.76,
+          "duration": 0.044
+        },
+        {
+          "text": "c",
+          "start": 14.819,
+          "duration": 0.147
+        },
+        {
+          "text": "hash",
+          "start": 14.981,
+          "duration": 0.412
+        },
+        {
+          "text": "lo",
+          "start": 15.716,
+          "duration": 0.088
+        },
+        {
+          "text": "vinculan",
+          "start": 15.819,
+          "duration": 0.515
+        },
+        {
+          "text": "con",
+          "start": 16.349,
+          "duration": 0.176
+        },
+        {
+          "text": "el",
+          "start": 16.54,
+          "duration": 0.103
+        },
+        {
+          "text": "access",
+          "start": 16.657,
+          "duration": 0.397
+        },
+        {
+          "text": "token",
+          "start": 17.069,
+          "duration": 0.397
+        },
+        {
+          "text": "y",
+          "start": 17.481,
+          "duration": 0.044
+        },
+        {
+          "text": "con",
+          "start": 17.54,
+          "duration": 0.191
+        },
+        {
+          "text": "el",
+          "start": 17.746,
+          "duration": 0.118
+        },
+        {
+          "text": "código",
+          "start": 17.878,
+          "duration": 0.706
+        },
+        {
+          "text": "Los",
+          "start": 19.594,
+          "duration": 0.382
+        },
+        {
+          "text": "claims",
+          "start": 19.991,
+          "duration": 0.309
+        },
+        {
+          "text": "del",
+          "start": 20.315,
+          "duration": 0.147
+        },
+        {
+          "text": "usuario",
+          "start": 20.476,
+          "duration": 0.515
+        },
+        {
+          "text": "salen",
+          "start": 21.006,
+          "duration": 0.368
+        },
+        {
+          "text": "del",
+          "start": 21.388,
+          "duration": 0.162
+        },
+        {
+          "text": "scope",
+          "start": 21.565,
+          "duration": 0.324
+        },
+        {
+          "text": "concedido",
+          "start": 21.903,
+          "duration": 0.912
+        }
+      ]
     },
     {
       "id": "scene-06-grants",
       "index": 6,
       "kicker": "Grants",
       "title": "Token Endpoint y Grant Types",
-      "text": "El token endpoint, en connect token, es donde cada grant type obtiene sus tokens. Soportamos siete: authorization code, refresh token, client credentials, password, device code, ciba y el tipo de dispositivo. Un patrón strategy despacha cada grant a su handler.",
+      "text": "El token endpoint, en connect token, es donde cada grant type obtiene sus tokens. Soportamos siete: authorization code, refresh token, client credentials, password, device code, ciba e implicit. Un patrón strategy despacha cada grant a su handler.",
       "audio": "audio/segments/seg-06.mp3",
-      "start": 80.12,
-      "duration": 16.024,
-      "audioStart": 81.02,
-      "audioDuration": 14.424
+      "start": 119.06,
+      "duration": 23.02,
+      "audioStart": 119.96,
+      "audioDuration": 21.12,
+      "highlights": [
+        {
+          "key": "line-token",
+          "start": 0.104416,
+          "end": 1.281
+        },
+        {
+          "key": "stat-grants",
+          "start": 6.505875,
+          "end": 7.903
+        },
+        {
+          "key": "chip-authorization-code",
+          "start": 8.152958,
+          "end": 9.329
+        },
+        {
+          "key": "chip-refresh-token",
+          "start": 9.608833,
+          "end": 10.668
+        },
+        {
+          "key": "chip-client-credentials",
+          "start": 10.96175,
+          "end": 12.241
+        },
+        {
+          "key": "chip-password",
+          "start": 12.564708,
+          "end": 13.094
+        },
+        {
+          "key": "chip-device-code",
+          "start": 13.358833,
+          "end": 14.124
+        },
+        {
+          "key": "chip-ciba",
+          "start": 14.485291,
+          "end": 14.897
+        },
+        {
+          "key": "chip-implicit",
+          "start": 14.985291,
+          "end": 15.721
+        },
+        {
+          "key": "stat-handler",
+          "start": 18.025,
+          "end": 19.187
+        }
+      ],
+      "words": [
+        {
+          "text": "El",
+          "start": 0.104,
+          "duration": 0.279
+        },
+        {
+          "text": "token",
+          "start": 0.399,
+          "duration": 0.353
+        },
+        {
+          "text": "endpoint",
+          "start": 0.766,
+          "duration": 0.515
+        },
+        {
+          "text": "en",
+          "start": 1.546,
+          "duration": 0.118
+        },
+        {
+          "text": "connect",
+          "start": 1.678,
+          "duration": 0.368
+        },
+        {
+          "text": "token",
+          "start": 2.06,
+          "duration": 0.485
+        },
+        {
+          "text": "es",
+          "start": 2.854,
+          "duration": 0.103
+        },
+        {
+          "text": "donde",
+          "start": 2.972,
+          "duration": 0.265
+        },
+        {
+          "text": "cada",
+          "start": 3.251,
+          "duration": 0.235
+        },
+        {
+          "text": "grant",
+          "start": 3.501,
+          "duration": 0.294
+        },
+        {
+          "text": "type",
+          "start": 3.81,
+          "duration": 0.265
+        },
+        {
+          "text": "obtiene",
+          "start": 4.09,
+          "duration": 0.412
+        },
+        {
+          "text": "sus",
+          "start": 4.516,
+          "duration": 0.206
+        },
+        {
+          "text": "tokens",
+          "start": 4.737,
+          "duration": 0.75
+        },
+        {
+          "text": "Soportamos",
+          "start": 6.506,
+          "duration": 0.941
+        },
+        {
+          "text": "siete",
+          "start": 7.462,
+          "duration": 0.441
+        },
+        {
+          "text": "authorization",
+          "start": 8.153,
+          "duration": 0.809
+        },
+        {
+          "text": "code",
+          "start": 8.976,
+          "duration": 0.353
+        },
+        {
+          "text": "refresh",
+          "start": 9.609,
+          "duration": 0.5
+        },
+        {
+          "text": "token",
+          "start": 10.124,
+          "duration": 0.544
+        },
+        {
+          "text": "client",
+          "start": 10.962,
+          "duration": 0.471
+        },
+        {
+          "text": "credentials",
+          "start": 11.447,
+          "duration": 0.794
+        },
+        {
+          "text": "password",
+          "start": 12.565,
+          "duration": 0.529
+        },
+        {
+          "text": "device",
+          "start": 13.359,
+          "duration": 0.412
+        },
+        {
+          "text": "code",
+          "start": 13.785,
+          "duration": 0.338
+        },
+        {
+          "text": "ciba",
+          "start": 14.485,
+          "duration": 0.412
+        },
+        {
+          "text": "e",
+          "start": 14.912,
+          "duration": 0.059
+        },
+        {
+          "text": "implicit",
+          "start": 14.985,
+          "duration": 0.735
+        },
+        {
+          "text": "Un",
+          "start": 16.731,
+          "duration": 0.265
+        },
+        {
+          "text": "patrón",
+          "start": 17.01,
+          "duration": 0.353
+        },
+        {
+          "text": "strategy",
+          "start": 17.378,
+          "duration": 0.632
+        },
+        {
+          "text": "despacha",
+          "start": 18.025,
+          "duration": 0.559
+        },
+        {
+          "text": "cada",
+          "start": 18.599,
+          "duration": 0.265
+        },
+        {
+          "text": "grant",
+          "start": 18.878,
+          "duration": 0.309
+        },
+        {
+          "text": "a",
+          "start": 19.201,
+          "duration": 0.044
+        },
+        {
+          "text": "su",
+          "start": 19.26,
+          "duration": 0.147
+        },
+        {
+          "text": "handler",
+          "start": 19.422,
+          "duration": 0.647
+        }
+      ]
     },
     {
       "id": "scene-07-userinfo",
@@ -82,10 +1541,214 @@
       "title": "UserInfo, Introspection y Revocation",
       "text": "UserInfo devuelve los claims del usuario a partir del access token. Introspection responde siempre con active verdadero o falso, sin revelar si el token existía. Revocation registra el jti o revoca toda la familia de refresh tokens.",
       "audio": "audio/segments/seg-07.mp3",
-      "start": 96.144,
-      "duration": 13.36,
-      "audioStart": 97.044,
-      "audioDuration": 11.76
+      "start": 142.08,
+      "duration": 19.876,
+      "audioStart": 142.98,
+      "audioDuration": 17.976,
+      "highlights": [
+        {
+          "key": "card-userinfo",
+          "start": 0.1,
+          "end": 1.321
+        },
+        {
+          "key": "card-introspection",
+          "start": 5.255875,
+          "end": 6.741
+        },
+        {
+          "key": "card-revocation",
+          "start": 12.43675,
+          "end": 13.834
+        }
+      ],
+      "words": [
+        {
+          "text": "UserInfo",
+          "start": 0.1,
+          "duration": 0.75
+        },
+        {
+          "text": "devuelve",
+          "start": 0.865,
+          "duration": 0.456
+        },
+        {
+          "text": "los",
+          "start": 1.335,
+          "duration": 0.206
+        },
+        {
+          "text": "claims",
+          "start": 1.556,
+          "duration": 0.294
+        },
+        {
+          "text": "del",
+          "start": 1.865,
+          "duration": 0.147
+        },
+        {
+          "text": "usuario",
+          "start": 2.026,
+          "duration": 0.5
+        },
+        {
+          "text": "a",
+          "start": 2.541,
+          "duration": 0.059
+        },
+        {
+          "text": "partir",
+          "start": 2.615,
+          "duration": 0.426
+        },
+        {
+          "text": "del",
+          "start": 3.056,
+          "duration": 0.147
+        },
+        {
+          "text": "access",
+          "start": 3.218,
+          "duration": 0.382
+        },
+        {
+          "text": "token",
+          "start": 3.615,
+          "duration": 0.618
+        },
+        {
+          "text": "Introspection",
+          "start": 5.256,
+          "duration": 0.926
+        },
+        {
+          "text": "responde",
+          "start": 6.197,
+          "duration": 0.544
+        },
+        {
+          "text": "siempre",
+          "start": 6.756,
+          "duration": 0.397
+        },
+        {
+          "text": "con",
+          "start": 7.168,
+          "duration": 0.191
+        },
+        {
+          "text": "active",
+          "start": 7.374,
+          "duration": 0.338
+        },
+        {
+          "text": "verdadero",
+          "start": 7.726,
+          "duration": 0.559
+        },
+        {
+          "text": "o",
+          "start": 8.3,
+          "duration": 0.074
+        },
+        {
+          "text": "falso",
+          "start": 8.388,
+          "duration": 0.559
+        },
+        {
+          "text": "sin",
+          "start": 9.226,
+          "duration": 0.235
+        },
+        {
+          "text": "revelar",
+          "start": 9.476,
+          "duration": 0.515
+        },
+        {
+          "text": "si",
+          "start": 10.006,
+          "duration": 0.132
+        },
+        {
+          "text": "el",
+          "start": 10.153,
+          "duration": 0.118
+        },
+        {
+          "text": "token",
+          "start": 10.285,
+          "duration": 0.324
+        },
+        {
+          "text": "existía",
+          "start": 10.624,
+          "duration": 0.794
+        },
+        {
+          "text": "Revocation",
+          "start": 12.437,
+          "duration": 0.824
+        },
+        {
+          "text": "registra",
+          "start": 13.275,
+          "duration": 0.559
+        },
+        {
+          "text": "el",
+          "start": 13.849,
+          "duration": 0.103
+        },
+        {
+          "text": "jti",
+          "start": 13.966,
+          "duration": 0.25
+        },
+        {
+          "text": "o",
+          "start": 14.231,
+          "duration": 0.059
+        },
+        {
+          "text": "revoca",
+          "start": 14.304,
+          "duration": 0.485
+        },
+        {
+          "text": "toda",
+          "start": 14.804,
+          "duration": 0.25
+        },
+        {
+          "text": "la",
+          "start": 15.069,
+          "duration": 0.103
+        },
+        {
+          "text": "familia",
+          "start": 15.187,
+          "duration": 0.412
+        },
+        {
+          "text": "de",
+          "start": 15.613,
+          "duration": 0.088
+        },
+        {
+          "text": "refresh",
+          "start": 15.716,
+          "duration": 0.441
+        },
+        {
+          "text": "tokens",
+          "start": 16.172,
+          "duration": 0.75
+        }
+      ]
     },
     {
       "id": "scene-08-sesion",
@@ -94,58 +1757,1168 @@
       "title": "Sesión y Logout",
       "text": "Hay tres sesiones: la del OP, que habilita el SSO; la del cliente, con su propia cookie; y el sid, que conecta el id token con la sesión del OP. El logout usa connect end session con id token hint y post logout redirect uri. El prompt admite none, login, consent o select account.",
       "audio": "audio/segments/seg-08.mp3",
-      "start": 109.504,
-      "duration": 16.72,
-      "audioStart": 110.404,
-      "audioDuration": 15.12
+      "start": 161.956,
+      "duration": 25.012,
+      "audioStart": 162.856,
+      "audioDuration": 23.112,
+      "highlights": [
+        {
+          "key": "card-op",
+          "start": 1.702958,
+          "end": 2.423
+        },
+        {
+          "key": "card-cliente",
+          "start": 4.497041,
+          "end": 5.365
+        },
+        {
+          "key": "card-sid",
+          "start": 7.158833,
+          "end": 7.644
+        },
+        {
+          "key": "card-logout",
+          "start": 12.005875,
+          "end": 12.947
+        },
+        {
+          "key": "card-prompt",
+          "start": 17.96175,
+          "end": 18.976
+        }
+      ],
+      "words": [
+        {
+          "text": "Hay",
+          "start": 0.1,
+          "duration": 0.324
+        },
+        {
+          "text": "tres",
+          "start": 0.438,
+          "duration": 0.265
+        },
+        {
+          "text": "sesiones",
+          "start": 0.718,
+          "duration": 0.662
+        },
+        {
+          "text": "la",
+          "start": 1.703,
+          "duration": 0.118
+        },
+        {
+          "text": "del",
+          "start": 1.835,
+          "duration": 0.191
+        },
+        {
+          "text": "OP",
+          "start": 2.041,
+          "duration": 0.382
+        },
+        {
+          "text": "que",
+          "start": 2.732,
+          "duration": 0.118
+        },
+        {
+          "text": "habilita",
+          "start": 2.865,
+          "duration": 0.456
+        },
+        {
+          "text": "el",
+          "start": 3.335,
+          "duration": 0.103
+        },
+        {
+          "text": "SSO",
+          "start": 3.453,
+          "duration": 0.765
+        },
+        {
+          "text": "la",
+          "start": 4.497,
+          "duration": 0.103
+        },
+        {
+          "text": "del",
+          "start": 4.615,
+          "duration": 0.162
+        },
+        {
+          "text": "cliente",
+          "start": 4.791,
+          "duration": 0.574
+        },
+        {
+          "text": "con",
+          "start": 5.615,
+          "duration": 0.206
+        },
+        {
+          "text": "su",
+          "start": 5.835,
+          "duration": 0.132
+        },
+        {
+          "text": "propia",
+          "start": 5.982,
+          "duration": 0.353
+        },
+        {
+          "text": "cookie",
+          "start": 6.35,
+          "duration": 0.471
+        },
+        {
+          "text": "y",
+          "start": 7.085,
+          "duration": 0.059
+        },
+        {
+          "text": "el",
+          "start": 7.159,
+          "duration": 0.147
+        },
+        {
+          "text": "sid",
+          "start": 7.321,
+          "duration": 0.324
+        },
+        {
+          "text": "que",
+          "start": 8.035,
+          "duration": 0.235
+        },
+        {
+          "text": "conecta",
+          "start": 8.285,
+          "duration": 0.471
+        },
+        {
+          "text": "el",
+          "start": 8.771,
+          "duration": 0.118
+        },
+        {
+          "text": "id",
+          "start": 8.903,
+          "duration": 0.235
+        },
+        {
+          "text": "token",
+          "start": 9.153,
+          "duration": 0.412
+        },
+        {
+          "text": "con",
+          "start": 9.579,
+          "duration": 0.176
+        },
+        {
+          "text": "la",
+          "start": 9.771,
+          "duration": 0.118
+        },
+        {
+          "text": "sesión",
+          "start": 9.903,
+          "duration": 0.397
+        },
+        {
+          "text": "del",
+          "start": 10.315,
+          "duration": 0.162
+        },
+        {
+          "text": "OP",
+          "start": 10.491,
+          "duration": 0.5
+        },
+        {
+          "text": "El",
+          "start": 12.006,
+          "duration": 0.25
+        },
+        {
+          "text": "logout",
+          "start": 12.271,
+          "duration": 0.441
+        },
+        {
+          "text": "usa",
+          "start": 12.726,
+          "duration": 0.221
+        },
+        {
+          "text": "connect",
+          "start": 12.962,
+          "duration": 0.397
+        },
+        {
+          "text": "end",
+          "start": 13.374,
+          "duration": 0.132
+        },
+        {
+          "text": "session",
+          "start": 13.521,
+          "duration": 0.441
+        },
+        {
+          "text": "con",
+          "start": 13.976,
+          "duration": 0.191
+        },
+        {
+          "text": "id",
+          "start": 14.182,
+          "duration": 0.206
+        },
+        {
+          "text": "token",
+          "start": 14.403,
+          "duration": 0.426
+        },
+        {
+          "text": "hint",
+          "start": 14.844,
+          "duration": 0.338
+        },
+        {
+          "text": "y",
+          "start": 15.197,
+          "duration": 0.044
+        },
+        {
+          "text": "post",
+          "start": 15.256,
+          "duration": 0.265
+        },
+        {
+          "text": "logout",
+          "start": 15.535,
+          "duration": 0.412
+        },
+        {
+          "text": "redirect",
+          "start": 15.962,
+          "duration": 0.515
+        },
+        {
+          "text": "uri",
+          "start": 16.491,
+          "duration": 0.456
+        },
+        {
+          "text": "El",
+          "start": 17.962,
+          "duration": 0.294
+        },
+        {
+          "text": "prompt",
+          "start": 18.271,
+          "duration": 0.279
+        },
+        {
+          "text": "admite",
+          "start": 18.565,
+          "duration": 0.412
+        },
+        {
+          "text": "none",
+          "start": 18.991,
+          "duration": 0.382
+        },
+        {
+          "text": "login",
+          "start": 19.756,
+          "duration": 0.485
+        },
+        {
+          "text": "consent",
+          "start": 20.535,
+          "duration": 0.5
+        },
+        {
+          "text": "o",
+          "start": 21.05,
+          "duration": 0.044
+        },
+        {
+          "text": "select",
+          "start": 21.109,
+          "duration": 0.397
+        },
+        {
+          "text": "account",
+          "start": 21.521,
+          "duration": 0.544
+        }
+      ]
     },
     {
       "id": "scene-09-avanzados",
       "index": 9,
       "kicker": "Avanzado",
       "title": "Flujos Avanzados",
-      "text": "Tenemos PAR implementado, el flujo híbrido code id token para GAUDI, y device y CIBA simulados para completar el discovery. PAR usa request uri y envía los parámetros sensibles por back-channel.",
+      "text": "Tenemos PAR implementado, el flujo híbrido code id token para el sistema interno, y device y CIBA simulados para completar el discovery. PAR usa request uri y envía los parámetros sensibles por back-channel.",
       "audio": "audio/segments/seg-09.mp3",
-      "start": 126.224,
-      "duration": 11.176,
-      "audioStart": 127.124,
-      "audioDuration": 9.576
+      "start": 186.968,
+      "duration": 17.284,
+      "audioStart": 187.868,
+      "audioDuration": 15.384,
+      "highlights": [
+        {
+          "key": "card-par",
+          "start": 0.673541,
+          "end": 1.688
+        },
+        {
+          "key": "card-hibrido",
+          "start": 2.173541,
+          "end": 2.938
+        },
+        {
+          "key": "card-device",
+          "start": 5.804416,
+          "end": 7.378
+        },
+        {
+          "key": "card-par",
+          "start": 10.094125,
+          "end": 11.315
+        }
+      ],
+      "words": [
+        {
+          "text": "Tenemos",
+          "start": 0.1,
+          "duration": 0.559
+        },
+        {
+          "text": "PAR",
+          "start": 0.674,
+          "duration": 0.162
+        },
+        {
+          "text": "implementado",
+          "start": 0.85,
+          "duration": 0.838
+        },
+        {
+          "text": "el",
+          "start": 1.997,
+          "duration": 0.162
+        },
+        {
+          "text": "flujo",
+          "start": 2.174,
+          "duration": 0.397
+        },
+        {
+          "text": "híbrido",
+          "start": 2.585,
+          "duration": 0.353
+        },
+        {
+          "text": "code",
+          "start": 2.953,
+          "duration": 0.324
+        },
+        {
+          "text": "id",
+          "start": 3.291,
+          "duration": 0.206
+        },
+        {
+          "text": "token",
+          "start": 3.512,
+          "duration": 0.412
+        },
+        {
+          "text": "para",
+          "start": 3.938,
+          "duration": 0.176
+        },
+        {
+          "text": "el",
+          "start": 4.129,
+          "duration": 0.088
+        },
+        {
+          "text": "sistema",
+          "start": 4.232,
+          "duration": 0.412
+        },
+        {
+          "text": "interno",
+          "start": 4.659,
+          "duration": 0.574
+        },
+        {
+          "text": "y",
+          "start": 5.599,
+          "duration": 0.191
+        },
+        {
+          "text": "device",
+          "start": 5.804,
+          "duration": 0.441
+        },
+        {
+          "text": "y",
+          "start": 6.26,
+          "duration": 0.074
+        },
+        {
+          "text": "CIBA",
+          "start": 6.349,
+          "duration": 0.309
+        },
+        {
+          "text": "simulados",
+          "start": 6.672,
+          "duration": 0.706
+        },
+        {
+          "text": "para",
+          "start": 7.393,
+          "duration": 0.206
+        },
+        {
+          "text": "completar",
+          "start": 7.613,
+          "duration": 0.574
+        },
+        {
+          "text": "el",
+          "start": 8.201,
+          "duration": 0.088
+        },
+        {
+          "text": "discovery",
+          "start": 8.304,
+          "duration": 0.779
+        },
+        {
+          "text": "PAR",
+          "start": 10.094,
+          "duration": 0.265
+        },
+        {
+          "text": "usa",
+          "start": 10.374,
+          "duration": 0.235
+        },
+        {
+          "text": "request",
+          "start": 10.624,
+          "duration": 0.456
+        },
+        {
+          "text": "uri",
+          "start": 11.094,
+          "duration": 0.221
+        },
+        {
+          "text": "y",
+          "start": 11.329,
+          "duration": 0.044
+        },
+        {
+          "text": "envía",
+          "start": 11.388,
+          "duration": 0.368
+        },
+        {
+          "text": "los",
+          "start": 11.771,
+          "duration": 0.191
+        },
+        {
+          "text": "parámetros",
+          "start": 11.976,
+          "duration": 0.588
+        },
+        {
+          "text": "sensibles",
+          "start": 12.579,
+          "duration": 0.618
+        },
+        {
+          "text": "por",
+          "start": 13.212,
+          "duration": 0.191
+        },
+        {
+          "text": "back-channel",
+          "start": 13.418,
+          "duration": 0.912
+        }
+      ]
     },
     {
       "id": "scene-10-matriz",
       "index": 10,
       "kicker": "Resumen",
       "title": "Matriz de Paridad",
-      "text": "La matriz de paridad compara la teoría, el BCCR real y OidcMock. Los tokens tienen vidas definidas: el código cinco minutos, el access token y el id token treinta minutos, y el refresh token ocho horas. Los errores siguen los códigos HTTP definidos por RFC.",
+      "text": "La matriz de paridad compara la teoría, el servidor de referencia y OidcMock. Los tokens tienen vidas definidas: el código cinco minutos, el access token y el id token treinta minutos, y el refresh token ocho horas. Los errores siguen los códigos HTTP definidos por RFC.",
       "audio": "audio/segments/seg-10.mp3",
-      "start": 137.4,
-      "duration": 16.072,
-      "audioStart": 138.3,
-      "audioDuration": 14.472
+      "start": 204.252,
+      "duration": 24.052,
+      "audioStart": 205.152,
+      "audioDuration": 22.152,
+      "highlights": [
+        {
+          "key": "row-code",
+          "start": 8.417666,
+          "end": 9.962
+        },
+        {
+          "key": "row-access",
+          "start": 10.226458,
+          "end": 11.212
+        },
+        {
+          "key": "row-id",
+          "start": 11.3,
+          "end": 12.462
+        },
+        {
+          "key": "row-refresh",
+          "start": 13.68675,
+          "end": 15.643
+        },
+        {
+          "key": "card-errores",
+          "start": 16.652958,
+          "end": 17.8
+        }
+      ],
+      "words": [
+        {
+          "text": "La",
+          "start": 0.104,
+          "duration": 0.25
+        },
+        {
+          "text": "matriz",
+          "start": 0.369,
+          "duration": 0.368
+        },
+        {
+          "text": "de",
+          "start": 0.751,
+          "duration": 0.103
+        },
+        {
+          "text": "paridad",
+          "start": 0.869,
+          "duration": 0.471
+        },
+        {
+          "text": "compara",
+          "start": 1.354,
+          "duration": 0.426
+        },
+        {
+          "text": "la",
+          "start": 1.796,
+          "duration": 0.132
+        },
+        {
+          "text": "teoría",
+          "start": 1.943,
+          "duration": 0.544
+        },
+        {
+          "text": "el",
+          "start": 2.81,
+          "duration": 0.132
+        },
+        {
+          "text": "servidor",
+          "start": 2.957,
+          "duration": 0.529
+        },
+        {
+          "text": "de",
+          "start": 3.501,
+          "duration": 0.103
+        },
+        {
+          "text": "referencia",
+          "start": 3.619,
+          "duration": 0.662
+        },
+        {
+          "text": "y",
+          "start": 4.296,
+          "duration": 0.074
+        },
+        {
+          "text": "OidcMock",
+          "start": 4.384,
+          "duration": 0.529
+        },
+        {
+          "text": "Los",
+          "start": 5.932,
+          "duration": 0.368
+        },
+        {
+          "text": "tokens",
+          "start": 6.315,
+          "duration": 0.456
+        },
+        {
+          "text": "tienen",
+          "start": 6.785,
+          "duration": 0.324
+        },
+        {
+          "text": "vidas",
+          "start": 7.124,
+          "duration": 0.309
+        },
+        {
+          "text": "definidas",
+          "start": 7.447,
+          "duration": 0.676
+        },
+        {
+          "text": "el",
+          "start": 8.418,
+          "duration": 0.118
+        },
+        {
+          "text": "código",
+          "start": 8.55,
+          "duration": 0.426
+        },
+        {
+          "text": "cinco",
+          "start": 8.991,
+          "duration": 0.338
+        },
+        {
+          "text": "minutos",
+          "start": 9.344,
+          "duration": 0.618
+        },
+        {
+          "text": "el",
+          "start": 10.226,
+          "duration": 0.132
+        },
+        {
+          "text": "access",
+          "start": 10.374,
+          "duration": 0.426
+        },
+        {
+          "text": "token",
+          "start": 10.815,
+          "duration": 0.397
+        },
+        {
+          "text": "y",
+          "start": 11.226,
+          "duration": 0.059
+        },
+        {
+          "text": "el",
+          "start": 11.3,
+          "duration": 0.132
+        },
+        {
+          "text": "id",
+          "start": 11.447,
+          "duration": 0.221
+        },
+        {
+          "text": "token",
+          "start": 11.682,
+          "duration": 0.412
+        },
+        {
+          "text": "treinta",
+          "start": 12.109,
+          "duration": 0.353
+        },
+        {
+          "text": "minutos",
+          "start": 12.476,
+          "duration": 0.632
+        },
+        {
+          "text": "y",
+          "start": 13.481,
+          "duration": 0.191
+        },
+        {
+          "text": "el",
+          "start": 13.687,
+          "duration": 0.103
+        },
+        {
+          "text": "refresh",
+          "start": 13.804,
+          "duration": 0.485
+        },
+        {
+          "text": "token",
+          "start": 14.304,
+          "duration": 0.397
+        },
+        {
+          "text": "ocho",
+          "start": 14.716,
+          "duration": 0.294
+        },
+        {
+          "text": "horas",
+          "start": 15.025,
+          "duration": 0.618
+        },
+        {
+          "text": "Los",
+          "start": 16.653,
+          "duration": 0.397
+        },
+        {
+          "text": "errores",
+          "start": 17.065,
+          "duration": 0.412
+        },
+        {
+          "text": "siguen",
+          "start": 17.491,
+          "duration": 0.309
+        },
+        {
+          "text": "los",
+          "start": 17.815,
+          "duration": 0.191
+        },
+        {
+          "text": "códigos",
+          "start": 18.021,
+          "duration": 0.515
+        },
+        {
+          "text": "HTTP",
+          "start": 18.55,
+          "duration": 0.706
+        },
+        {
+          "text": "definidos",
+          "start": 19.271,
+          "duration": 0.662
+        },
+        {
+          "text": "por",
+          "start": 19.947,
+          "duration": 0.206
+        },
+        {
+          "text": "RFC",
+          "start": 20.168,
+          "duration": 0.926
+        }
+      ]
     },
     {
       "id": "scene-11-arranque",
       "index": 11,
       "kicker": "Práctico",
       "title": "Arrancar OidcMock",
-      "text": "Para arrancar OidcMock ejecutamos dotnet run sobre el proyecto Host, con el issuer configurado por opciones, HTTPS o HTTP, y los clientes de ejemplo declarados en JSON. Todo el estado vive en memoria, sin base de datos.",
+      "text": "Para arrancar OidcMock ejecutamos dotnet run sobre el proyecto Host. El issuer se configura por opciones, HTTPS o HTTP, y los clientes de ejemplo se declaran en JSON. Todo el estado vive en memoria, sin base de datos.",
       "audio": "audio/segments/seg-11.mp3",
-      "start": 153.472,
-      "duration": 13.24,
-      "audioStart": 154.372,
-      "audioDuration": 11.64
+      "start": 228.304,
+      "duration": 20.644,
+      "audioStart": 229.204,
+      "audioDuration": 18.744,
+      "highlights": [
+        {
+          "key": "cmd-run",
+          "start": 2.158833,
+          "end": 2.894
+        },
+        {
+          "key": "cmd-issuer",
+          "start": 5.255875,
+          "end": 6.756
+        },
+        {
+          "key": "card-clientes",
+          "start": 10.480875,
+          "end": 11.76
+        }
+      ],
+      "words": [
+        {
+          "text": "Para",
+          "start": 0.1,
+          "duration": 0.324
+        },
+        {
+          "text": "arrancar",
+          "start": 0.438,
+          "duration": 0.529
+        },
+        {
+          "text": "OidcMock",
+          "start": 0.982,
+          "duration": 0.426
+        },
+        {
+          "text": "ejecutamos",
+          "start": 1.424,
+          "duration": 0.721
+        },
+        {
+          "text": "dotnet",
+          "start": 2.159,
+          "duration": 0.456
+        },
+        {
+          "text": "run",
+          "start": 2.629,
+          "duration": 0.265
+        },
+        {
+          "text": "sobre",
+          "start": 2.909,
+          "duration": 0.265
+        },
+        {
+          "text": "el",
+          "start": 3.188,
+          "duration": 0.074
+        },
+        {
+          "text": "proyecto",
+          "start": 3.276,
+          "duration": 0.471
+        },
+        {
+          "text": "Host",
+          "start": 3.762,
+          "duration": 0.471
+        },
+        {
+          "text": "El",
+          "start": 5.256,
+          "duration": 0.265
+        },
+        {
+          "text": "issuer",
+          "start": 5.535,
+          "duration": 0.441
+        },
+        {
+          "text": "se",
+          "start": 5.991,
+          "duration": 0.132
+        },
+        {
+          "text": "configura",
+          "start": 6.138,
+          "duration": 0.618
+        },
+        {
+          "text": "por",
+          "start": 6.771,
+          "duration": 0.176
+        },
+        {
+          "text": "opciones",
+          "start": 6.962,
+          "duration": 0.618
+        },
+        {
+          "text": "HTTPS",
+          "start": 7.888,
+          "duration": 1.088
+        },
+        {
+          "text": "o",
+          "start": 8.991,
+          "duration": 0.103
+        },
+        {
+          "text": "HTTP",
+          "start": 9.109,
+          "duration": 0.824
+        },
+        {
+          "text": "y",
+          "start": 10.304,
+          "duration": 0.162
+        },
+        {
+          "text": "los",
+          "start": 10.481,
+          "duration": 0.191
+        },
+        {
+          "text": "clientes",
+          "start": 10.687,
+          "duration": 0.456
+        },
+        {
+          "text": "de",
+          "start": 11.157,
+          "duration": 0.088
+        },
+        {
+          "text": "ejemplo",
+          "start": 11.26,
+          "duration": 0.5
+        },
+        {
+          "text": "se",
+          "start": 11.775,
+          "duration": 0.147
+        },
+        {
+          "text": "declaran",
+          "start": 11.937,
+          "duration": 0.456
+        },
+        {
+          "text": "en",
+          "start": 12.407,
+          "duration": 0.132
+        },
+        {
+          "text": "JSON",
+          "start": 12.554,
+          "duration": 0.632
+        },
+        {
+          "text": "Todo",
+          "start": 14.197,
+          "duration": 0.368
+        },
+        {
+          "text": "el",
+          "start": 14.579,
+          "duration": 0.074
+        },
+        {
+          "text": "estado",
+          "start": 14.668,
+          "duration": 0.426
+        },
+        {
+          "text": "vive",
+          "start": 15.109,
+          "duration": 0.294
+        },
+        {
+          "text": "en",
+          "start": 15.418,
+          "duration": 0.103
+        },
+        {
+          "text": "memoria",
+          "start": 15.535,
+          "duration": 0.574
+        },
+        {
+          "text": "sin",
+          "start": 16.359,
+          "duration": 0.206
+        },
+        {
+          "text": "base",
+          "start": 16.579,
+          "duration": 0.309
+        },
+        {
+          "text": "de",
+          "start": 16.903,
+          "duration": 0.118
+        },
+        {
+          "text": "datos",
+          "start": 17.035,
+          "duration": 0.662
+        }
+      ]
     },
     {
       "id": "scene-12-outro",
       "index": 12,
       "kicker": "Cierre",
       "title": "Desarrolla sin dependencias externas",
-      "text": "OidcMock replica el comportamiento del BCCR para desarrollo local, con configuración JSON y estado en memoria, y nunca debe exponerse fuera de localhost. Gracias por ver.",
+      "text": "OidcMock replica el comportamiento del servidor de referencia para desarrollo local, con configuración JSON y estado en memoria, y nunca debe exponerse fuera de localhost. Gracias por ver.",
       "audio": "audio/segments/seg-12.mp3",
-      "start": 166.712,
-      "duration": 10.504,
-      "audioStart": 167.612,
-      "audioDuration": 8.904
+      "start": 248.948,
+      "duration": 15.94,
+      "audioStart": 249.848,
+      "audioDuration": 14.04,
+      "highlights": [
+        {
+          "key": "lede",
+          "start": 0.73675,
+          "end": 2.207
+        },
+        {
+          "key": "code-localhost",
+          "start": 10.094125,
+          "end": 10.741
+        }
+      ],
+      "words": [
+        {
+          "text": "OidcMock",
+          "start": 0.104,
+          "duration": 0.618
+        },
+        {
+          "text": "replica",
+          "start": 0.737,
+          "duration": 0.515
+        },
+        {
+          "text": "el",
+          "start": 1.266,
+          "duration": 0.088
+        },
+        {
+          "text": "comportamiento",
+          "start": 1.369,
+          "duration": 0.838
+        },
+        {
+          "text": "del",
+          "start": 2.222,
+          "duration": 0.162
+        },
+        {
+          "text": "servidor",
+          "start": 2.399,
+          "duration": 0.515
+        },
+        {
+          "text": "de",
+          "start": 2.928,
+          "duration": 0.088
+        },
+        {
+          "text": "referencia",
+          "start": 3.031,
+          "duration": 0.647
+        },
+        {
+          "text": "para",
+          "start": 3.693,
+          "duration": 0.206
+        },
+        {
+          "text": "desarrollo",
+          "start": 3.913,
+          "duration": 0.559
+        },
+        {
+          "text": "local",
+          "start": 4.487,
+          "duration": 0.456
+        },
+        {
+          "text": "con",
+          "start": 5.256,
+          "duration": 0.309
+        },
+        {
+          "text": "configuración",
+          "start": 5.579,
+          "duration": 0.882
+        },
+        {
+          "text": "JSON",
+          "start": 6.476,
+          "duration": 0.338
+        },
+        {
+          "text": "y",
+          "start": 6.829,
+          "duration": 0.059
+        },
+        {
+          "text": "estado",
+          "start": 6.903,
+          "duration": 0.397
+        },
+        {
+          "text": "en",
+          "start": 7.315,
+          "duration": 0.088
+        },
+        {
+          "text": "memoria",
+          "start": 7.418,
+          "duration": 0.588
+        },
+        {
+          "text": "y",
+          "start": 8.374,
+          "duration": 0.029
+        },
+        {
+          "text": "nunca",
+          "start": 8.418,
+          "duration": 0.338
+        },
+        {
+          "text": "debe",
+          "start": 8.771,
+          "duration": 0.206
+        },
+        {
+          "text": "exponerse",
+          "start": 8.991,
+          "duration": 0.706
+        },
+        {
+          "text": "fuera",
+          "start": 9.712,
+          "duration": 0.265
+        },
+        {
+          "text": "de",
+          "start": 9.991,
+          "duration": 0.088
+        },
+        {
+          "text": "localhost",
+          "start": 10.094,
+          "duration": 0.647
+        },
+        {
+          "text": "Gracias",
+          "start": 11.794,
+          "duration": 0.588
+        },
+        {
+          "text": "por",
+          "start": 12.397,
+          "duration": 0.176
+        },
+        {
+          "text": "ver",
+          "start": 12.588,
+          "duration": 0.426
+        }
+      ]
     }
   ]
 }

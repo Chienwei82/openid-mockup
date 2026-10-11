@@ -8,12 +8,16 @@
     "audio": "node scripts/generate_audio.mjs",
     "build": "python3 scripts/build_composition.py",
     "check": "hyperframes check .",
-    "render": "hyperframes render . --quality standard -o dist/oidc-explainer.mp4",
-    "preview": "hyperframes preview ."
+    "dev": "hyperframes preview .",
+    "preview": "hyperframes preview .",
+    "stop": "hyperframes preview . --stop",
+    "render": "hyperframes render . --quality standard -o dist/oidc-explainer.mp4"
+  },
+  "allowScripts": {
+    "esbuild": true
   },
   "devDependencies": {
-    "hyperframes": "^0.8.140",
-    "yauzl": "^3.4.0"
+    "hyperframes": "^0.8.140"
   },
   "dependencies": {
     "@lobehub/tts": "^5.2.1",

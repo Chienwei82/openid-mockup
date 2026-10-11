@@ -4,23 +4,79 @@
     data-composition-id="scene-05-idtoken"
     data-width="1920"
     data-height="1080"
-    data-duration="17.224"
+    data-duration="25.78"
   >
-<section class="scene"><header class="scene__head"><span class="kicker" data-anim>Claims</span><h2 class="headline" data-anim>ID Token y Claims</h2></header><div class="grid grid--2"><article class="card" data-anim><h3 class="card__title">Claims del JWT</h3><p class="card__label">Obligatorios</p><div class="chiprow"><span class="chip chip--accent">iss</span><span class="chip chip--accent">sub</span><span class="chip chip--accent">aud</span><span class="chip chip--accent">exp</span><span class="chip chip--accent">iat</span><span class="chip chip--accent">nonce</span></div><p class="card__label">Binding</p><div class="chiprow"><span class="chip">at_hash</span><span class="chip">c_hash</span><span class="chip">sid</span></div></article><article class="card" data-anim><h3 class="card__title">Proyección por scope</h3><ul class="list"><li><strong>openid</strong> → sub</li><li><strong>profile</strong> → name, given_name, family_name, locale</li><li><strong>email</strong> → email, email_verified</li><li><strong>address</strong> → address</li></ul></article></div></section>
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Claims</span><h2 class="headline" data-anim="rise">ID Token y Claims</h2></header><div class="grid grid--2"><article class="card" data-anim="rise"><h3 class="card__title">Claims del JWT</h3><p class="card__label">Obligatorios</p><div class="chiprow" data-anim="fade"><span class="chip chip--accent" data-hl="chip-iss">iss</span><span class="chip chip--accent" data-hl="chip-sub">sub</span><span class="chip chip--accent" data-hl="chip-aud">aud</span><span class="chip chip--accent" data-hl="chip-exp">exp</span><span class="chip chip--accent" data-hl="chip-iat">iat</span><span class="chip chip--accent" data-hl="chip-nonce">nonce</span></div><p class="card__label">Binding</p><div class="chiprow" data-anim="fade" data-hl="chiprow-binding"><span class="chip">at_hash</span><span class="chip">c_hash</span><span class="chip">sid</span></div></article><article class="card" data-anim="rise" data-hl="card-scope"><h3 class="card__title">Proyección por scope</h3><ul class="list"><li><strong>openid</strong> → sub</li><li><strong>profile</strong> → name, given_name, family_name, locale</li><li><strong>email</strong> → email, email_verified</li><li><strong>address</strong> → address</li></ul></article></div></section>
 
     <script>
       (function () {
         var root = document.querySelector('[data-composition-id="scene-05-idtoken"]');
         if (!root || typeof gsap === 'undefined') { return; }
-        var items = root.querySelectorAll('[data-anim]');
         var timeline = gsap.timeline({ paused: true });
+
+        var FROM = {
+          rise: { opacity: 0, y: 36 },
+          pop: { opacity: 0, y: 22, scale: 0.92 },
+          slide: { opacity: 0, x: -40 },
+          fade: { opacity: 0 },
+        };
+        var items = root.querySelectorAll('[data-anim]');
         for (var index = 0; index < items.length; index += 1) {
+          var from = FROM[items[index].getAttribute('data-anim')] || FROM.rise;
           timeline.from(
             items[index],
-            { opacity: 0, y: 36, duration: 0.65, ease: 'power3.out' },
-            0.45 + index * 0.16
+            Object.assign({ duration: 0.65, ease: 'power3.out' }, from),
+            0.45 + index * 0.24
           );
         }
+
+        var HIGHLIGHTS = {"chip-iss": [[8.763, 9.484]], "chip-sub": [[9.749, 10.146]], "chip-aud": [[10.425, 10.646]], "chip-exp": [[10.954, 11.263]], "chip-iat": [[11.631, 11.866]], "chip-nonce": [[11.94, 12.572]], "chiprow-binding": [[13.587, 14.896]], "card-scope": [[22.465, 23.715]]};
+        var targets = [];
+        Object.keys(HIGHLIGHTS).forEach(function (key) {
+          var el = root.querySelector('[data-hl="' + key + '"]');
+          if (el) { targets.push({ el: el, windows: HIGHLIGHTS[key] }); }
+        });
+        var ATTACK = 0.22;
+        var RELEASE = 0.55;
+        function envelope(time, start, end) {
+          if (time < start) { return 0; }
+          if (time < end) { return Math.min((time - start) / ATTACK, 1); }
+          if (time < end + RELEASE) { return 1 - (time - end) / RELEASE; }
+          return 0;
+        }
+        function paint(target, env) {
+          var el = target.el;
+          if (env <= 0.001) {
+            el.style.borderColor = '';
+            el.style.boxShadow = '';
+            el.style.textShadow = '';
+            return;
+          }
+          el.style.borderColor =
+            'rgb(' + Math.round(58 + 19 * env) + ', ' + Math.round(63 + 145 * env) + ', ' + Math.round(71 + 154 * env) + ')';
+          el.style.boxShadow = '0 0 ' + (36 * env).toFixed(1) + 'px rgba(77, 208, 225, ' + (0.28 * env).toFixed(3) + ')';
+          el.style.textShadow = '0 0 ' + (16 * env).toFixed(1) + 'px rgba(77, 208, 225, ' + (0.4 * env).toFixed(3) + ')';
+        }
+        var driver = { t: 0 };
+        timeline.to(
+          driver,
+          {
+            t: 25.78,
+            duration: 25.78,
+            ease: 'none',
+            onUpdate: function () {
+              for (var i = 0; i < targets.length; i += 1) {
+                var env = 0;
+                for (var w = 0; w < targets[i].windows.length; w += 1) {
+                  env = Math.max(env, envelope(driver.t, targets[i].windows[w][0], targets[i].windows[w][1]));
+                }
+                paint(targets[i], env);
+              }
+            },
+          },
+          0
+        );
+
         window.__timelines['scene-05-idtoken'] = timeline;
       })();
     </script>

@@ -20,35 +20,99 @@ WIDTH = 1920
 HEIGHT = 1080
 FPS = 30
 FIRST_ITEM_DELAY = 0.45
-STAGGER = 0.16
+STAGGER_MIN = 0.15
+STAGGER_MAX = 0.24
+STAGGER_SPREAD = 0.30
 VISUAL_TRACK = 1
 AUDIO_TRACK = 10
 
+# Cada escena anima sus entradas con cuatro variantes (data-anim="rise|pop|
+# slide|fade") y resalta en pantalla lo que la voz está pronunciando: un único
+# driver lineal recorre las ventanas de habla de timings.json y pinta cada
+# elemento [data-hl] con una envolvente ataque-sostén-caída (adaptado de la
+# receta asr-keyword-glow de hyperframes-animation). Solo se pintan bordes y
+# sombras de texto: nada que pueda empeorar el contraste AA auditado.
 SCENE_TEMPLATE = """<template>
   <div
     class="scene-root"
-    data-composition-id="{scene_id}"
-    data-width="{width}"
-    data-height="{height}"
-    data-duration="{duration}"
+    data-composition-id="__SCENE_ID__"
+    data-width="__WIDTH__"
+    data-height="__HEIGHT__"
+    data-duration="__DURATION__"
   >
-{body}
+__BODY__
 
     <script>
-      (function () {{
-        var root = document.querySelector('[data-composition-id="{scene_id}"]');
-        if (!root || typeof gsap === 'undefined') {{ return; }}
+      (function () {
+        var root = document.querySelector('[data-composition-id="__SCENE_ID__"]');
+        if (!root || typeof gsap === 'undefined') { return; }
+        var timeline = gsap.timeline({ paused: true });
+
+        var FROM = {
+          rise: { opacity: 0, y: 36 },
+          pop: { opacity: 0, y: 22, scale: 0.92 },
+          slide: { opacity: 0, x: -40 },
+          fade: { opacity: 0 },
+        };
         var items = root.querySelectorAll('[data-anim]');
-        var timeline = gsap.timeline({{ paused: true }});
-        for (var index = 0; index < items.length; index += 1) {{
+        for (var index = 0; index < items.length; index += 1) {
+          var from = FROM[items[index].getAttribute('data-anim')] || FROM.rise;
           timeline.from(
             items[index],
-            {{ opacity: 0, y: 36, duration: 0.65, ease: 'power3.out' }},
-            {first_delay} + index * {stagger}
+            Object.assign({ duration: 0.65, ease: 'power3.out' }, from),
+            __FIRST_DELAY__ + index * __STAGGER__
           );
-        }}
-        window.__timelines['{scene_id}'] = timeline;
-      }})();
+        }
+
+        var HIGHLIGHTS = __HIGHLIGHTS__;
+        var targets = [];
+        Object.keys(HIGHLIGHTS).forEach(function (key) {
+          var el = root.querySelector('[data-hl="' + key + '"]');
+          if (el) { targets.push({ el: el, windows: HIGHLIGHTS[key] }); }
+        });
+        var ATTACK = 0.22;
+        var RELEASE = 0.55;
+        function envelope(time, start, end) {
+          if (time < start) { return 0; }
+          if (time < end) { return Math.min((time - start) / ATTACK, 1); }
+          if (time < end + RELEASE) { return 1 - (time - end) / RELEASE; }
+          return 0;
+        }
+        function paint(target, env) {
+          var el = target.el;
+          if (env <= 0.001) {
+            el.style.borderColor = '';
+            el.style.boxShadow = '';
+            el.style.textShadow = '';
+            return;
+          }
+          el.style.borderColor =
+            'rgb(' + Math.round(58 + 19 * env) + ', ' + Math.round(63 + 145 * env) + ', ' + Math.round(71 + 154 * env) + ')';
+          el.style.boxShadow = '0 0 ' + (36 * env).toFixed(1) + 'px rgba(77, 208, 225, ' + (0.28 * env).toFixed(3) + ')';
+          el.style.textShadow = '0 0 ' + (16 * env).toFixed(1) + 'px rgba(77, 208, 225, ' + (0.4 * env).toFixed(3) + ')';
+        }
+        var driver = { t: 0 };
+        timeline.to(
+          driver,
+          {
+            t: __DURATION__,
+            duration: __DURATION__,
+            ease: 'none',
+            onUpdate: function () {
+              for (var i = 0; i < targets.length; i += 1) {
+                var env = 0;
+                for (var w = 0; w < targets[i].windows.length; w += 1) {
+                  env = Math.max(env, envelope(driver.t, targets[i].windows[w][0], targets[i].windows[w][1]));
+                }
+                paint(targets[i], env);
+              }
+            },
+          },
+          0
+        );
+
+        window.__timelines['__SCENE_ID__'] = timeline;
+      })();
     </script>
   </div>
 </template>
@@ -118,16 +182,40 @@ __AUDIOS__
 </html>
 """
 
-def build_scene(scene: dict[str, object]) -> None:
+def reveal_stagger(body: str, spoken: float) -> float:
+    items = max(body.count("data-anim=") - 1, 1)
+    spread = (spoken * STAGGER_SPREAD) / items
+    return round(min(STAGGER_MAX, max(STAGGER_MIN, spread)), 2)
+
+
+def highlight_windows(scene: dict[str, object], lead_in: float) -> dict[str, list[list[float]]]:
+    grouped: dict[str, list[list[float]]] = {}
+    for highlight in scene["highlights"]:
+        grouped.setdefault(str(highlight["key"]), []).append(
+            [
+                round(lead_in + float(highlight["start"]), 3),
+                round(lead_in + float(highlight["end"]), 3),
+            ]
+        )
+    return grouped
+
+
+def build_scene(scene: dict[str, object], lead_in: float) -> None:
     scene_id = str(scene["id"])
-    document = SCENE_TEMPLATE.format(
-        scene_id=scene_id,
-        width=WIDTH,
-        height=HEIGHT,
-        duration=scene["duration"],
-        body=SCENE_BODY[scene_id],
-        first_delay=FIRST_ITEM_DELAY,
-        stagger=STAGGER,
+    body = SCENE_BODY[scene_id]
+    windows = highlight_windows(scene, lead_in)
+    missing = [key for key in windows if f'data-hl="{key}"' not in body]
+    if missing:
+        print(f"aviso: {scene_id} resalta claves sin elemento data-hl: {missing}")
+    document = (
+        SCENE_TEMPLATE.replace("__SCENE_ID__", scene_id)
+        .replace("__WIDTH__", str(WIDTH))
+        .replace("__HEIGHT__", str(HEIGHT))
+        .replace("__DURATION__", str(scene["duration"]))
+        .replace("__BODY__", body)
+        .replace("__FIRST_DELAY__", str(FIRST_ITEM_DELAY))
+        .replace("__STAGGER__", str(reveal_stagger(body, float(scene["audioDuration"]))))
+        .replace("__HIGHLIGHTS__", json.dumps(windows))
     )
     (COMPOSITIONS_DIR / f"{scene_id}.html").write_text(document, encoding="utf-8")
 
@@ -179,7 +267,7 @@ def main() -> None:
 
     COMPOSITIONS_DIR.mkdir(exist_ok=True)
     for scene in scenes:
-        build_scene(scene)
+        build_scene(scene, float(timings["leadIn"]))
     build_orchestrator(scenes, timings["total"])
     print(f"index.html + {len(scenes)} composiciones · duración {timings['total']}s")
 
