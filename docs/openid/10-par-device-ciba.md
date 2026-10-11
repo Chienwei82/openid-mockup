@@ -1,6 +1,6 @@
 # 10 · PAR, Device y CIBA
 
-Tres flujos que no siguen el patrón "authorize → redirect con code" y que el discovery del BCCR anuncia.
+Tres flujos que no siguen el patrón "authorize → redirect con code" y que el discovery del servidor de referencia anuncia.
 El mock los cubre a niveles distintos: PAR **resuelto**, Device y CIBA **simulados**.
 
 ## 🟦 Teoría
@@ -58,7 +58,7 @@ center). El cliente obtiene un `auth_req_id` y **sondea** con el mismo ciclo que
 
 ## 🟩 Servidor real
 
-El BCCR anuncia los tres endpoints (`/connect/par`, `/connect/deviceauthorization`, `/connect/ciba`),
+El el servidor de referencia anuncia los tres endpoints (`/connect/par`, `/connect/deviceauthorization`, `/connect/ciba`),
 `require_pushed_authorization_requests: false` (PAR es opcional), y
 `backchannel_token_delivery_modes_supported: ["poll"]` (entrega por sondeo, no push).
 `backchannel_user_code_parameter_supported: true`.

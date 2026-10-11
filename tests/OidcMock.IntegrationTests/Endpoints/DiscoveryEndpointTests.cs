@@ -127,7 +127,7 @@ public sealed class DiscoveryEndpointTests
     [Fact]
     public async Task ElIssuerConfiguradoGanaAlHostDeLaPeticion()
     {
-        const string issuer = "https://oauth2.bccr.fi.cr/personafisica";
+        const string issuer = "https://oauth2.example.com/personafisica";
         using var factory = MockHost.Create()
             .WithWebHostBuilder(builder => builder.UseSetting(IssuerSettingName, issuer));
         using var client = factory.CreateClient();

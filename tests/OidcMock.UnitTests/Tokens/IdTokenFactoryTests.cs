@@ -69,7 +69,7 @@ public sealed class IdTokenFactoryTests
 
     /// <summary>
     /// El id_token del servidor real declara como se autentico al usuario y con que proveedor:
-    /// acr=possesionorinherence, amr=[sc] e idp=local, valores observados en la captura de GAUDI.
+    /// acr=possesionorinherence, amr=[sc] e idp=local, valores observados en la captura del sistema interno.
     /// </summary>
     [Fact]
     public void EmiteLosClaimsDeAutenticacionDelServidorReal()

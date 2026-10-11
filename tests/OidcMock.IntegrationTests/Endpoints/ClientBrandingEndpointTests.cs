@@ -12,9 +12,9 @@ namespace OidcMock.IntegrationTests.Endpoints;
 public sealed class ClientBrandingEndpointTests
 {
     private const string TestClientId = "fb02079c-3143-49e6-a776-dd9b002388d2";
-    private const string TestClientRedirectUri = "http://localhost:5173/pruebas/ves/landing";
+    private const string TestClientRedirectUri = "http://localhost:5173/pruebas/app/landing";
     private const string ExpectedDisplayName = "OidcMock - Pruebas Open ID";
-    private const string PreviousDisplayName = "Prueba GAUDI";
+    private const string PreviousDisplayName = "Prueba Sistema Interno";
 
     [Fact]
     public async Task ElClienteDePruebaSeLlamaPruebasOpenIdEnSuPantalla()

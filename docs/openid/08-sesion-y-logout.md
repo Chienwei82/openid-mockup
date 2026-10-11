@@ -71,7 +71,7 @@ sequenceDiagram
 ## 🟩 Servidor real
 
 El OP real mantiene sesión (SSO) y por eso `check_session_iframe` funciona de verdad: el cliente consulta
-si la sesión sigue viva y, si no, refresca. Soporta front-channel **y** back-channel logout (el BCCR
+si la sesión sigue viva y, si no, refresca. Soporta front-channel **y** back-channel logout (el servidor de referencia
 anuncia ambos). Cierra la sesión solo si la petición es válida; si no, responde error.
 
 ## 🟨 OidcMock

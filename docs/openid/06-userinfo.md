@@ -38,7 +38,7 @@ scopes. Si no, el cliente ve dos verdades distintas sobre la misma persona.
 ## 🟩 Servidor real
 
 El OP real aplica exactamente esas reglas y añade firma opcional de la respuesta
-(`userinfo_signing_alg_values_supported: ["RS256"]` en el BCCR) y rechazos finos (`insufficient_scope`
+(`userinfo_signing_alg_values_supported: ["RS256"]` en el servidor de referencia) y rechazos finos (`insufficient_scope`
 → 403 cuando el token no cubre el recurso). También, si el access_token es un JWT, puede leer los claims
 directamente del token en vez de consultar un store.
 

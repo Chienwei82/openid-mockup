@@ -23,10 +23,10 @@
         "codTipoId": "01",
         "documentofva": "1-23456789",
         "nombre": "Juan",
-        "Bccr.IdUsuario": "us-88213",
-        "Bccr.IdEntidad": "ent-1001",
-        "Bccr.CodTipoId": "01",
-        "Bccr.negocio": "comercio-01",
+        "Org.IdUsuario": "us-88213",
+        "Org.IdEntidad": "ent-1001",
+        "Org.CodTipoId": "01",
+        "Org.negocio": "comercio-01",
         "role": [
           "persona-fisica"
         ]
@@ -52,10 +52,10 @@
         "codTipoId": "01",
         "documentofva": "1-2222-3333",
         "nombre": "Usuario",
-        "Bccr.IdUsuario": "us-00002",
-        "Bccr.IdEntidad": "ent-1001",
-        "Bccr.CodTipoId": "01",
-        "Bccr.negocio": "prueba-01",
+        "Org.IdUsuario": "us-00002",
+        "Org.IdEntidad": "ent-1001",
+        "Org.CodTipoId": "01",
+        "Org.negocio": "prueba-01",
         "role": [
           "persona-fisica"
         ]
@@ -71,15 +71,15 @@
         "email": "facturacion@empresa-demo.cr",
         "email_verified": true,
         "locale": "es-CR",
-        "Bccr.IdEntidad": "ent-2042",
-        "Bccr.IdUsuario": "us-90112",
-        "Bccr.CodTipoId": "02",
-        "Bccr.negocio": "empresa-demo",
+        "Org.IdEntidad": "ent-2042",
+        "Org.IdUsuario": "us-90112",
+        "Org.CodTipoId": "02",
+        "Org.negocio": "empresa-demo",
         "codTipoId": "02",
         "nombre": "Comercial Demo S.A.",
         "role": [
           "persona-juridica",
-          "firmadigital"
+          "Sistema15"
         ]
       }
     },
@@ -97,10 +97,10 @@
         "role": [
           "administrador",
           "roles",
-          "skoruba_identity_admin_api"
+          "Sistema28"
         ],
-        "Bccr.IdUsuario": "us-00001",
-        "Bccr.IdEntidad": "ent-0001",
+        "Org.IdUsuario": "us-00001",
+        "Org.IdEntidad": "ent-0001",
         "login_name": "admin"
       }
     }

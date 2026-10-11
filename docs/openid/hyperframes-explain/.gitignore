@@ -1,0 +1,18 @@
+# Dependencias y entorno virtual (solo hacen falta para regenerar el video).
+node_modules/
+.venv/
+
+# Salidas de render: el MP4 final se publica aparte, no se versiona.
+renders/
+dist/
+
+# Temporales de ffmpeg/edge-tts.
+audio/concat.txt
+
+# Estado local del Studio de HyperFrames: registro de ids data-hf-id estampados
+# y el HTML compilado del preview. Se regenera solo.
+.hyperframes/
+
+# Caches locales de las sondas de voz y forma de onda. Se regeneran solo.
+.thumbnails/
+.waveform-cache/

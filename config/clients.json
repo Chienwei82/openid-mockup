@@ -90,7 +90,7 @@
         "openid",
         "custom.profile",
         "roles",
-        "centralenlinea.bccr.fi.cr"
+        "Sistema1"
       ],
       "require_pkce": false,
       "require_client_secret": true,
@@ -110,10 +110,10 @@
       "client_id": "fb02079c-3143-49e6-a776-dd9b002388d2",
       "client_secret": null,
       "redirect_uris": [
-        "http://localhost:5173/pruebas/ves/landing"
+        "http://localhost:5173/pruebas/app/landing"
       ],
       "post_logout_redirect_uris": [
-        "http://localhost:5173/pruebas/ves/"
+        "http://localhost:5173/pruebas/app/"
       ],
       "frontchannel_logout_uri": null,
       "allowed_grant_types": [

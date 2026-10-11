@@ -7,7 +7,7 @@ Leyenda: ✅ implementado · 🟡 simulado/parcial · ⛔ no implementado (o anu
 
 ## Endpoints
 
-| Endpoint (bajo `<base>`) | Teoría | Real (BCCR) | OidcMock | Código |
+| Endpoint (bajo `<base>`) | Teoría | Real (el servidor de referencia) | OidcMock | Código |
 | --- | --- | --- | --- | --- |
 | `GET /.well-known/openid-configuration` | Discovery | ✅ | ✅ | `DiscoveryEndpoints.cs` |
 | `GET …/openid-configuration/jwks` | JWKS | ✅ (anidado) | ✅ | `JsonWebKeySetBuilder.cs` |
@@ -35,7 +35,7 @@ Leyenda: ✅ implementado · 🟡 simulado/parcial · ⛔ no implementado (o anu
 
 ## Capacidades del discovery
 
-| Campo | Real (BCCR) | Mock | ¿Por qué |
+| Campo | Real (el servidor de referencia) | Mock | ¿Por qué |
 | --- | --- | --- | --- |
 | `issuer` | con barra final | igual | comparación literal del `iss` |
 | `id_token_signing_alg_values_supported` | `["RS256"]` | igual | clave RSA del JWKS |

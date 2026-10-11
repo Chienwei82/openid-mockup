@@ -1,25 +1,25 @@
 namespace OidcMock.UnitTests.Discovery;
 
 /// <summary>
-/// Discovery del servidor real del BCCR, usado como contrato de forma: los nombres de campo del
+/// Discovery del servidor de referencia, usado como contrato de forma: los nombres de campo del
 /// mock deben ser un subconjunto de estos.
 /// </summary>
 public static class ReferenceDiscoveryDocument
 {
     public const string Json = """
         {
-          "issuer": "https://oauth2.bccr.fi.cr/personafisica/",
-          "jwks_uri": "https://oauth2.bccr.fi.cr/personafisica/.well-known/openid-configuration/jwks",
-          "authorization_endpoint": "https://oauth2.bccr.fi.cr/personafisica/connect/authorize",
-          "token_endpoint": "https://oauth2.bccr.fi.cr/personafisica/connect/token",
-          "userinfo_endpoint": "https://oauth2.bccr.fi.cr/personafisica/connect/userinfo",
-          "end_session_endpoint": "https://oauth2.bccr.fi.cr/personafisica/connect/endsession",
-          "check_session_iframe": "https://oauth2.bccr.fi.cr/personafisica/connect/checksession",
-          "revocation_endpoint": "https://oauth2.bccr.fi.cr/personafisica/connect/revocation",
-          "introspection_endpoint": "https://oauth2.bccr.fi.cr/personafisica/connect/introspect",
-          "device_authorization_endpoint": "https://oauth2.bccr.fi.cr/personafisica/connect/deviceauthorization",
-          "backchannel_authentication_endpoint": "https://oauth2.bccr.fi.cr/personafisica/connect/ciba",
-          "pushed_authorization_request_endpoint": "https://oauth2.bccr.fi.cr/personafisica/connect/par",
+          "issuer": "https://oauth2.example.com/personafisica/",
+          "jwks_uri": "https://oauth2.example.com/personafisica/.well-known/openid-configuration/jwks",
+          "authorization_endpoint": "https://oauth2.example.com/personafisica/connect/authorize",
+          "token_endpoint": "https://oauth2.example.com/personafisica/connect/token",
+          "userinfo_endpoint": "https://oauth2.example.com/personafisica/connect/userinfo",
+          "end_session_endpoint": "https://oauth2.example.com/personafisica/connect/endsession",
+          "check_session_iframe": "https://oauth2.example.com/personafisica/connect/checksession",
+          "revocation_endpoint": "https://oauth2.example.com/personafisica/connect/revocation",
+          "introspection_endpoint": "https://oauth2.example.com/personafisica/connect/introspect",
+          "device_authorization_endpoint": "https://oauth2.example.com/personafisica/connect/deviceauthorization",
+          "backchannel_authentication_endpoint": "https://oauth2.example.com/personafisica/connect/ciba",
+          "pushed_authorization_request_endpoint": "https://oauth2.example.com/personafisica/connect/par",
           "require_pushed_authorization_requests": false,
           "frontchannel_logout_supported": true,
           "frontchannel_logout_session_supported": true,

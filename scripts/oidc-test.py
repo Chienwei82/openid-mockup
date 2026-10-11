@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prueba manual del flujo hibrido de GAUDI: construye la URL de login y desglosa el retorno.
+"""Prueba manual del flujo hibrido del sistema interno: construye la URL de login y desglosa el retorno.
 
 Por defecto apunta al mock local (https://localhost:5443/personafisica/) con el cliente de
 prueba; con --host/--client-id se apunta al servidor real. Solo biblioteca estandar: no añade
@@ -36,7 +36,7 @@ DEFAULTS = {
     "code_verifier": "igxfDIwq7GH81kaV2rmZYHU_uNk3wmIZAMyU37Cd75Kgvo6JoUHqudHMl_cWNm38",
     "code_challenge": "mZ9qmLuFWkdJi578Y-Y58DJq3DnTDpbc94EpuHmO658",
     "code_challenge_method": "S256",
-    "redirect_uri": "http://localhost:5173/pruebas/ves/landing",
+    "redirect_uri": "http://localhost:5173/pruebas/app/landing",
 }
 
 ENV_VARS = {
@@ -54,9 +54,9 @@ ENV_VARS = {
 }
 PARAM_NOTES = {
     "client_id": "para quien es el token (aud del id_token)",
-    "response_type": "hibrido GAUDI: code e id_token en el fragmento",
+    "response_type": "hibrido del sistema interno: code e id_token en el fragmento",
     "scope": "openid pide id_token; offline_access pide refresh_token",
-    "nonce": "eco anti-replay, GAUDI lo devuelve en el claim nonce",
+    "nonce": "eco anti-replay, el sistema interno lo devuelve en el claim nonce",
     "subject": "subject esperado (claim sub); el del usuario del mock vive en config/users.json",
     "code_verifier": "verificador PKCE: se canjea junto al code",
     "code_challenge": "huella S256 del code_verifier (PKCE RFC7636)",
@@ -278,7 +278,7 @@ def show_callback_url(console: Console, url: str, config: dict[str, str],
     print(console.bold("\n== URL de retorno (callback) =="))
     parts = urlsplit(url)
     print_field(console, "base", f"{parts.scheme}://{parts.hostname or ''}{parts.path}")
-    print_field(console, "query (?)", parts.query or "(vacia: GAUDI devuelve todo en el fragmento #)")
+    print_field(console, "query (?)", parts.query or "(vacia: el sistema interno devuelve todo en el fragmento #)")
 
     fragment = parts.fragment or (url.split("#", 1)[-1] if "#" in url and "code=" in url else "")
     fields = dict(parse_qsl(fragment, keep_blank_values=True))
@@ -297,7 +297,7 @@ def show_callback_url(console: Console, url: str, config: dict[str, str],
         print_field(console, name, value, note)
 
     if "error" in fields:
-        print(console.red(f"\nGAUDI devolvio error: {fields['error']}"))
+        print(console.red(f"\nEl sistema interno devolvio error: {fields['error']}"))
         if fields.get("error_description"):
             print(f"  {fields['error_description']}")
         return
@@ -326,7 +326,7 @@ def show_callback_url(console: Console, url: str, config: dict[str, str],
         print(f"    {console.bold(console.cyan(name)):{CLAIM_COLUMN_WIDTH}} {shown}  {console.dim(str(note))}")
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Construye el login GAUDI y desglosa el retorno a color + JWT.",
+        description="Construye el login del sistema interno y desglosa el retorno a color + JWT.",
         epilog="URL con ReturnUrl= es entrada; con #code= es retorno.")
     parser.add_argument("url", nargs="?", help="URL a desglosar. Sin URL: construye la de entrada.")
     parser.add_argument("--build", action="store_true", help="construir la URL de entrada")

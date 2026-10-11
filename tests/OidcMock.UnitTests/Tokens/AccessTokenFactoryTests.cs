@@ -73,18 +73,18 @@ public sealed class AccessTokenFactoryTests
     [Fact]
     public void LaAudienciaEsLaDefinidaPorElClienteYNoElSubject()
     {
-        var token = _factory.CreateAccessToken(Request(["https://api.bccr.fi.cr/centralenlinea"]));
+        var token = _factory.CreateAccessToken(Request(["https://api.example.com/sistema1"]));
 
-        var result = _validator.Validate(token, Issuer, ["https://api.bccr.fi.cr/centralenlinea"], _clock);
+        var result = _validator.Validate(token, Issuer, ["https://api.example.com/sistema1"], _clock);
 
         Assert.True(result.IsValid, result.Exception?.Message);
-        Assert.Equal("https://api.bccr.fi.cr/centralenlinea", TokenTestValidator.ReadClaim(token, "aud").GetString());
+        Assert.Equal("https://api.example.com/sistema1", TokenTestValidator.ReadClaim(token, "aud").GetString());
     }
 
     [Fact]
     public void AdmiteVariasAudienciasSimultaneas()
     {
-        string[] audiences = ["https://api.bccr.fi.cr/centralenlinea", "https://api.bccr.fi.cr/bolsadeempleo"];
+        string[] audiences = ["https://api.example.com/sistema1", "https://api.example.com/sistema2"];
 
         var token = _factory.CreateAccessToken(Request(audiences));
 

@@ -1,0 +1,84 @@
+<template>
+  <div
+    class="scene-root"
+    data-composition-id="scene-03-discovery"
+    data-width="1920"
+    data-height="1080"
+    data-duration="24.292"
+  >
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Discovery</span><h2 class="headline" data-anim="rise">Discovery y JWKS</h2></header><div class="grid grid--2"><article class="card" data-anim="rise" data-hl="card-discovery"><h3 class="card__title">Discovery Document</h3><p class="mono">GET /.well-known/openid-configuration</p><ul class="list"><li>issuer — comparado literalmente por el cliente</li><li>authorization · token · userinfo · introspect · revocation</li><li>scopes_supported y grant_types_supported</li></ul></article><article class="card" data-anim="rise" data-hl="card-jwks"><h3 class="card__title">JWKS</h3><p class="mono">GET /.well-known/openid-configuration/jwks</p><ul class="list"><li>JSON Web Key Set — claves públicas del emisor</li><li>kid identifica qué clave firmó el JWT</li><li>Algoritmo de firma: RS256</li></ul></article></div></section>
+
+    <script>
+      (function () {
+        var root = document.querySelector('[data-composition-id="scene-03-discovery"]');
+        if (!root || typeof gsap === 'undefined') { return; }
+        var timeline = gsap.timeline({ paused: true });
+
+        var FROM = {
+          rise: { opacity: 0, y: 36 },
+          pop: { opacity: 0, y: 22, scale: 0.92 },
+          slide: { opacity: 0, x: -40 },
+          fade: { opacity: 0 },
+        };
+        var items = root.querySelectorAll('[data-anim]');
+        for (var index = 0; index < items.length; index += 1) {
+          var from = FROM[items[index].getAttribute('data-anim')] || FROM.rise;
+          timeline.from(
+            items[index],
+            Object.assign({ duration: 0.65, ease: 'power3.out' }, from),
+            0.45 + index * 0.24
+          );
+        }
+
+        var HIGHLIGHTS = {"card-discovery": [[4.16, 5.484]], "card-jwks": [[16.043, 18.19]]};
+        var targets = [];
+        Object.keys(HIGHLIGHTS).forEach(function (key) {
+          var el = root.querySelector('[data-hl="' + key + '"]');
+          if (el) { targets.push({ el: el, windows: HIGHLIGHTS[key] }); }
+        });
+        var ATTACK = 0.22;
+        var RELEASE = 0.55;
+        function envelope(time, start, end) {
+          if (time < start) { return 0; }
+          if (time < end) { return Math.min((time - start) / ATTACK, 1); }
+          if (time < end + RELEASE) { return 1 - (time - end) / RELEASE; }
+          return 0;
+        }
+        function paint(target, env) {
+          var el = target.el;
+          if (env <= 0.001) {
+            el.style.borderColor = '';
+            el.style.boxShadow = '';
+            el.style.textShadow = '';
+            return;
+          }
+          el.style.borderColor =
+            'rgb(' + Math.round(58 + 19 * env) + ', ' + Math.round(63 + 145 * env) + ', ' + Math.round(71 + 154 * env) + ')';
+          el.style.boxShadow = '0 0 ' + (36 * env).toFixed(1) + 'px rgba(77, 208, 225, ' + (0.28 * env).toFixed(3) + ')';
+          el.style.textShadow = '0 0 ' + (16 * env).toFixed(1) + 'px rgba(77, 208, 225, ' + (0.4 * env).toFixed(3) + ')';
+        }
+        var driver = { t: 0 };
+        timeline.to(
+          driver,
+          {
+            t: 24.292,
+            duration: 24.292,
+            ease: 'none',
+            onUpdate: function () {
+              for (var i = 0; i < targets.length; i += 1) {
+                var env = 0;
+                for (var w = 0; w < targets[i].windows.length; w += 1) {
+                  env = Math.max(env, envelope(driver.t, targets[i].windows[w][0], targets[i].windows[w][1]));
+                }
+                paint(targets[i], env);
+              }
+            },
+          },
+          0
+        );
+
+        window.__timelines['scene-03-discovery'] = timeline;
+      })();
+    </script>
+  </div>
+</template>
