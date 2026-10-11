@@ -22,7 +22,7 @@ public sealed class JsonUserStoreTests
     }
 
     [Fact]
-    public void ExponeLosClaimsConNombresLibresIncluidosLosDeBccr()
+    public void ExponeLosClaimsConNombresLibresIncluidosLosPersonalizados()
     {
         var store = new JsonUserStore(RepositoryLayout.ConfigDirectory);
         var user = store.FindByUserName(SampleUserName);
@@ -31,7 +31,7 @@ public sealed class JsonUserStoreTests
         Assert.Equal("Juan", user.GetClaim("given_name").GetString());
         Assert.Equal("jperez@example.cr", user.GetClaim("email").GetString());
         Assert.Equal("01", user.GetClaim("codTipoId").GetString());
-        Assert.Equal("us-88213", user.GetClaim("Bccr.IdUsuario").GetString());
+        Assert.Equal("us-88213", user.GetClaim("Org.IdUsuario").GetString());
         Assert.Equal("1-23456789", user.GetClaim("documentofva").GetString());
     }
 

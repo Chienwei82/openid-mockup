@@ -36,16 +36,16 @@ Reglas que manda la teoría:
 
 ## 🟩 Servidor real
 
-El discovery del BCCR (pegado en [`AGENTS.md`](../../AGENTS.md)) tiene detalles que **no** son
+El discovery del servidor de referencia (pegado en [`AGENTS.md`](../../AGENTS.md)) tiene detalles que **no** son
 universales y que el mock debe imitar:
 
-- `issuer` **con barra final**: `https://oauth2.bccr.fi.cr/personafisica/`.
+- `issuer` **con barra final**: `https://oauth2.example.com/personafisica/`.
 - `jwks_uri` **anidado** bajo el well-known: `…/personafisica/.well-known/openid-configuration/jwks`
   (muchos OP usan `/connect/jwks` o `/jwks.json`; este no).
 - Prefijo de rutas `/personafisica/` en **todos** los endpoints (`/connect/authorize`,
   `/connect/token`, …).
-- Un catálogo gigante de `scopes_supported` (≈70) y `claims_supported` (≈40), incluidos los del BCCR
-  (`documentofva`, `Bccr.IdEntidad`, `custom.profile`, `SAML2P:TeamMateSugeval`, …).
+- Un catálogo gigante de `scopes_supported` (≈70) y `claims_supported` (≈40), incluidos los del servidor de referencia
+  (`documentofva`, `Org.IdEntidad`, `custom.profile`, `Sistema36`, …).
 - `id_token_signing_alg_values_supported: ["RS256"]` y `subject_types_supported: ["public"]`.
 
 ## 🟨 OidcMock
@@ -110,6 +110,6 @@ flowchart LR
 Se anuncia todo por **paridad** (una app que valide la metadata no debe fallar al arrancar), pero solo
 se *responde* el código y el híbrido. Es la decisión **D-042** de
 [`docs/decisions.md`](../decisions.md). El test de forma además fija que las claves que anuncia el mock
-sean **subconjunto** de las del JSON de referencia del BCCR.
+sean **subconjunto** de las del JSON de referencia del servidor de referencia.
 
 Siguiente: **[03 · Authorization Code + PKCE](03-authorization-code-y-pkce.md)**.

@@ -44,7 +44,7 @@ flowchart LR
 
 El real exige autenticación de cliente en ambos endpoints (`revocation_endpoint_auth_methods_supported`
 e `introspection_endpoint_auth_methods_supported`), devuelve `active` con metadatos para tokens válidos,
-y responde **200** a la revocación aunque el token no existiera (RFC 7009 § 2.2). El BCCR anuncia además
+y responde **200** a la revocación aunque el token no existiera (RFC 7009 § 2.2). El el servidor de referencia anuncia además
 firma de la respuesta de introspection (`introspection_signing_alg_values_supported: ["RS256"]`).
 
 ## 🟨 OidcMock

@@ -15,7 +15,7 @@ public sealed class JsonWebTokenFactory : ITokenFactory
 {
     /// <summary>
     /// Valores de los claims de autenticacion que el servidor real emite siempre en el id_token y
-    /// que la captura de GAUDI confirma: el mock los fija porque no autentica de otra forma, y sin
+    /// que la captura del sistema interno confirma: el mock los fija porque no autentica de otra forma, y sin
     /// ellos una aplicacion que los lea veria una diferencia entre el mock y el servidor real.
     /// </summary>
     private const string LocalIdentityProvider = "local";

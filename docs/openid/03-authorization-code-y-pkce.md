@@ -1,6 +1,6 @@
 # 03 · Authorization Code Flow + PKCE
 
-Es **el flujo**. Todo lo demás (refresh, userinfo, logout) cuelga de él. Y es el que usa el BCCR.
+Es **el flujo**. Todo lo demás (refresh, userinfo, logout) cuelga de él. Y es el que usa el servidor de referencia.
 
 ## 🟦 Teoría
 
@@ -62,13 +62,13 @@ Dos métodos (RFC 7636 § 4.2): `plain` (challenge = verifier, solo para cuando 
 
 ## 🟩 Servidor real
 
-El OP real (estilo IdentityServer) hace exactamente esto y además:
+El OP real (estilo servidor OIDC) hace exactamente esto y además:
 
 - Valida **cada** parámetro contra la configuración del cliente y responde `invalid_request` /
   `unauthorized_client` cuando algo no encaja.
 - Solo emite `id_token` cuando el `scope` incluye `openid`.
 - Devuelve el `iss` en la respuesta de autorización (`authorization_response_iss_parameter_supported:
-  true` en el discovery del BCCR).
+  true` en el discovery del servidor de referencia).
 - Exige `code_challenge` a los clientes con PKCE obligatorio.
 - Rechaza `response_mode=query` cuando la respuesta llevaría tokens (los tokens van en el **fragmento**,
   a salvo del historial y las cabeceras `Referer` — *OAuth 2.0 Multiple Response Type Encoding*).

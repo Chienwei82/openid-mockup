@@ -6,7 +6,7 @@ veces, con la misma lupa:
 | Plano | Qué cuenta | De dónde sale |
 | --- | --- | --- |
 | 🟦 **Teoría** | Cómo *debería* hacerse según los estándares | RFC 6749/6750/7009/7636/7662/8628/9126 y OpenID Connect Core 1.0 |
-| 🟩 **Servidor real** | Cómo lo haría un Authorization Server en producción (el BCCR `oauth2.bccr.fi.cr`, estilo Duende IdentityServer) | el *discovery* de referencia que está en [`AGENTS.md`](../../AGENTS.md) + comportamiento observado |
+| 🟩 **Servidor real** | Cómo lo haría un Authorization Server en producción (el servidor de referencia `oauth2.example.com`, un servidor OIDC de producción) | el *discovery* de referencia que está en [`AGENTS.md`](../../AGENTS.md) + comportamiento observado |
 | 🟨 **OidcMock** | Cómo *realmente* lo resuelve **este** mock | `src/OidcMock.Core`, `src/OidcMock.Host`, `config/*.json`, [`docs/decisions.md`](../decisions.md) |
 
 La idea es que puedas leer cualquier documento de tres formas: para **entender** el protocolo, para
@@ -31,7 +31,7 @@ el camino corto es **[03 · Authorization Code + PKCE](03-authorization-code-y-p
 | 06 | [UserInfo](06-userinfo.md) | El endpoint de claims del usuario y el reto `WWW-Authenticate` |
 | 07 | [Introspection y revocation](07-introspection-y-revocation.md) | RFC 7662 / 7009 y el store de revocaciones |
 | 08 | [Sesión y logout](08-sesion-y-logout.md) | Cookie de sesión, `prompt`, `end_session` y front-channel logout |
-| 09 | [Flujo híbrido](09-flujo-hibrido.md) | `response_type=code id_token` y las rutas de entrada de GAUDI |
+| 09 | [Flujo híbrido](09-flujo-hibrido.md) | `response_type=code id_token` y las rutas de entrada del sistema interno |
 | 10 | [PAR, Device y CIBA](10-par-device-ciba.md) | Los flujos empujados y por sondeo (y qué está simulado) |
 | 11 | [Matriz de paridad](11-matriz-de-paridad.md) | Tabla-resumen: teoría vs. real vs. mock, y mapa a código |
 | 12 | [Cheatsheet](12-cheatsheet.md) | Todo lo esencial en una página: endpoints, tokens, errores y comandos |
@@ -52,7 +52,7 @@ flowchart LR
         BE["Back-end<br/>(confidencial)"]
     end
 
-    OP["🟦/🟩/🟨 Authorization Server / OP<br/>(BCCR real · OidcMock)"]
+    OP["🟦/🟩/🟨 Authorization Server / OP<br/>(el servidor de referencia · OidcMock)"]
     RS["API / Resource Server<br/>(valida el access_token)"]
 
     RO --> AG
@@ -91,7 +91,7 @@ sequenceDiagram
 
 - Estándares: OAuth 2.0 (RFC 6749), Bearer (RFC 6750), Revocation (RFC 7009), PKCE (RFC 7636),
   Introspection (RFC 7662), Device (RFC 8628), PAR (RFC 9126) y **OpenID Connect Core 1.0**.
-- Referencia del servidor real: el *discovery* del BCCR incluido en [`AGENTS.md`](../../AGENTS.md).
+- Referencia del servidor real: el *discovery* del servidor de referencia incluido en [`AGENTS.md`](../../AGENTS.md).
 - Implementación: [`README.md`](../../README.md) (alcance y endpoints) y
   [`docs/decisions.md`](../decisions.md) (histórico con el porqué).
 

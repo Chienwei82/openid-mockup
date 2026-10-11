@@ -123,7 +123,7 @@ redirigen) para evitar open redirect; el resto viajan por el `redirect_uri`.
 ```bash
 ./scripts/test.sh                 # build Release + unit + integration + compat
 ./scripts/publish.py              # build + tests + publish (linux-x64 y win-x64)
-./scripts/oidc-test.py --build    # URL de entrada del flujo híbrido de GAUDI
+./scripts/oidc-test.py --build    # URL de entrada del flujo híbrido del sistema interno
 ./scripts/oidc-test.py "<url-retorno>"   # desglose del fragmento + claims
 ```
 

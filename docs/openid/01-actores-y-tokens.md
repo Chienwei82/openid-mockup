@@ -64,11 +64,11 @@ viajar en el navegador sin problema, pero un `access_token` sea un secreto.
 
 ## 🟩 Servidor real
 
-Un OP de producción (Duende IdentityServer, el que hay detrás del BCCR) implementa este mismo
+Un OP de producción (un servidor OIDC comercial, el que hay detrás del servidor de referencia) implementa este mismo
 vocabulario y añade matices que el mock imita:
 
 - **`kid` en la cabecera**: identifica *cuál* clave del JWKS firmó, para permitir rotación.
-- **`iss` con barra final** (`https://oauth2.bccr.fi.cr/personafisica/`): la comparación de emisor es
+- **`iss` con barra final** (`https://oauth2.example.com/personafisica/`): la comparación de emisor es
   literal, así que la barra cuenta.
 - **`aud`**: en el `id_token` es el `client_id`; en el `access_token` puede ser el `client_id` o un
   nombre de API.

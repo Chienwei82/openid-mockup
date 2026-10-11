@@ -8,7 +8,7 @@ using static OidcMock.IntegrationTests.Endpoints.OidcTestClient;
 namespace OidcMock.IntegrationTests.Endpoints;
 
 /// <summary>
-/// Rutas de entrada del servidor real, tal como arranca la prueba contra GAUDI:
+/// Rutas de entrada del servidor real, tal como arranca la prueba contra el sistema interno:
 /// /Account/Login?ReturnUrl=... es la pantalla de login y /connect/authorize/callback el destino
 /// del ReturnUrl. El flujo completo termina igual que la captura: el redirect_uri con #code,
 /// #id_token y #session_state en el fragmento. Las rutas se fijan por su texto porque son el
@@ -88,7 +88,7 @@ public sealed class AccountLoginEndpointTests
     }
 
     /// <summary>
-    /// El flujo completo con la forma de GAUDI: entrada por Account/Login, login por POST, el
+    /// El flujo completo con la forma del sistema interno: entrada por Account/Login, login por POST, el
     /// ReturnUrl cae en el callback del authorize y este devuelve el fragmento hibrido al
     /// redirect_uri. Es la prueba del script, contra el mock.
     /// </summary>

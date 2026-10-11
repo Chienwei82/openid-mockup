@@ -1,6 +1,6 @@
 # 09 · Flujo híbrido (`code id_token`)
 
-El flujo que pide **GAUDI**, el cliente real contra el que se calibró el mock. No es el clásico
+El flujo que pide **el sistema interno**, el cliente real contra el que se calibró el mock. No es el clásico
 `response_type=code`: devuelve el **código y el `id_token` juntos** en el fragmento del `redirect_uri`.
 
 ## 🟦 Teoría
@@ -74,7 +74,7 @@ Qué **valida el cliente** en cada salto (y por qué no basta con lo que emite e
 
 ## 🟩 Servidor real
 
-El servidor real que imita el mock (el del BCCR, del que GAUDI es cliente) emite el híbrido con estos
+El servidor real que imita el mock (el del servidor de referencia, del que el sistema interno es cliente) emite el híbrido con estos
 **formatos observados** (no son opacos: se ven en la URL de retorno):
 
 | Elemento | Formato observado |
@@ -88,7 +88,7 @@ El servidor real que imita el mock (el del BCCR, del que GAUDI es cliente) emite
 Nota fina: el servidor real **omite `iss`** en la respuesta híbrida aunque anuncia
 `authorization_response_iss_parameter_supported: true`. El mock imita **lo que hace**, no lo que dice.
 
-Y expone dos rutas de entrada que GAUDI usa:
+Y expone dos rutas de entrada que el sistema interno usa:
 
 - `/Account/Login?ReturnUrl=…` — la pantalla de login real (ASP.NET Identity), con `ReturnUrl` local.
 - `/connect/authorize/callback` — alias del authorize y destino de ese `ReturnUrl`.
@@ -125,7 +125,7 @@ Puntos que fija el mock:
 - **`response_mode` por defecto**: fragmento cuando la respuesta lleva tokens; `query` solo para `code`.
   `response_mode=query` con un híbrido → `invalid_request`.
 
-### Rutas de entrada de GAUDI
+### Rutas de entrada del sistema interno
 
 | Ruta | Qué hace en el mock |
 | --- | --- |
@@ -137,8 +137,8 @@ de retorno y decodifica el JWT (contrastando el `sub`). Config de prueba: client
 `fb02079c-3143-49e6-a776-dd9b002388d2` (PKCE obligatorio, redirect falso) y usuario `prueba`
 (`sub=01-2222-3333`, **dato falso**).
 
-> Documentación relacionada: *"Adaptacion a GAUDI: flujo hibrido y rutas de entrada"* en
-> [`docs/decisions.md`](../decisions.md), y la sección *"Probar el flujo de GAUDI"* de
+> Documentación relacionada: *"Adaptacion al sistema interno: flujo hibrido y rutas de entrada"* en
+> [`docs/decisions.md`](../decisions.md), y la sección *"Probar el flujo del sistema interno"* de
 > [`README.md`](../../README.md).
 
 Siguiente: **[10 · PAR, Device y CIBA](10-par-device-ciba.md)**.

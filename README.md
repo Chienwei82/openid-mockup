@@ -1,7 +1,7 @@
 # OidcMock
 
 Servidor OpenID Connect **falso** para desarrollo local y offline. Imita el comportamiento observable
-del servidor real del BCCR (`https://oauth2.bccr.fi.cr/personafisica/`) para que una aplicación
+del servidor de referencia (`https://oauth2.example.com/personafisica/`) para que una aplicación
 apunte al mock **sin cambios de código**: mismo discovery, mismos endpoints, mismos nombres de
 scopes y claims, mismos errores de protocolo.
 
@@ -165,9 +165,9 @@ El login es una pantalla HTML con la lista de usuarios de `config/users.json`. C
 | `prueba` | `Prueba123!` | `01-2222-3333` |
 | `admin` | `Admin123!` | `user-administrador` |
 
-### Probar el flujo de GAUDI (`scripts/oidc-test.py`)
+### Probar el flujo del sistema interno (`scripts/oidc-test.py`)
 
-`scripts/oidc-test.py` (solo stdlib) reproduce la prueba de login del servidor real GAUDI contra el
+`scripts/oidc-test.py` (solo stdlib) reproduce la prueba de login del sistema interno contra el
 mock: construye la URL de entrada `/Account/Login?ReturnUrl=…` con el híbrido `code id_token` y
 desglosa a color la URL de retorno (`#code`, `#id_token`, `#session_state`), decodificando el JWT.
 
@@ -257,7 +257,7 @@ config/
         "name": "Juan Pérez",
         "given_name": "Juan",
         "email": "jperez@example.cr",
-        "Bccr.IdUsuario": "us-88213",
+        "Org.IdUsuario": "us-88213",
         "role": ["persona-fisica"]
       }
     }
@@ -267,7 +267,7 @@ config/
 
 `sub` es el identificador estable — el **subject** que el `id_token` y el `userinfo` declaran en el
 claim `sub` — y es configurable por usuario: cámbialo aquí y el token sale con el nuevo valor. El
-usuario `prueba` usa `01-2222-3333` como subject de ejemplo para el flujo de GAUDI (es un dato
+usuario `prueba` usa `01-2222-3333` como subject de ejemplo para el flujo del sistema interno (es un dato
 falso de prueba). `claims` se proyecta al `id_token` y al `userinfo` según los scopes
 concedidos. La contraseña va **en claro**: es un mock para desarrollo.
 
@@ -282,7 +282,7 @@ concedidos. La contraseña va **en claro**: es un mock para desarrollo.
 }
 ```
 
-Los nombres de scope y de claim son los del servidor real (`nombre`, `documentofva`, `Bccr.IdEntidad`,
+Los nombres de scope y de claim son los del servidor real (`nombre`, `documentofva`, `Org.IdEntidad`,
 `custom.profile`, `roles`, …) para que una aplicación que los pida funcione igual contra el mock.
 
 ### Opciones (`appsettings.json`, variables de entorno o `--OidcMock:…`)
@@ -434,7 +434,7 @@ el HTTP del host, y la de compatibilidad usa `Microsoft.AspNetCore.Authenticatio
 el mock se aparta del protocolo en algo que un cliente real nota, lo detecta.
 
 La serie [`docs/openid/`](docs/openid/README.md) cuenta el flujo del protocolo **tres veces** —teoría
-(RFC y OIDC), servidor real (el BCCR/IdentityServer) y cómo lo resuelve **este** mock, archivo por
+(RFC y OIDC), servidor real (el OIDC de producción) y cómo lo resuelve **este** mock, archivo por
 archivo— con diagramas Mermaid. Empieza por su índice.
 
 ```bash

@@ -54,7 +54,7 @@ Claim pedido y no declarado → se **omite** (no se inventa).
 El OP real añade y varía:
 
 - Emite `acr` (contexto de autenticación) y `amr` (métodos, p. ej. `["pwd"]` o `["sc"]` de tarjeta) e
-  `idp` (proveedor usado). En el BCCR, la captura de GAUDI muestra `amr:["sc"]`,
+  `idp` (proveedor usado). En el servidor de referencia, la captura del sistema interno muestra `amr:["sc"]`,
   `acr:"possessionorinherence"`, `idp:"local"`.
 - `sid` en el id_token = la **sesión del navegador** que hizo login.
 - Firma siempre `RS256`; podría rotar claves (`kid`) sin cortar tokens vivos.

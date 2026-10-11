@@ -404,7 +404,7 @@ el canje posterior necesita).
   **el discovery no puede anunciar capacidades inexistentes**, porque una app que las lea fallaría
   más tarde y en un punto más difícil de depurar.
 - El test de *forma* (`ReferenceDiscoveryDocument`) fija el JSON del servidor real en el proyecto de
-  pruebas y exige que las claves del mock sean un **subconjunto** de él: si mañana el BCCR renombra
+  pruebas y exige que las claves del mock sean un **subconjunto** de él: si mañana el servidor de referencia renombra
   un campo, el test falla en lugar de dejar al cliente descubriéndolo en runtime.
 
 ### Clave de firma
@@ -468,7 +468,7 @@ dotnet test tests/OidcMock.IntegrationTests/OidcMock.IntegrationTests.csproj
 
 ### Claims de los usuarios
 - `User.Claims` es `IReadOnlyDictionary<string, JsonElement>`: los nombres son libres (incluidos
-  `codTipoId`, `Bccr.IdUsuario`, etc.) y los valores conservan su tipo JSON (bool, número, arreglo),
+  `codTipoId`, `Org.IdUsuario`, etc.) y los valores conservan su tipo JSON (bool, número, arreglo),
   necesario para serializar después los id_token sin pérdida.
 
 ### Directorio de configuración en ejecución
@@ -696,9 +696,9 @@ cliente real o una prueba puede detectar. Quedan anotados aqui y en el informe d
 
 Dos defaults que rompian a un desarrollador, encontrados al revisar el discovery contra los datos:
 
-- `backend-service` declaraba `centralenlinea.bccr.fi.cr`, un scope que no existia en `scopes.json`:
+- `backend-service` declaraba `Sistema1`, un scope que no existia en `scopes.json`:
   cualquier peticion de token de ese cliente devolvia `invalid_scope`.
-- Los claims `Bccr.IdEntidad`, `Bccr.IdUsuario`, `Bccr.CodTipoId` y `Bccr.negocio` estaban en
+- Los claims `Org.IdEntidad`, `Org.IdUsuario`, `Org.CodTipoId` y `Org.negocio` estaban en
   `users.json` pero en ningun scope, asi que el proyector nunca los emitia. Tambien `phone_number`, sin
   scope `phone` que lo proyectara.
 
@@ -812,13 +812,13 @@ este forget.
 **Decision: se deja como esta. No es un olvido.**
 
 `DiscoveryDocumentBuilder` anuncia `select_account` en `prompt_values_supported`, igual que la referencia
-del BCCR, y `ResponseModes.SelectAccount` define el valor. Pero ningun camino del authorize lo trata de
+del servidor de referencia, y `ResponseModes.SelectAccount` define el valor. Pero ningun camino del authorize lo trata de
 forma especial: el flujo es el mismo que sin el.
 
 **Por que se anuncia igual.**
 
 1. **El discovery tiene que coincidir con la referencia.** El objetivo del mock es que una app apunte a
-   `https://oauth2.bccr.fi.cr/personafisica/` o al mock sin cambios de codigo. Una app que valida el
+   `https://oauth2.example.com/personafisica/` o al mock sin cambios de codigo. Una app que valida el
    discovery contra el de la referencia rechazaria el mock si le falta un valor. Annunciar de menos rompe el
    proposito del proyecto; anunciar de mas no, porque el valor es opcional en la practica.
 2. **El valor se acepta, no se rechaza.** Un cliente que envie `prompt=select_account` no recibe un error:
@@ -953,7 +953,7 @@ explicita: no por el fallo, sino porque asi el script dice que corredor ejecuta 
 ### D-042 — Anunciar no es aceptar: dos listas de response_type
 
 **El bug.** `ResponseTypeValidator` validaba contra `ResponseTypeNames.SupportedCombinations`, que es
-la lista que el discovery **anuncia** por paridad con el BCCR, y no contra la que el endpoint sabe
+la lista que el discovery **anuncia** por paridad con el servidor de referencia, y no contra la que el endpoint sabe
 **responder**. Como el authorize solo emite codigo de autorizacion, `response_type=id_token token` pasaba
 la validacion, el usuario hacia login, y la respuesta era `code=...` en el fragmento: el cliente pedia
 tokens y recibia un codigo que no sabe usar, **sin ningun error**. Es peor que rechazar, porque nada
@@ -1099,7 +1099,7 @@ verificado en el binario: `response_type=id_token token` responde 302 con
   flujo TDD/build (como `publish.py`): replica la URL de login con su doble
   codificacion observada y desglosa el retorno (`#code/id_token/session_state`)
   con color ANSI y JWT decodificado sin verificar firma (solo inspeccion).
-- **Tus valores GAUDI como defecto** (host, client_id, nonce fijo, challenge,
+- **Tus valores el sistema interno como defecto** (host, client_id, nonce fijo, challenge,
   landing). Flags > env `OIDC_*` > `--config` JSON > defecto.
 - **Valores fijos, no aleatorios:** nonce y challenge por defecto son los de tu
   URL; `--random-nonce`/`--new-pkce` generan otros cuando quieras probar.
@@ -1130,10 +1130,10 @@ mejor forma interna.
 - **Shell scripts:** `readonly`, las suites y los runtimes como arrays nombrados (sin repetir la
   lista en el `for`), comentarios de uso y el porque del `rm -rf` previo.
 
-## Adaptacion a GAUDI: flujo hibrido y rutas de entrada (2026-10-07)
+## Adaptacion al sistema interno: flujo hibrido y rutas de entrada (2026-10-07)
 
 Para correr la prueba del script contra el mock sustituyendo al servidor real de la empresa
-(GAUDI), con la captura de su URL de salida como especificacion.
+(el sistema interno), con la captura de su URL de salida como especificacion.
 
 ### Lo que se implemento y por que
 
@@ -1166,7 +1166,7 @@ Para correr la prueba del script contra el mock sustituyendo al servidor real de
 ### Configuracion de prueba
 
 - Cliente publico `fb02079c-3143-49e6-a776-dd9b002388d2` con PKCE obligatorio y el redirect_uri
-  falso `http://localhost:5173/pruebas/ves/landing` (no hay servidor atras; solo tiene que existir
+  falso `http://localhost:5173/pruebas/app/landing` (no hay servidor atras; solo tiene que existir
   registrado). Usuario `prueba` / `Prueba123!` con `sub` `01-2222-3333`, **dato falso de prueba**.
 - `scripts/oidc-test.py` apunta por defecto a `https://localhost:5443/personafisica/` con ese
   cliente, un par PKCE fijo (el `code_verifier` vive en los defaults, para poder canjear el code) y
@@ -1250,7 +1250,7 @@ Tres mejoras de usabilidad pedidas para el mock como herramienta de desarrollo.
 
 - **El cliente de prueba se llama "OidcMock - Pruebas Open ID".** El texto vive en el `branding`
   de `config/clients.json` (cliente `fb02079c-…`), no en codigo: cambiar el nombre es editar el dato.
-  El nombre anterior ("Prueba GAUDI") describia la prueba puntual; el nuevo describe lo que el mock
+  El nombre anterior ("Prueba Sistema Interno") describia la prueba puntual; el nuevo describe lo que el mock
   es. Un test de integracion fija el nombre visible en la pantalla de login.
 - **Los campos de identidad van a dos columnas.** `IdentityFields` (compartido por el authorize y
   `/Account/Login`) envuelve el subject y los claims en una grilla `.fields` de dos columnas, y la
@@ -1308,7 +1308,7 @@ motivos independientes, corregidos de raiz.
 Se anade una **serie didactica** de 13 archivos Markdown (`docs/openid/README.md` + `01..12`) que
 documenta el flujo OIDC y, sobre todo, **mapea cada pieza del protocolo al codigo real del mock**.
 
-- **Tres lentes por documento:** teoria (RFC/OIDC), servidor real (BCCR/IdentityServer) y OidcMock.
+- **Tres lentes por documento:** teoria (RFC/OIDC), servidor real (OIDC de producción) y OidcMock.
   Cuando el mock se aparta de la teoria o del real, se dice y se enlaza la decision (D-0xx).
 - **Diagramas en Mermaid** (no imagenes): se renderizan en GitHub/VS Code y se versionan como texto.
 - **Sin impacto en el build:** son documentos; no entran a compilar ni a las suites. El `README.md`
@@ -1361,5 +1361,124 @@ es documentacion generada, y por eso no entra a compilar ni a las suites.
 - **El MP4 no se versiona.** `dist/` y `renders/` quedan ignorados; se regeneran con
   `npm run render`. Los MP3 de la narracion si se versionan para poder montar el video
   sin red.
+- **Instalacion sin avisos.** `npm install` avisaba de dos cosas: `ERESOLVE overriding
+  peer dependency` por los peers de navegador de `@lobehub/tts` (`react`, `react-dom`,
+  `antd`, `@lobehub/ui`, que la narracion no usa porque solo importa su entrada de Node)
+  y `allow-scripts` de esbuild, que npm >= 11 pide aprobar. Se resolvio con `.npmrc`
+  (`legacy-peer-deps=true`, que poda el arbol de ~560 a ~230 paquetes) y el campo
+  `allowScripts` de `package.json` sin fijar version, para que sobreviva a los updates.
+  Comprobado que el TTS sigue sintetizando sin los peers, que `npm ci` instala con 0
+  avisos y que `check` y el render siguen en verde.
+- **`npm run dev` existe.** Era el comando que faltaba: no habia script `dev`, asi que
+  `npm run dev` moria con `Missing script: "dev"`. Se anadio como alias de
+  `hyperframes preview .` (Studio en el puerto 3002) y `npm run stop` para cerrar el
+  servidor que el CLI deja en segundo plano.
+- **`yauzl` fuera del `package.json`.** Era una dependencia directa que ningun script usaba y
+  que HyperFrames no referencia en ninguna parte: su unico camino de extraccion es el binario
+  `unzip` (`hyperframes doctor` lo comprueba) o el extractor integrado de Windows. Se instalo
+  `unzip` en el sistema y el chequeo pasa (`Archive extractor: unzip`). Las dos menciones que
+  quedan en el lock son el peer *opcional* de `@puppeteer/browsers`, no un paquete instalado.
+- **El Studio estampa ids en los HTML generados.** `preview`/`dev` —y tambien `check`—
+  escriben `data-hf-id` en `index.html` y `compositions/*.html` y los reformatean con
+  prettier. El estampado es determinista (mismo contenido, mismos ids) e idempotente,
+  pero `npm run build` los reescribe sin ids: se dejo documentado en el README para que
+  el ruido en `git status` no sorprenda, y `.hyperframes/` (registro de lo estampado y
+  el preview compilado) queda en `.gitignore` porque es estado local regenerable.
 
 
+## Voz natural y resaltado sincronizado con la narracion (2026-10-10)
+
+La primera version narraba a ~19 caracteres/s y sonaba apresurada; se rehizo la
+voz y se anadio resaltado de pantalla sincronizado con lo que se pronuncia.
+
+- **`rate` del TTS es un cambio RELATIVO, no una fraccion.** Medido con la nueva
+  sonda `scripts/probe_voice.mjs`: el servicio aplica `prosody rate="<N>%"` como
+  ± N% sobre el ritmo por defecto de la voz (16,5 chars/s). `rate: 0.3`
+  resultaba +30% (21,4 chars/s, ~210 ppm — el tono apresurado que se noto) y
+  `rate: -0.15` da 14,1 chars/s (~140 ppm), ritmo de presentador. Se fijo
+  `rate: -0.15` y el video paso de 177 s a 264 s, que es lo que cuesta hablar
+  con calma un guion denso de 12 escenas.
+- **Lo que el servicio no deja cambiar, medido antes de tocar nada.** `pitch` no
+  tiene efecto audible (audio identico con 50%/100%/150%) y el SSML con
+  `<break>` o `<mstts:express-as style>` se rechaza: el turno termina sin audio y
+  la promesa se queda colgada (ahora `generate_audio.mjs` falla ruidosamente con
+  timeout). Las pausas se consiguen solo con puntuacion: una coma +0,5 s y un
+  punto y aparte +1 s (tambien medido). El guion se reescribio puntuando mejor y
+  el `tail` entre escenas subio de 0,7 s a 1 s.
+- **Resaltado anclado a marcas de palabra reales.** El servicio Edge emite
+  `WordBoundary` por palabra (`metadataoptions.wordBoundaryEnabled`), que
+  `@lobehub/tts` descarta; se capturan en el wrapper de `ws` y cada pista
+  `hl` del guion (`{key, say}`) resuelve su ventana `[inicio, fin]` real contra
+  esas marcas (fallback: estimacion por caracteres, con aviso). `timings.json`
+  lleva las ventanas y `build_composition.py` las convierte en un driver GSAP
+  unico por escena (envolvente ataque-sostén-caida de la receta
+  `asr-keyword-glow` de hyperframes-animation) que pinta el elemento `data-hl`
+  mientras la voz pronuncia su frase.
+- **Solo bordes y sombras en el resaltado.** El pintado del driver se limito a
+  `borderColor`, `box-shadow` y `text-shadow` (y se limpian a envolvente 0 para
+  que los `data-hl` anidados hereden bien): nada que cambie el color del texto ni
+  el fondo, para no arriesgar las comprobaciones WCAG AA que audita `check`
+  (87/87 en verde).
+- **Entradas con variantes y stagger pautado.** `data-anim` lleva ahora su
+  variante (`rise`, `pop`, `slide`, `fade` — cards, stats, steps, filas de
+  chips) y el escalonado de la cascada se calcula por escena segun la duracion de
+  la voz (0,15-0,24 s), en vez del 0,16 s fijo que iba apresurado al hablar mas
+  lento.
+
+
+## Menciones neutras en el video del explicador (2026-10-10)
+
+- **El video sustituye toda mencion al ente y al sistema reales por un termino neutro.** Las tres
+  frases del guion (escenas 01, 10 y 12) y el lede del cierre nombraban a la entidad; ahora dicen
+  "el servidor de referencia". El video no menciona ningun nombre propio del entorno real en
+  narration.json, scene_content.py, README ni en los artefactos generados. Se regenero la narracion
+  (264,1 s) y `npm run check` pasa en verde.
+- **El resto del repo conserva sus menciones a proposito, inventariadas para el usuario.**
+  Identifican al servidor real cuya paridad se implementa: `docs/openid/` (la matriz de paridad se
+  compara con el servidor real), `README.md` y `docs/decisions.md`, los fixtures de tests
+  (`ReferenceDiscoveryDocument.cs` es literalmente el discovery de referencia), `config/*.json`
+  (scopes y claims con los nombres reales), `scripts/oidc-test.py` y `AGENTS.md` (que fija el
+  discovery de referencia como contrato). Cambiarlos no es solo redaccion: altera el proposito de
+  esos archivos, asi que queda como decision pendiente.
+
+## Neutralizacion de nombres del entorno real (2026-10-10)
+
+El usuario pidio eliminar toda mencia a la entidad, sus sistemas internos y sus productos —tambien
+en codigo y documentacion—, no solo en el video.
+
+- **Mapa unico y consistente aplicado a todo el repo** (AGENTS.md, docs/, README, config/, scripts/,
+  comentarios de src/, tests y memory-bank; ademas los artefactos de publish/): dominios del ente →
+  `example.com`, claims del ente → prefijo `Org.`, scopes e identificadores de sistema del discovery
+  → `Sistema1..56` (numerados en el orden de la lista original, mismo nombre en todos los archivos
+  para que config, tests y documentacion sigan cuadrando) y prosa → "el servidor de referencia" /
+  "el sistema interno" / "un servidor OIDC". Los redirects de pruebas pasan a `/pruebas/app/`.
+- **Lo que NO se toco, a proposito:** idioma y zona horaria (`es-CR`, `America/Costa_Rica`),
+  telefonos, dominios de ejemplo de usuarios y nombres de usuario inventados. Son datos de
+  localizacion o de ejemplo, no referencias a sistemas; el criterio fue "nombre propio de entidad,
+  sistema, producto o host interno".
+- **El video se regenero entero** tras el cambio (guion, audio, composiciones) para que la
+  narracion tampoco lo mencione, y `dotnet build` + `dotnet test` + `hyperframes check` quedan en
+  verde: la neutralizacion es mecanica y no altera comportamiento.
+
+## Auditoria final de neutralizacion para publicacion (2026-10-11)
+
+Antes de hacer el repo publico, se rebusco en todo el arbol —fuentes, docs, tests, scripts, video y
+artefactos ignorados— cualquier resto de BCCR, VES, "banco central", SINPE y demas nombres
+propietarios, con la intencion de neutralizar lo que quedara.
+
+- **SINPE: cero ocurrencias reales.** Los unicos matches case-insensitive son los nombres de test
+  `SinPedirIdTokenNoSeEmite…` y `LaPantallaPideSubjectYClaimsEditablesSinPedirContrasena`, que
+  contienen la palabra espanola "sin pedir"; no son referencias al sistema de pagos y se conservan.
+- **Los ultimos restos de BCCR vivian solo en artefactos ignorados, ya borrados**: binarios
+  obsoletos de `publish/` construidos antes de la neutralizacion, el cache de preview de
+  HyperFrames (`.hyperframes/preview/`, con el lede viejo "el comportamiento del BCCR"),
+  `scripts/__pycache__/` (redirect antiguo `pruebas/ves/landing`) y las copias de `config/` en
+  `bin/` y `obj/`. Ninguno esta versionado; todos se regeneran con build/publish.
+- **Decision del propietario: los datos de ejemplo se quedan tal cual.** `es-CR`,
+  `America/Costa_Rica`, telefonos `+506`, `jperez@example.cr`, `prueba@example.cr`,
+  `facturacion@empresa-demo.cr`, el `sub` con formato de cedula `01-2222-3333` y los valores de
+  `documentofva` NO se neutralizan: son fixtures de ejemplo, no nombres de empresa o sistema. Esta
+  entrada reemplaza el criterio difuso de "no se toco" de la entrada anterior por una exclusion
+  explicita del propietario.
+- **Verificacion**: barrido final de `bccr|banco central|sinpe|\bVES\b|pruebas/ves` a cero en todo
+  el arbol (versionado e ignorado), `dotnet build` sin avisos y `dotnet test` en verde.

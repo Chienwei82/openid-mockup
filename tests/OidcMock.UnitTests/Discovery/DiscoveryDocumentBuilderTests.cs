@@ -12,7 +12,7 @@ namespace OidcMock.UnitTests.Discovery;
 public sealed class DiscoveryDocumentBuilderTests
 {
     private const string Issuer = "http://localhost:5000/personafisica/";
-    private const string ReferenceIssuer = "https://oauth2.bccr.fi.cr/personafisica/";
+    private const string ReferenceIssuer = "https://oauth2.example.com/personafisica/";
 
     /// <summary>
     /// El discovery se arma con listas literales dentro del propio builder, que se pueden quedar atras

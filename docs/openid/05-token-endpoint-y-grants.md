@@ -60,7 +60,7 @@ sequenceDiagram
 
 El OP real autentica al cliente por `client_secret_basic` (encabezado `Authorization`) o
 `client_secret_post` (cuerpo), da prioridad al encabezado (RFC 6749 § 2.3.1), y exige `offline_access`
-para emitir refresh. Devuelve `WWW-Authenticate` en los 401. El BCCR además soporta auth por
+para emitir refresh. Devuelve `WWW-Authenticate` en los 401. El el servidor de referencia además soporta auth por
 **certificado de cliente** (`ClientCertificate`) que el mock no implementa.
 
 ## 🟨 OidcMock

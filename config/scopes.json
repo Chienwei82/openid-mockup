@@ -39,10 +39,10 @@
         "codTipoId",
         "nombre",
         "documentofva",
-        "Bccr.IdUsuario",
-        "Bccr.IdEntidad",
-        "Bccr.CodTipoId",
-        "Bccr.negocio"
+        "Org.IdUsuario",
+        "Org.IdEntidad",
+        "Org.CodTipoId",
+        "Org.negocio"
       ]
     },
     {
@@ -63,7 +63,7 @@
       "name": "documentofva",
       "claims": [
         "documentofva",
-        "Bccr.X509Subject",
+        "Org.X509Subject",
         "X509Subject"
       ]
     },
@@ -72,10 +72,10 @@
       "claims": []
     },
     {
-      "name": "centralenlinea.bccr.fi.cr",
+      "name": "Sistema1",
       "claims": [
-        "Bccr.IdEntidad",
-        "Bccr.negocio"
+        "Org.IdEntidad",
+        "Org.negocio"
       ]
     },
     {
