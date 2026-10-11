@@ -4,7 +4,7 @@
     data-composition-id="scene-10-matriz"
     data-width="1920"
     data-height="1080"
-    data-duration="24.052"
+    data-duration="23.956"
   >
 <section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Resumen</span><h2 class="headline" data-anim="rise">Matriz de Paridad</h2></header><div class="grid grid--matrix"><table class="table" data-anim="rise"><thead><tr><th>Token</th><th>Vida</th><th>Notas</th></tr></thead><tbody><tr data-hl="row-code"><td class="mono">authorization_code</td><td>5 min</td><td>opaco, un solo uso</td></tr><tr data-hl="row-access"><td class="mono">access_token</td><td>30 min</td><td>JWT RS256, aud = client_id</td></tr><tr data-hl="row-id"><td class="mono">id_token</td><td>30 min</td><td>solo con scope openid</td></tr><tr data-hl="row-refresh"><td class="mono">refresh_token</td><td>8 h</td><td>rota, requiere offline_access</td></tr></tbody></table><article class="card" data-anim="rise" data-hl="card-errores"><h3 class="card__title">Errores de protocolo</h3><p class="errow"><span class="chip chip--accent">invalid_request</span><span class="errow__http">400</span>falta o estorba un parámetro</p><p class="errow"><span class="chip chip--accent">invalid_client</span><span class="errow__http">401</span>credenciales de cliente inválidas</p><p class="errow"><span class="chip chip--accent">invalid_grant</span><span class="errow__http">400</span>code, refresh o PKCE no válidos</p><p class="errow"><span class="chip chip--accent">unsupported_grant_type</span><span class="errow__http">400</span>grant desconocido</p><p class="errow"><span class="chip chip--accent">invalid_scope</span><span class="errow__http">400</span>scope no permitido</p><p class="errow"><span class="chip chip--accent">invalid_token</span><span class="errow__http">401</span>reto Bearer en /userinfo</p></article></div><p class="note" data-anim="fade">El usuario denegó: <code>access_denied</code> · <code>request_uri</code> caducado: <code>invalid_request_uri</code>.</p></section>
 
@@ -30,7 +30,7 @@
           );
         }
 
-        var HIGHLIGHTS = {"row-code": [[9.318, 10.862]], "row-access": [[11.126, 12.112]], "row-id": [[12.2, 13.362]], "row-refresh": [[14.587, 16.543]], "card-errores": [[17.553, 18.7]]};
+        var HIGHLIGHTS = {"row-code": [[9.457, 11.11]], "row-access": [[11.446, 12.497]], "row-id": [[12.581, 13.771]], "row-refresh": [[14.808, 16.754]], "card-errores": [[17.735, 18.659]]};
         var targets = [];
         Object.keys(HIGHLIGHTS).forEach(function (key) {
           var el = root.querySelector('[data-hl="' + key + '"]');
@@ -61,8 +61,8 @@
         timeline.to(
           driver,
           {
-            t: 24.052,
-            duration: 24.052,
+            t: 23.956,
+            duration: 23.956,
             ease: 'none',
             onUpdate: function () {
               for (var i = 0; i < targets.length; i += 1) {

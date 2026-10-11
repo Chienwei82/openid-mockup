@@ -4,7 +4,7 @@
     data-composition-id="scene-05-idtoken"
     data-width="1920"
     data-height="1080"
-    data-duration="25.78"
+    data-duration="25.468"
   >
 <section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Claims</span><h2 class="headline" data-anim="rise">ID Token y Claims</h2></header><div class="grid grid--2"><article class="card" data-anim="rise"><h3 class="card__title">Claims del JWT</h3><p class="card__label">Obligatorios</p><div class="chiprow" data-anim="fade"><span class="chip chip--accent" data-hl="chip-iss">iss</span><span class="chip chip--accent" data-hl="chip-sub">sub</span><span class="chip chip--accent" data-hl="chip-aud">aud</span><span class="chip chip--accent" data-hl="chip-exp">exp</span><span class="chip chip--accent" data-hl="chip-iat">iat</span><span class="chip chip--accent" data-hl="chip-nonce">nonce</span></div><p class="card__label">Binding</p><div class="chiprow" data-anim="fade" data-hl="chiprow-binding"><span class="chip">at_hash</span><span class="chip">c_hash</span><span class="chip">sid</span></div></article><article class="card" data-anim="rise" data-hl="card-scope"><h3 class="card__title">Proyección por scope</h3><ul class="list"><li><strong>openid</strong> → sub</li><li><strong>profile</strong> → name, given_name, family_name, locale</li><li><strong>email</strong> → email, email_verified</li><li><strong>address</strong> → address</li></ul></article></div></section>
 
@@ -30,7 +30,7 @@
           );
         }
 
-        var HIGHLIGHTS = {"chip-iss": [[8.763, 9.484]], "chip-sub": [[9.749, 10.146]], "chip-aud": [[10.425, 10.646]], "chip-exp": [[10.954, 11.263]], "chip-iat": [[11.631, 11.866]], "chip-nonce": [[11.94, 12.572]], "chiprow-binding": [[13.587, 14.896]], "card-scope": [[22.465, 23.715]]};
+        var HIGHLIGHTS = {"chip-iss": [[8.799, 9.583]], "chip-sub": [[9.962, 10.27]], "chip-aud": [[10.578, 10.844]], "chip-exp": [[11.152, 11.474]], "chip-iat": [[11.796, 12.105]], "chip-nonce": [[12.203, 12.679]], "chiprow-binding": [[13.659, 14.892]], "card-scope": [[22.371, 23.477]]};
         var targets = [];
         Object.keys(HIGHLIGHTS).forEach(function (key) {
           var el = root.querySelector('[data-hl="' + key + '"]');
@@ -61,8 +61,8 @@
         timeline.to(
           driver,
           {
-            t: 25.78,
-            duration: 25.78,
+            t: 25.468,
+            duration: 25.468,
             ease: 'none',
             onUpdate: function () {
               for (var i = 0; i < targets.length; i += 1) {

@@ -4,10 +4,11 @@ Video explicativo de 16:9, en español, que recorre los 12 documentos de
 [`docs/openid/`](../) y muestra cómo OidcMock implementa cada pieza del protocolo.
 
 - **Formato:** 1920 × 1080 · 30 fps · H.264
-- **Duración:** 264,2 s (12 escenas)
+- **Duración:** 259,4 s (12 escenas)
 - **Voz:** TTS en español con [`@lobehub/tts`](https://www.npmjs.com/package/@lobehub/tts)
-  (voces neuronales de Microsoft Edge) — `es-ES-AlvaroNeural`, `rate: -0.15`
-  (≈14 caracteres/s, ritmo de presentador)
+  (voces neuronales de Microsoft Edge) — `es-US-PalomaNeural`, `rate: -0.15`
+  (≈12 caracteres/s, ritmo de presentador); elegida entre 9 voces candidatas con
+  `scripts/probe_voices.mjs`
 - **Salida:** `dist/oidc-explainer.mp4`
 
 ## Requisitos
@@ -48,6 +49,7 @@ scripts/theme.css       tokens y clases compartidas (Material You oscuro)
 scripts/generate_audio.mjs    TTS + marcas de palabra → audio/segments + timings.json
 scripts/build_composition.py  timings + markup → index.html y compositions/*.html
 scripts/probe_voice.mjs       sonda de prosodia y puntuación para ajustar la voz
+scripts/probe_voices.mjs      sonda de voces: compara candidatas con la misma frase
 audio/segments/         un MP3 por escena (lo que suena en el video)
 audio/timings.json      ventana y clip de audio de cada escena (medidos)
 audio/narration.mp3     narración completa, solo para revisión
@@ -70,7 +72,7 @@ npm run render   # 4. Renderizar a dist/oidc-explainer.mp4
 El paso 2 es determinista: si no se toca `narration.json` ni `scene_content.py`,
 regenerar produce exactamente los mismos archivos.
 
-> El render tarda unos minutos (~7 min en software GPU para 264 s de video) y se
+> El render tarda unos minutos (~7 min en software GPU para 259 s de video) y se
 > cancela solo (`render_cancelled_parent_exited`) si muere cualquier proceso
 > ancestro. Para lanzarlo desde una terminal que se va a cerrar, repáralo a
 > `init`: `HYPERFRAMES_RENDER_DETACHED=1 setsid --fork nohup npx hyperframes render . -o dist/oidc-explainer.mp4`.
@@ -112,9 +114,20 @@ en segundo plano y se cierra con `npm run stop`.
 ## Motor de voz
 
 La narración se sintetiza con **`@lobehub/tts`** (`EdgeSpeechTTS.createRequest`),
-que habla el protocolo de las voces neuronales de Microsoft Edge. Tres detalles
-que costaron descubrir, medidos con `scripts/probe_voice.mjs` y documentados en
-el código:
+que habla el protocolo de las voces neuronales de Microsoft Edge.
+
+**Elección de la voz.** `scripts/probe_voices.mjs` narra la misma frase del guion
+con 9 voces en español que el servicio acepta (`es-ES`, `es-MX`, `es-US`, `es-AR`,
+`es-CO`, `es-PE`) —12 configuraciones, incluidas tres a `rate: 0`— y mide duración,
+ritmo, percentiles de F0 (entonación) y pausas, dejando un MP3 por voz en
+`audio/voice-samples/` (gitignored) y un `comparativa.mp3` que las encadena en el
+orden de la tabla. De ahí salió **`es-US-PalomaNeural`**:
+mayor rango de entonación de todas (p90−p10 = 180 Hz) y mejor pronuncia de los
+anglicismos del guion (`PKCE`, `code verifier`, `dotnet run`). Con `rate: -0.15`
+narra 14,3 chars/s en la frase de sonda y 12,4 chars/s de media sobre el guion.
+
+Tres detalles que costaron descubrir, medidos con `scripts/probe_voice.mjs` y
+documentados en el código:
 
 1. **Transporte.** `@lobehub/tts` asume un navegador: su `createEdgeSpeech` usa el
    `WebSocket` global y el servicio exige un `Origin` de extensión de Chrome. En
@@ -122,10 +135,11 @@ el código:
    handshake; sin el `Origin` correcto el upgrade se queda colgado.
 2. **`rate` es un cambio RELATIVO.** Se traduce a `prosody rate="<rate*100>%"`,
    pero el servicio lo aplica como ± porcentaje sobre el ritmo por defecto de la
-   voz (≈16,5 caracteres/s), no como fracción del mismo. Así, `rate: 0.3` narra
-   +30% más rápido (≈21 chars/s, ~210 palabras/min — demasiado para un
-   explicador), sin prosody narra a 16,5 chars/s y `rate: -0.15` a ≈14 chars/s
-   (~140 palabras/min): el ritmo natural de presentador que usa el guion.
+   voz (16,5 chars/s con `es-ES-AlvaroNeural`, ≈14,6 con la actual), no como
+   fracción del mismo. Así, `rate: 0.3` narra +30% más rápido (≈21 chars/s,
+   ~210 palabras/min — demasiado para un explicador) y `rate: -0.15` narra ≈12,4
+   chars/s sobre el guion (~125 palabras/min): el ritmo de presentador que usa el
+   guion.
 3. **Lo que el servicio ignora o rechaza.** `pitch` no tiene efecto audible, y el
    SSML con `<break>` o `<mstts:express-as style>` se rechaza (el turno termina
    sin audio). Las pausas se consiguen solo con la puntuación del guion: una coma

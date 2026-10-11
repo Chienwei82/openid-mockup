@@ -18,7 +18,7 @@ import { EdgeSpeechTTS } from '@lobehub/tts';
 import WebSocket from 'ws';
 
 const PROBE_DIR = '/tmp/hf-voice-probe';
-const VOICE = 'es-ES-AlvaroNeural';
+const VOICE = 'es-US-PalomaNeural';
 const PROBE_TEXT =
   'El cliente genera un código de verificación y lo envía al servidor para canjearlo por sus tokens de acceso.';
 

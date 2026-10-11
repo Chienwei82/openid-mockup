@@ -4,7 +4,7 @@
     data-composition-id="scene-12-outro"
     data-width="1920"
     data-height="1080"
-    data-duration="15.94"
+    data-duration="15.34"
   >
 <section class="scene scene--center"><span class="kicker" data-anim="pop">Cierre</span><h2 class="headline" data-anim="rise">Desarrolla sin dependencias externas</h2><p class="lede" data-anim="fade" data-hl="lede">OidcMock replica el comportamiento del servidor de referencia para desarrollo local: configuración JSON, estado en memoria y ningún artefacto fuera de <code data-hl="code-localhost">localhost</code>.</p><div class="chiprow" data-anim="fade"><span class="chip">docs/openid/</span><span class="chip">scripts/test.sh</span><span class="chip">OidcMock v1.0</span></div></section>
 
@@ -30,7 +30,7 @@
           );
         }
 
-        var HIGHLIGHTS = {"lede": [[1.637, 3.107]], "code-localhost": [[10.994, 11.641]]};
+        var HIGHLIGHTS = {"lede": [[1.524, 2.841]], "code-localhost": [[10.544, 11.216]]};
         var targets = [];
         Object.keys(HIGHLIGHTS).forEach(function (key) {
           var el = root.querySelector('[data-hl="' + key + '"]');
@@ -61,8 +61,8 @@
         timeline.to(
           driver,
           {
-            t: 15.94,
-            duration: 15.94,
+            t: 15.34,
+            duration: 15.34,
             ease: 'none',
             onUpdate: function () {
               for (var i = 0; i < targets.length; i += 1) {

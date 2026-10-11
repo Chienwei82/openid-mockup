@@ -4,7 +4,7 @@
     data-composition-id="scene-11-arranque"
     data-width="1920"
     data-height="1080"
-    data-duration="20.644"
+    data-duration="19.996"
   >
 <section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Práctico</span><h2 class="headline" data-anim="rise">Arrancar OidcMock</h2></header><div class="grid grid--2"><article class="card" data-anim="rise"><h3 class="card__title">Comandos</h3><pre class="code" data-hl="cmd-run"><code>dotnet run --project src/OidcMock.Host</code></pre><pre class="code" data-hl="cmd-issuer"><code>--OidcMock:Issuer=https://localhost:5443/personafisica/</code></pre><pre class="code"><code>--OidcMock:Serving:UseHttps=false --OidcMock:Serving:AllowHttp=true</code></pre></article><article class="card" data-anim="rise" data-hl="card-clientes"><h3 class="card__title">Clientes de ejemplo (config/)</h3><ul class="list"><li><span class="tok tok--code">público</span> web-app-spa — PKCE, sin secreto</li><li><span class="tok tok--access">confidencial</span> web-app-confidencial</li><li><span class="tok tok--refresh">servicio</span> backend-service — client_credentials</li></ul><p class="card__label">Opciones clave</p><div class="chiprow" data-anim="fade"><span class="chip">PathBase /personafisica</span><span class="chip">ConfigDirectory ./config</span><span class="chip">ReloadOnChange true</span></div></article></div></section>
 
@@ -30,7 +30,7 @@
           );
         }
 
-        var HIGHLIGHTS = {"cmd-run": [[3.059, 3.794]], "cmd-issuer": [[6.156, 7.656]], "card-clientes": [[11.381, 12.66]]};
+        var HIGHLIGHTS = {"cmd-run": [[2.911, 3.597]], "cmd-issuer": [[6.026, 7.273]], "card-clientes": [[11.082, 12.23]]};
         var targets = [];
         Object.keys(HIGHLIGHTS).forEach(function (key) {
           var el = root.querySelector('[data-hl="' + key + '"]');
@@ -61,8 +61,8 @@
         timeline.to(
           driver,
           {
-            t: 20.644,
-            duration: 20.644,
+            t: 19.996,
+            duration: 19.996,
             ease: 'none',
             onUpdate: function () {
               for (var i = 0; i < targets.length; i += 1) {

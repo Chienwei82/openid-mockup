@@ -1482,3 +1482,30 @@ propietarios, con la intencion de neutralizar lo que quedara.
   explicita del propietario.
 - **Verificacion**: barrido final de `bccr|banco central|sinpe|\bVES\b|pruebas/ves` a cero en todo
   el arbol (versionado e ignorado), `dotnet build` sin avisos y `dotnet test` en verde.
+
+
+## Voz mas natural para el explicador (2026-10-11)
+
+El propietario pidio reemplazar la voz del video por una mas natural. La anterior
+(`es-ES-AlvaroNeural`) dejo paso a una seleccion hecha con datos y con los oidos del propietario.
+
+- **Sonda de voces nueva: `scripts/probe_voices.mjs`.** Narra la MISMA frase del guion con las
+  9 voces en español que el servicio Edge acepta en consumer (12 configuraciones, incluidas tres
+  a `rate: 0`) y mide duración, chars/s, percentiles de F0 —entonación— y pausas a partir de las
+  marcas `WordBoundary`. Deja un MP3 por voz en `audio/voice-samples/` y un `comparativa.mp3`
+  que las encadena en el orden de la tabla, para decidir escuchando y no a ojo.
+- **Eleccion: `es-US-PalomaNeural`** (antes `es-ES-AlvaroNeural`), con `rate: -0.15` intacto.
+  Es la de mayor rango de entonación de todas (p90−p10 = 180 Hz; la anterior daba 139 Hz), narra
+  12,4 chars/s de media sobre el guion y pronuncia los anglicismos del guion (`PKCE`,
+  `code verifier`, `dotnet run`) con soltura, que es lo que mas se nota en un explicador tecnico.
+- **El cambio es una linea:** `scripts/narration.json` → `"voice"`. Los tiempos se recalculan
+  solos (`npm run audio`): la narración pasa de 264,2 s a 259,4 s y los 57 resaltados resuelven
+  su ventana contra las marcas de palabra sin ningun aviso.
+- **`scripts/probe_voice.mjs` (sonda de prosodia) apunta ahora a la voz vigente**, para que su
+  baseline describa el video real y no el antiguo.
+- **`audio/voice-samples/` va en `.gitignore`:** se regenera con la sonda y no suena en el video;
+  los MP3 que si suenan (`audio/segments/`) siguen versionados.
+- **Un turno perdido se reintenta:** el servicio fluctua y en una pasada `es-PE-CamilaNeural`
+  no devolvio audio; la sonda reintenta una vez antes de reportar RECHAZADO.
+- **Verificacion:** `npm run audio` + `npm run build` + `npm run check` en verde (0 errores,
+  0 avisos; contraste 87/87 WCAG AA).

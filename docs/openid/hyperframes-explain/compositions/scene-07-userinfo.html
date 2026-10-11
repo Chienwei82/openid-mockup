@@ -4,7 +4,7 @@
     data-composition-id="scene-07-userinfo"
     data-width="1920"
     data-height="1080"
-    data-duration="19.876"
+    data-duration="19.516"
   >
 <section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Gestión</span><h2 class="headline" data-anim="rise">UserInfo, Introspection y Revocation</h2></header><div class="grid grid--3"><article class="card" data-anim="rise" data-hl="card-userinfo"><h3 class="card__title">UserInfo</h3><p class="mono">GET /connect/userinfo</p><ul class="list"><li>Devuelve los claims del usuario</li><li>Requiere <code>Authorization: Bearer</code></li><li>Reto <code>WWW-Authenticate</code> si el token no vale</li></ul></article><article class="card" data-anim="rise" data-hl="card-introspection"><h3 class="card__title">Introspection</h3><p class="mono">POST /connect/introspect</p><ul class="list"><li>Responde <code>active: true</code> o <code>false</code></li><li>Nunca revela si el token existía</li><li>RFC 7662, autenticado como cliente</li></ul></article><article class="card" data-anim="rise" data-hl="card-revocation"><h3 class="card__title">Revocation</h3><p class="mono">POST /connect/revocation</p><ul class="list"><li>Access token: registra su <code>jti</code></li><li>Refresh token: revoca la familia completa</li><li>RFC 7009, idempotente</li></ul></article></div></section>
 
@@ -30,7 +30,7 @@
           );
         }
 
-        var HIGHLIGHTS = {"card-userinfo": [[1.0, 2.221]], "card-introspection": [[6.156, 7.641]], "card-revocation": [[13.337, 14.734]]};
+        var HIGHLIGHTS = {"card-userinfo": [[1.006, 2.14]], "card-introspection": [[6.11, 7.301]], "card-revocation": [[12.931, 14.247]]};
         var targets = [];
         Object.keys(HIGHLIGHTS).forEach(function (key) {
           var el = root.querySelector('[data-hl="' + key + '"]');
@@ -61,8 +61,8 @@
         timeline.to(
           driver,
           {
-            t: 19.876,
-            duration: 19.876,
+            t: 19.516,
+            duration: 19.516,
             ease: 'none',
             onUpdate: function () {
               for (var i = 0; i < targets.length; i += 1) {
