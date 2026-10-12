@@ -15,7 +15,9 @@
  * más rápido (≈21 chars/s, demasiado para un explicador) y `rate: -0.15` →
  * `rate="-15%"` narra ≈14 chars/s (≈140 palabras/min), ritmo de presentador.
  * `pitch` es relativo y solo funciona con signo: `pitch: -0.1` → `pitch="-10%"`
- * baja la F0 mediana ≈10% (182 → 164 Hz) sin tocar la duración. Atención: si
+ * baja la F0 mediana ≈10% (182 → 164 Hz) sin tocar la duración. `pitch: 0`
+ * deja el tono natural (≈182 Hz); `synthesize` lo emite como 0.001 para que
+ * el `pitch || 1` de genSSML no lo convierta en "100 %". Atención: si
  * `narration.json` no declara `pitch`, `genSSML` emite igual `pitch="100%"` (su
  * `pitch || 1`) y Edge lo interpreta como ≈+50%: así sonaba la narración vieja,
  * a 270 Hz en vez de 182. Por eso la sonda anterior "medía" que `pitch` no
@@ -45,6 +47,8 @@ const SEGMENTS_DIR = join(AUDIO_DIR, 'segments');
 const LEAD_IN_SECONDS = 0.9;
 const TAIL_SECONDS = 1.0;
 const SYNTHESES_TIMEOUT_MS = 60_000;
+// Ver `synthesize`: 0.001 sobrevive al `|| 1` de genSSML y llega como "0 %".
+const PITCH_OPTION_ZERO = 0.001;
 const TICKS_PER_SECOND = 10_000_000n;
 
 // @lobehub/tts habla el protocolo de Edge TTS, pero su transporte asume un
@@ -102,8 +106,9 @@ async function synthesize(text, prosody, target) {
         input: text,
         options: {
           voice: prosody.voice,
+          // `pitch: 0` es falsy: genSSML hace `pitch || 1` y caería a "100 %" (agudo).
           rate: prosody.rate,
-          ...(prosody.pitch ? { pitch: prosody.pitch } : {}),
+          ...(prosody.pitch !== undefined ? { pitch: prosody.pitch === 0 ? PITCH_OPTION_ZERO : prosody.pitch } : {}),
         },
       },
     }),
