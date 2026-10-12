@@ -122,6 +122,57 @@ def lanes(
     )
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Diagramas animados: flujo secuencial (flow) y casos de uso (usecase).
+#
+# `flow` dibuja una cadena de paradas unidas por un riel que el build traza
+# (receta svg-path-draw) y un token viajero por parada (receta
+# spring-pop-entrance + driver lineal seek-safe). Cada parada lleva `data-hl`
+# para que la voz la encienda al mencionarla (receta asr-keyword-glow).
+# `usecase` dibuja una pregunta con ramas de decisión para las escenas de
+# casos de uso (grants, sesiones, flujos avanzados, contenido del id token).
+# ─────────────────────────────────────────────────────────────────────────────
+
+def flow_stop(number: str, label: str, hl: str | None = None) -> str:
+    return (
+        f'<li class="flow__stop" data-anim="pop"{hl_attr(hl)}>'
+        f'<span class="flow__n">{number}</span>'
+        f'<span class="flow__label">{label}</span>'
+        f'<span class="flow__token" data-token="{hl or number}" aria-hidden="true"></span>'
+        "</li>"
+    )
+
+
+def flow(stops: tuple[tuple[str, str, str | None], ...]) -> str:
+    return (
+        '<ol class="flow" data-anim="fade">'
+        '<span class="flow__rail" aria-hidden="true"></span>'
+        + "".join(flow_stop(number, label, key) for number, label, key in stops)
+        + "</ol>"
+    )
+
+
+def usecase(
+    question: str,
+    branches: tuple[tuple[str, str, str, str | None], ...],
+) -> str:
+    return (
+        '<div class="use">'
+        f'<p class="use__q" data-anim="pop">{question}</p>'
+        '<div class="use__branches">'
+        + "".join(
+            f'<article class="use__branch" data-anim="rise"{hl_attr(hl)}>'
+            f'<h3 class="use__when">{when}</h3>'
+            f'<p class="use__go">{go}</p>'
+            f'<p class="use__note">{note}</p>'
+            "</article>"
+            for when, go, note, hl in branches
+        )
+        + "</div></div>"
+    )
+
+
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # El mapa fijo: el flujo completo en seis paradas, con sus seis claves de voz.
@@ -138,16 +189,10 @@ MAP_ACTORS: tuple[str, ...] = ("Cliente", "Navegador", "OP · OidcMock", "API")
 
 
 def flow_map(active: int | None = None) -> str:
-    stops = "".join(
-        f'<li class="map__stop{" map__stop--on" if number == active else ""}"'
-        f' data-anim="slide"{hl_attr(key)}>'
-        f'<span class="map__n">{number}</span>{label}</li>'
-        for number, (key, label) in enumerate(FLOW_STOPS, start=1)
+    _ = active
+    return chips(tuple(MAP_ACTORS)) + flow(
+        tuple((str(number), label, key) for number, (key, label) in enumerate(FLOW_STOPS, start=1))
     )
-    actors = "".join(
-        f'<span class="map__actor" data-anim="pop">{actor}</span>' for actor in MAP_ACTORS
-    )
-    return f'<div class="map" data-anim="fade"><p class="map__actors">{actors}</p><ol class="map__stops">{stops}</ol></div>'
 
 
 SCENE_BODY: dict[str, str] = {}
@@ -206,238 +251,123 @@ SCENE_BODY["scene-04-discovery"] = (
     '<section class="scene">'
     + head("Paso 1 del mapa", "Discovery y JWKS")
     + where_you_are("Discovery")
-    + '<div class="grid grid--2">'
-    + card(
-        "Discovery Document",
-        '<p class="mono">GET /.well-known/openid-configuration</p>'
-        + bullet_list(
-            (
-                "issuer — comparado literalmente por el cliente",
-                "authorization · token · userinfo · introspect · revocation",
-                "scopes_supported y grant_types_supported",
-            )
-        ),
-        hl="card-discovery",
+    + flow(
+        (
+            ("1", "El cliente pide <code>/.well-known/openid-configuration</code>", "card-discovery"),
+            ("2", "Lee issuer, endpoints y capacidades soportadas", "card-discovery"),
+            ("3", "Descarga el <strong>JWKS</strong> con las claves públicas RS256", "card-jwks"),
+            ("4", "Ya sabe a dónde redirigir y con qué validar firmas", "card-jwks"),
+        )
     )
-    + card(
-        "JWKS",
-        '<p class="mono">GET /.well-known/openid-configuration/jwks</p>'
-        + bullet_list(
-            (
-                "JSON Web Key Set — claves públicas del emisor",
-                "kid identifica qué clave firmó el JWT",
-                "Algoritmo de firma: RS256",
-            )
-        ),
-        hl="card-jwks",
-    )
-    + "</div></section>"
+    + "</section>"
 )
 
 SCENE_BODY["scene-05-pkce"] = (
     '<section class="scene">'
     + head("Pasos 2 y 3 del mapa", "Authorization Code + PKCE")
     + where_you_are("Authorize")
-    + lanes(
+    + flow(
         (
-            (
-                "Cliente",
-                (
-                    ("step-verifier", "Genera <code>code_verifier</code> y <code>code_challenge</code>"),
-                    ("step-authorize", "Redirige a <code>/connect/authorize</code> con challenge y <code>state</code>"),
-                ),
-            ),
-            (
-                "OP · OidcMock",
-                (
-                    ("step-aprueba", "Autentica al usuario y pide consentimiento"),
-                    ("step-canje", "Devuelve el <code>authorization_code</code> al redirect_uri"),
-                    ("step-compara", "Al canjear, compara en tiempo constante · S256 sobre plain"),
-                ),
-            ),
-        ),
-        1,
+            ("1", "El cliente genera <code>verifier</code> y <code>challenge</code>", "step-verifier"),
+            ("2", "Redirige a <code>/connect/authorize</code> con challenge y <code>state</code>", "step-authorize"),
+            ("3", "El usuario <strong>aprueba</strong> y vuelve con el <code>code</code>", "step-aprueba"),
+            ("4", "Al canjear, el servidor <strong>compara</strong> el verifier en tiempo constante", "step-compara"),
+            ("5", "Métodos <code>plain</code> y <code>S256</code>: usa <strong>S256</strong>", "step-metodos"),
+        )
     )
     + "</section>"
 )
 
 SCENE_BODY["scene-06-idtoken"] = (
     '<section class="scene">'
-    + head("Paso 4 del mapa", "ID Token y Claims")
+    + head("Paso 4b del mapa", "El ID Token")
     + where_you_are("Canje")
-    + '<div class="grid grid--2">'
-    + card(
-        "Claims del JWT",
-        '<p class="card__label">Obligatorios</p>'
-        + chips(
-            (
-                ("chip-iss", "iss"),
-                ("chip-sub", "sub"),
-                ("chip-aud", "aud"),
-                ("chip-exp", "exp"),
-                ("chip-iat", "iat"),
-                ("chip-nonce", "nonce"),
-            ),
-            " chip--accent",
-        )
-        + '<p class="card__label">Binding</p>'
-        + chips(("at_hash", "c_hash", "sid"), hl="chiprow-binding"),
-    )
-    + card(
-        "Proyección por scope",
-        bullet_list(
-            (
-                "<strong>openid</strong> → sub",
-                "<strong>profile</strong> → name, given_name, family_name, locale",
-                "<strong>email</strong> → email, email_verified",
-                "<strong>address</strong> → address",
-            )
+    + usecase(
+        "¿Qué trae el id token?",
+        (
+            ("Identidad", "<code>sub</code>, <code>name</code>, <code>email</code>", "quién es el usuario", "card-claims"),
+            ("Validez", "<code>iss</code>, <code>aud</code>, <code>exp</code>, <code>iat</code>", "quién lo emite y hasta cuándo vale", "card-tiempos"),
+            ("Sesión", "<code>sid</code>, <code>auth_time</code>, <code>nonce</code>", "a qué login pertenece", "card-sesion"),
         ),
-        hl="card-scope",
     )
-    + "</div></section>"
+    + '<p class="note" data-anim="fade">Solo aparece cuando pides el scope <code>openid</code>.</p>'
+    + "</section>"
 )
 
 SCENE_BODY["scene-07-canje"] = (
     '<section class="scene">'
     + head("Paso 4 del mapa", "El Canje en el Token Endpoint")
     + where_you_are("Canje")
-    + steps(
+    + flow(
         (
-            ("paso-envia", "El cliente envía <code>code</code>, <code>redirect_uri</code> y <code>code_verifier</code>"),
-            ("paso-valida", "El servidor valida el código: existe, es de ese cliente y no se usó"),
-            ("paso-comprueba", "Comprueba el verifier contra el challenge guardado"),
-            ("paso-responde", "Responde <code>access_token</code> + <code>id_token</code> + <code>refresh_token</code>"),
-            ("paso-repite", "Repetir el código es <code>invalid_grant</code>: ya no vale"),
+            ("1", "El cliente envía <strong>code</strong> más <code>verifier</code>", "canje-post"),
+            ("2", "El servidor <strong>valida</strong> el challenge", "canje-valida"),
+            ("3", "Emite <strong>access</strong>, <strong>id</strong> y <strong>refresh</strong>", "canje-tokens"),
+            ("4", "El code queda <strong>inutilizado</strong>: un solo uso", "canje-un-solo-uso"),
         )
     )
+    + '<p class="note" data-anim="fade">El code expira en 5 minutos y es de un solo uso.</p>'
     + "</section>"
 )
 
 SCENE_BODY["scene-08-grants"] = (
     '<section class="scene">'
-    + head("Otros caminos", "Otros Grants del Token Endpoint")
-    + '<p class="mono" data-anim="fade">POST /connect/token — un handler por grant</p>'
-    + '<div class="grid grid--2">'
-    + card(
-        "Con usuario",
-        bullet_list(
-            (
-                ("card-refresh", "<strong>refresh_token</strong> — pide tokens nuevos sin login, rota en cada uso"),
-                ("card-password", "<strong>password</strong> — valida usuario y contraseña directamente"),
-            )
+    + head("Paso 4, otros caminos", "Otros Grant Types")
+    + where_you_are("Canje")
+    + usecase(
+        "¿Qué grant uso en cada caso?",
+        (
+            ("Hay usuario y navegador", "<strong>authorization_code</strong> con PKCE", "el camino feliz ya visto", "card-code"),
+            ("Solo máquina a máquina", "<strong>client_credentials</strong>", "sin usuario, con secreto", "card-cc"),
+            ("La sesión sigue viva", "<strong>refresh_token</strong>", "rota el refresh en cada uso", "card-refresh"),
         ),
     )
-    + card(
-        "Sin usuario",
-        bullet_list(
-            (
-                ("card-client", "<strong>client_credentials</strong> — tokens de servicio, sin usuario"),
-                ("card-device", "<strong>device_code y CIBA</strong> — simulados para completar el discovery"),
-            )
-        ),
-    )
-    + "</div></section>"
+    + '<p class="note" data-anim="fade">OidcMock también anuncia password, device_code y CIBA.</p>'
+    + "</section>"
 )
 
 SCENE_BODY["scene-09-uso"] = (
     '<section class="scene">'
-    + head("Pasos 5 y 6 del mapa", "UserInfo, API y Revocación")
+    + head("Pasos 5 y 6 del mapa", "UserInfo, API y Ciclo de Vida")
     + where_you_are("Uso")
-    + lanes(
+    + flow(
         (
-            (
-                "OP · OidcMock",
-                (
-                    ("uso-userinfo", "<code>GET /connect/userinfo</code> devuelve los claims del usuario"),
-                    ("uso-introspection", "<code>POST /connect/introspect</code> responde <code>active</code> true o false"),
-                    ("uso-revocation", "<code>POST /connect/revocation</code> registra el <code>jti</code>"),
-                ),
-            ),
-            (
-                "API",
-                (
-                    ("uso-api", "Valida la firma contra el JWKS y sirve los datos"),
-                ),
-            ),
-        ),
-        0,
+            ("5", "<strong>UserInfo</strong> devuelve los claims del usuario", "uso-userinfo"),
+            ("6", "La <strong>API</strong> valida firma, issuer, aud y expiración", "uso-api"),
+            ("7", "<strong>Introspection</strong> responde siempre active sí o no", "uso-introspection"),
+            ("8", "<strong>Revocation</strong> registra el jti o revoca la familia", "uso-revocation"),
+        )
     )
     + "</section>"
 )
 
 SCENE_BODY["scene-10-sesion"] = (
     '<section class="scene">'
-    + head("Sesión", "Sesión y Logout")
-    + '<div class="grid grid--3">'
-    + card(
-        "Sesión del OP",
-        bullet_list(("Habilita el SSO", "Cookie del navegador", "Vida por defecto 8 h")),
-        hl="card-op",
+    + head("Sesión", "Tres Sesiones y el Logout")
+    + usecase(
+        "¿Qué sesión se cierra con el logout?",
+        (
+            ("Sesión del OP", "habilita el <strong>SSO</strong> entre clientes", "cookie del servidor", "card-op"),
+            ("Sesión del cliente", "su propia <strong>cookie</strong> de app", "vive aunque el OP cierre", "card-cliente"),
+            ("El sid puente", "conecta el <strong>id token</strong> con el OP", "viaja en el logout", "card-sid"),
+        ),
     )
-    + card(
-        "Sesión del cliente",
-        bullet_list(("Cookie propia de la aplicación", "Independiente del OP", "Se cierra con el logout")),
-        hl="card-cliente",
-    )
-    + card(
-        "sid",
-        bullet_list(("Conecta el id_token con la sesión", "Viaja también en el logout", "Permite front-channel logout")),
-        hl="card-sid",
-    )
-    + "</div>"
-    + '<div class="grid grid--2 grid--tight">'
-    + card(
-        "prompt",
-        chips(("none", "login", "consent", "select_account")),
-        hl="card-prompt",
-    )
-    + card(
-        "RP-Initiated Logout",
-        '<p class="mono">/connect/endsession · id_token_hint · post_logout_redirect_uri</p>',
-        hl="card-logout",
-    )
-    + "</div></section>"
+    + '<p class="note" data-anim="fade">El logout usa <code>connect/endsession</code> con id token hint; '
+    + 'el <code>prompt</code> admite <code>none</code>, <code>login</code>, <code>consent</code> o <code>select_account</code>.</p>'
+    + "</section>"
 )
 
 SCENE_BODY["scene-11-avanzados"] = (
     '<section class="scene">'
     + head("Avanzado", "Flujos Avanzados")
-    + '<div class="grid grid--3">'
-    + card(
-        'PAR <span class="badge badge--ok">implementado</span>',
-        bullet_list(
-            (
-                "RFC 9126, un solo uso",
-                "Envía los parámetros por back-channel",
-                "Devuelve <code>request_uri</code> al cliente",
-            )
+    + usecase(
+        "¿Qué flujo avanzado necesito?",
+        (
+            ("Parámetros sensibles", "<strong>PAR</strong>: request uri por back-channel", "implementado", "card-par"),
+            ("Sistema interno", "<strong>híbrido</strong> code id token", "valida c_hash y session_state", "card-hibrido"),
+            ("Sin pantalla ni push", "<strong>device</strong> y <strong>CIBA</strong> simulados", "sondeo con slow_down", "card-device"),
         ),
-        hl="card-par",
     )
-    + card(
-        'Híbrido <span class="badge badge--ok">implementado</span>',
-        bullet_list(
-            (
-                "<code>code id_token</code> en el fragmento",
-                "Incluye <code>c_hash</code> y <code>session_state</code>",
-                "Pensado para el sistema interno",
-            )
-        ),
-        hl="card-hibrido",
-    )
-    + card(
-        'Device y CIBA <span class="badge badge--warn">simulados</span>',
-        bullet_list(
-            (
-                "Ciclo de sondeo, sin pantalla ni push",
-                "<code>authorization_pending</code>, <code>slow_down</code>",
-                "Validan el discovery anunciado",
-            )
-        ),
-        hl="card-device",
-    )
-    + "</div>"
     + '<p class="note" data-anim="fade">Implicit (<code>id_token token</code>) se anuncia pero no se responde: devuelve <code>unsupported_response_type</code>.</p>'
     + "</section>"
 )

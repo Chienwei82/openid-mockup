@@ -6,7 +6,7 @@
     data-height="1080"
     data-duration="28.132"
   >
-<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Paso 4 del mapa</span><h2 class="headline" data-anim="rise">ID Token y Claims</h2></header><p class="where" data-anim="fade"><span class="where__label">Estás aquí</span><span class="where__crumb"><span class="where__n">1</span>Discovery</span><span class="where__crumb"><span class="where__n">2-3</span>Authorize</span><span class="where__crumb where__crumb--on"><span class="where__n">4</span>Canje</span><span class="where__crumb"><span class="where__n">5-6</span>Uso</span></p><div class="grid grid--2"><article class="card" data-anim="rise"><h3 class="card__title">Claims del JWT</h3><p class="card__label">Obligatorios</p><div class="chiprow" data-anim="fade"><span class="chip chip--accent" data-hl="chip-iss">iss</span><span class="chip chip--accent" data-hl="chip-sub">sub</span><span class="chip chip--accent" data-hl="chip-aud">aud</span><span class="chip chip--accent" data-hl="chip-exp">exp</span><span class="chip chip--accent" data-hl="chip-iat">iat</span><span class="chip chip--accent" data-hl="chip-nonce">nonce</span></div><p class="card__label">Binding</p><div class="chiprow" data-anim="fade" data-hl="chiprow-binding"><span class="chip">at_hash</span><span class="chip">c_hash</span><span class="chip">sid</span></div></article><article class="card" data-anim="rise" data-hl="card-scope"><h3 class="card__title">Proyección por scope</h3><ul class="list"><li><strong>openid</strong> → sub</li><li><strong>profile</strong> → name, given_name, family_name, locale</li><li><strong>email</strong> → email, email_verified</li><li><strong>address</strong> → address</li></ul></article></div></section>
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Paso 4b del mapa</span><h2 class="headline" data-anim="rise">El ID Token</h2></header><p class="where" data-anim="fade"><span class="where__label">Estás aquí</span><span class="where__crumb"><span class="where__n">1</span>Discovery</span><span class="where__crumb"><span class="where__n">2-3</span>Authorize</span><span class="where__crumb where__crumb--on"><span class="where__n">4</span>Canje</span><span class="where__crumb"><span class="where__n">5-6</span>Uso</span></p><div class="use"><p class="use__q" data-anim="pop">¿Qué trae el id token?</p><div class="use__branches"><article class="use__branch" data-anim="rise" data-hl="card-claims"><h3 class="use__when">Identidad</h3><p class="use__go"><code>sub</code>, <code>name</code>, <code>email</code></p><p class="use__note">quién es el usuario</p></article><article class="use__branch" data-anim="rise" data-hl="card-tiempos"><h3 class="use__when">Validez</h3><p class="use__go"><code>iss</code>, <code>aud</code>, <code>exp</code>, <code>iat</code></p><p class="use__note">quién lo emite y hasta cuándo vale</p></article><article class="use__branch" data-anim="rise" data-hl="card-sesion"><h3 class="use__when">Sesión</h3><p class="use__go"><code>sid</code>, <code>auth_time</code>, <code>nonce</code></p><p class="use__note">a qué login pertenece</p></article></div></div><p class="note" data-anim="fade">Solo aparece cuando pides el scope <code>openid</code>.</p></section>
 
     <script>
       (function () {
@@ -31,6 +31,29 @@
         }
 
         var HIGHLIGHTS = {"chip-iss": [[11.488, 12.273]], "chip-sub": [[12.651, 12.959]], "chip-aud": [[13.267, 13.533]], "chip-exp": [[13.841, 14.163]], "chip-iat": [[14.485, 14.794]], "chip-nonce": [[14.892, 15.368]], "chiprow-binding": [[16.348, 17.581]], "card-scope": [[25.06, 26.166]]};
+        var RAILS = [];
+        var TOKENS = [];
+        var rails = root.querySelectorAll('.flow__rail');
+        for (var rail = 0; rail < rails.length; rail += 1) {
+          var span = RAILS[rail] || [0, 0.6];
+          timeline.fromTo(
+            rails[rail],
+            { scaleY: 0 },
+            { scaleY: 1, duration: Math.max(span[1] - span[0], 0.4), ease: 'power2.out' },
+            span[0]
+          );
+        }
+        var tokens = root.querySelectorAll('.flow__token');
+        for (var tok = 0; tok < tokens.length; tok += 1) {
+          var win = TOKENS[tok] || [0, 0];
+          timeline.fromTo(
+            tokens[tok],
+            { opacity: 0, scale: 0 },
+            { opacity: 1, scale: 1, duration: 0.35, ease: 'power3.out' },
+            Math.max(win[0] - 0.15, 0)
+          );
+          timeline.to(tokens[tok], { opacity: 0.25, duration: 0.5, ease: 'power1.out' }, win[1]);
+        }
         var targets = [];
         Object.keys(HIGHLIGHTS).forEach(function (key) {
           var el = root.querySelector('[data-hl="' + key + '"]');

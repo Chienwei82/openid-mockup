@@ -6,7 +6,7 @@
     data-height="1080"
     data-duration="27.508"
   >
-<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Paso 4 del mapa</span><h2 class="headline" data-anim="rise">El Canje en el Token Endpoint</h2></header><p class="where" data-anim="fade"><span class="where__label">Estás aquí</span><span class="where__crumb"><span class="where__n">1</span>Discovery</span><span class="where__crumb"><span class="where__n">2-3</span>Authorize</span><span class="where__crumb where__crumb--on"><span class="where__n">4</span>Canje</span><span class="where__crumb"><span class="where__n">5-6</span>Uso</span></p><ol class="steps"><li data-anim="slide" data-hl="paso-envia"><span class="steps__n">1</span>El cliente envía <code>code</code>, <code>redirect_uri</code> y <code>code_verifier</code></li><li data-anim="slide" data-hl="paso-valida"><span class="steps__n">2</span>El servidor valida el código: existe, es de ese cliente y no se usó</li><li data-anim="slide" data-hl="paso-comprueba"><span class="steps__n">3</span>Comprueba el verifier contra el challenge guardado</li><li data-anim="slide" data-hl="paso-responde"><span class="steps__n">4</span>Responde <code>access_token</code> + <code>id_token</code> + <code>refresh_token</code></li><li data-anim="slide" data-hl="paso-repite"><span class="steps__n">5</span>Repetir el código es <code>invalid_grant</code>: ya no vale</li></ol></section>
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Paso 4 del mapa</span><h2 class="headline" data-anim="rise">El Canje en el Token Endpoint</h2></header><p class="where" data-anim="fade"><span class="where__label">Estás aquí</span><span class="where__crumb"><span class="where__n">1</span>Discovery</span><span class="where__crumb"><span class="where__n">2-3</span>Authorize</span><span class="where__crumb where__crumb--on"><span class="where__n">4</span>Canje</span><span class="where__crumb"><span class="where__n">5-6</span>Uso</span></p><ol class="flow" data-anim="fade"><span class="flow__rail" aria-hidden="true"></span><li class="flow__stop" data-anim="pop" data-hl="canje-post"><span class="flow__n">1</span><span class="flow__label">El cliente envía <strong>code</strong> más <code>verifier</code></span><span class="flow__token" data-token="canje-post" aria-hidden="true"></span></li><li class="flow__stop" data-anim="pop" data-hl="canje-valida"><span class="flow__n">2</span><span class="flow__label">El servidor <strong>valida</strong> el challenge</span><span class="flow__token" data-token="canje-valida" aria-hidden="true"></span></li><li class="flow__stop" data-anim="pop" data-hl="canje-tokens"><span class="flow__n">3</span><span class="flow__label">Emite <strong>access</strong>, <strong>id</strong> y <strong>refresh</strong></span><span class="flow__token" data-token="canje-tokens" aria-hidden="true"></span></li><li class="flow__stop" data-anim="pop" data-hl="canje-un-solo-uso"><span class="flow__n">4</span><span class="flow__label">El code queda <strong>inutilizado</strong>: un solo uso</span><span class="flow__token" data-token="canje-un-solo-uso" aria-hidden="true"></span></li></ol><p class="note" data-anim="fade">El code expira en 5 minutos y es de un solo uso.</p></section>
 
     <script>
       (function () {
@@ -31,6 +31,29 @@
         }
 
         var HIGHLIGHTS = {"paso-envia": [[4.423, 5.39]], "paso-valida": [[11.026, 13.169]], "paso-comprueba": [[13.407, 15.494]], "paso-responde": [[15.606, 17.245]], "paso-repite": [[22.076, 22.847]]};
+        var RAILS = [[0.9, 1.5]];
+        var TOKENS = [[0.9, 1.5], [0.9, 1.5], [0.9, 1.5], [0.9, 1.5]];
+        var rails = root.querySelectorAll('.flow__rail');
+        for (var rail = 0; rail < rails.length; rail += 1) {
+          var span = RAILS[rail] || [0, 0.6];
+          timeline.fromTo(
+            rails[rail],
+            { scaleY: 0 },
+            { scaleY: 1, duration: Math.max(span[1] - span[0], 0.4), ease: 'power2.out' },
+            span[0]
+          );
+        }
+        var tokens = root.querySelectorAll('.flow__token');
+        for (var tok = 0; tok < tokens.length; tok += 1) {
+          var win = TOKENS[tok] || [0, 0];
+          timeline.fromTo(
+            tokens[tok],
+            { opacity: 0, scale: 0 },
+            { opacity: 1, scale: 1, duration: 0.35, ease: 'power3.out' },
+            Math.max(win[0] - 0.15, 0)
+          );
+          timeline.to(tokens[tok], { opacity: 0.25, duration: 0.5, ease: 'power1.out' }, win[1]);
+        }
         var targets = [];
         Object.keys(HIGHLIGHTS).forEach(function (key) {
           var el = root.querySelector('[data-hl="' + key + '"]');

@@ -31,6 +31,29 @@
         }
 
         var HIGHLIGHTS = {"role-owner": [[4.045, 4.914]], "role-client": [[6.874, 7.337]], "role-as": [[9.395, 10.6]], "role-rs": [[12.897, 13.765]], "tok-code": [[18.673, 19.836]], "tok-access": [[20.102, 20.984]], "tok-id": [[21.32, 22.076]], "tok-refresh": [[22.174, 23.127]]};
+        var RAILS = [];
+        var TOKENS = [];
+        var rails = root.querySelectorAll('.flow__rail');
+        for (var rail = 0; rail < rails.length; rail += 1) {
+          var span = RAILS[rail] || [0, 0.6];
+          timeline.fromTo(
+            rails[rail],
+            { scaleY: 0 },
+            { scaleY: 1, duration: Math.max(span[1] - span[0], 0.4), ease: 'power2.out' },
+            span[0]
+          );
+        }
+        var tokens = root.querySelectorAll('.flow__token');
+        for (var tok = 0; tok < tokens.length; tok += 1) {
+          var win = TOKENS[tok] || [0, 0];
+          timeline.fromTo(
+            tokens[tok],
+            { opacity: 0, scale: 0 },
+            { opacity: 1, scale: 1, duration: 0.35, ease: 'power3.out' },
+            Math.max(win[0] - 0.15, 0)
+          );
+          timeline.to(tokens[tok], { opacity: 0.25, duration: 0.5, ease: 'power1.out' }, win[1]);
+        }
         var targets = [];
         Object.keys(HIGHLIGHTS).forEach(function (key) {
           var el = root.querySelector('[data-hl="' + key + '"]');

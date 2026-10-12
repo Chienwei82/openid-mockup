@@ -6,7 +6,7 @@
     data-height="1080"
     data-duration="27.604"
   >
-<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Otros caminos</span><h2 class="headline" data-anim="rise">Otros Grants del Token Endpoint</h2></header><p class="mono" data-anim="fade">POST /connect/token — un handler por grant</p><div class="grid grid--2"><article class="card" data-anim="rise"><h3 class="card__title">Con usuario</h3><ul class="list"><li data-hl="card-refresh"><strong>refresh_token</strong> — pide tokens nuevos sin login, rota en cada uso</li><li data-hl="card-password"><strong>password</strong> — valida usuario y contraseña directamente</li></ul></article><article class="card" data-anim="rise"><h3 class="card__title">Sin usuario</h3><ul class="list"><li data-hl="card-client"><strong>client_credentials</strong> — tokens de servicio, sin usuario</li><li data-hl="card-device"><strong>device_code y CIBA</strong> — simulados para completar el discovery</li></ul></article></div></section>
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Paso 4, otros caminos</span><h2 class="headline" data-anim="rise">Otros Grant Types</h2></header><p class="where" data-anim="fade"><span class="where__label">Estás aquí</span><span class="where__crumb"><span class="where__n">1</span>Discovery</span><span class="where__crumb"><span class="where__n">2-3</span>Authorize</span><span class="where__crumb where__crumb--on"><span class="where__n">4</span>Canje</span><span class="where__crumb"><span class="where__n">5-6</span>Uso</span></p><div class="use"><p class="use__q" data-anim="pop">¿Qué grant uso en cada caso?</p><div class="use__branches"><article class="use__branch" data-anim="rise" data-hl="card-code"><h3 class="use__when">Hay usuario y navegador</h3><p class="use__go"><strong>authorization_code</strong> con PKCE</p><p class="use__note">el camino feliz ya visto</p></article><article class="use__branch" data-anim="rise" data-hl="card-cc"><h3 class="use__when">Solo máquina a máquina</h3><p class="use__go"><strong>client_credentials</strong></p><p class="use__note">sin usuario, con secreto</p></article><article class="use__branch" data-anim="rise" data-hl="card-refresh"><h3 class="use__when">La sesión sigue viva</h3><p class="use__go"><strong>refresh_token</strong></p><p class="use__note">rota el refresh en cada uso</p></article></div></div><p class="note" data-anim="fade">OidcMock también anuncia password, device_code y CIBA.</p></section>
 
     <script>
       (function () {
@@ -31,6 +31,29 @@
         }
 
         var HIGHLIGHTS = {"card-refresh": [[5.13, 7.497]], "card-client": [[10.816, 13.897]], "card-password": [[16.152, 19.051]], "card-device": [[22.945, 23.939]]};
+        var RAILS = [];
+        var TOKENS = [];
+        var rails = root.querySelectorAll('.flow__rail');
+        for (var rail = 0; rail < rails.length; rail += 1) {
+          var span = RAILS[rail] || [0, 0.6];
+          timeline.fromTo(
+            rails[rail],
+            { scaleY: 0 },
+            { scaleY: 1, duration: Math.max(span[1] - span[0], 0.4), ease: 'power2.out' },
+            span[0]
+          );
+        }
+        var tokens = root.querySelectorAll('.flow__token');
+        for (var tok = 0; tok < tokens.length; tok += 1) {
+          var win = TOKENS[tok] || [0, 0];
+          timeline.fromTo(
+            tokens[tok],
+            { opacity: 0, scale: 0 },
+            { opacity: 1, scale: 1, duration: 0.35, ease: 'power3.out' },
+            Math.max(win[0] - 0.15, 0)
+          );
+          timeline.to(tokens[tok], { opacity: 0.25, duration: 0.5, ease: 'power1.out' }, win[1]);
+        }
         var targets = [];
         Object.keys(HIGHLIGHTS).forEach(function (key) {
           var el = root.querySelector('[data-hl="' + key + '"]');

@@ -6,7 +6,7 @@
     data-height="1080"
     data-duration="24.748"
   >
-<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Sesión</span><h2 class="headline" data-anim="rise">Sesión y Logout</h2></header><div class="grid grid--3"><article class="card" data-anim="rise" data-hl="card-op"><h3 class="card__title">Sesión del OP</h3><ul class="list"><li>Habilita el SSO</li><li>Cookie del navegador</li><li>Vida por defecto 8 h</li></ul></article><article class="card" data-anim="rise" data-hl="card-cliente"><h3 class="card__title">Sesión del cliente</h3><ul class="list"><li>Cookie propia de la aplicación</li><li>Independiente del OP</li><li>Se cierra con el logout</li></ul></article><article class="card" data-anim="rise" data-hl="card-sid"><h3 class="card__title">sid</h3><ul class="list"><li>Conecta el id_token con la sesión</li><li>Viaja también en el logout</li><li>Permite front-channel logout</li></ul></article></div><div class="grid grid--2 grid--tight"><article class="card" data-anim="rise" data-hl="card-prompt"><h3 class="card__title">prompt</h3><div class="chiprow" data-anim="fade"><span class="chip">none</span><span class="chip">login</span><span class="chip">consent</span><span class="chip">select_account</span></div></article><article class="card" data-anim="rise" data-hl="card-logout"><h3 class="card__title">RP-Initiated Logout</h3><p class="mono">/connect/endsession · id_token_hint · post_logout_redirect_uri</p></article></div></section>
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Sesión</span><h2 class="headline" data-anim="rise">Tres Sesiones y el Logout</h2></header><div class="use"><p class="use__q" data-anim="pop">¿Qué sesión se cierra con el logout?</p><div class="use__branches"><article class="use__branch" data-anim="rise" data-hl="card-op"><h3 class="use__when">Sesión del OP</h3><p class="use__go">habilita el <strong>SSO</strong> entre clientes</p><p class="use__note">cookie del servidor</p></article><article class="use__branch" data-anim="rise" data-hl="card-cliente"><h3 class="use__when">Sesión del cliente</h3><p class="use__go">su propia <strong>cookie</strong> de app</p><p class="use__note">vive aunque el OP cierre</p></article><article class="use__branch" data-anim="rise" data-hl="card-sid"><h3 class="use__when">El sid puente</h3><p class="use__go">conecta el <strong>id token</strong> con el OP</p><p class="use__note">viaja en el logout</p></article></div></div><p class="note" data-anim="fade">El logout usa <code>connect/endsession</code> con id token hint; el <code>prompt</code> admite <code>none</code>, <code>login</code>, <code>consent</code> o <code>select_account</code>.</p></section>
 
     <script>
       (function () {
@@ -31,6 +31,29 @@
         }
 
         var HIGHLIGHTS = {"card-op": [[2.491, 3.233]], "card-cliente": [[5.614, 6.426]], "card-sid": [[8.345, 8.849]], "card-logout": [[12.959, 13.799]], "card-prompt": [[18.883, 19.808]]};
+        var RAILS = [];
+        var TOKENS = [];
+        var rails = root.querySelectorAll('.flow__rail');
+        for (var rail = 0; rail < rails.length; rail += 1) {
+          var span = RAILS[rail] || [0, 0.6];
+          timeline.fromTo(
+            rails[rail],
+            { scaleY: 0 },
+            { scaleY: 1, duration: Math.max(span[1] - span[0], 0.4), ease: 'power2.out' },
+            span[0]
+          );
+        }
+        var tokens = root.querySelectorAll('.flow__token');
+        for (var tok = 0; tok < tokens.length; tok += 1) {
+          var win = TOKENS[tok] || [0, 0];
+          timeline.fromTo(
+            tokens[tok],
+            { opacity: 0, scale: 0 },
+            { opacity: 1, scale: 1, duration: 0.35, ease: 'power3.out' },
+            Math.max(win[0] - 0.15, 0)
+          );
+          timeline.to(tokens[tok], { opacity: 0.25, duration: 0.5, ease: 'power1.out' }, win[1]);
+        }
         var targets = [];
         Object.keys(HIGHLIGHTS).forEach(function (key) {
           var el = root.querySelector('[data-hl="' + key + '"]');

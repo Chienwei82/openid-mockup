@@ -6,7 +6,7 @@
     data-height="1080"
     data-duration="16.564"
   >
-<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Avanzado</span><h2 class="headline" data-anim="rise">Flujos Avanzados</h2></header><div class="grid grid--3"><article class="card" data-anim="rise" data-hl="card-par"><h3 class="card__title">PAR <span class="badge badge--ok">implementado</span></h3><ul class="list"><li>RFC 9126, un solo uso</li><li>Envía los parámetros por back-channel</li><li>Devuelve <code>request_uri</code> al cliente</li></ul></article><article class="card" data-anim="rise" data-hl="card-hibrido"><h3 class="card__title">Híbrido <span class="badge badge--ok">implementado</span></h3><ul class="list"><li><code>code id_token</code> en el fragmento</li><li>Incluye <code>c_hash</code> y <code>session_state</code></li><li>Pensado para el sistema interno</li></ul></article><article class="card" data-anim="rise" data-hl="card-device"><h3 class="card__title">Device y CIBA <span class="badge badge--warn">simulados</span></h3><ul class="list"><li>Ciclo de sondeo, sin pantalla ni push</li><li><code>authorization_pending</code>, <code>slow_down</code></li><li>Validan el discovery anunciado</li></ul></article></div><p class="note" data-anim="fade">Implicit (<code>id_token token</code>) se anuncia pero no se responde: devuelve <code>unsupported_response_type</code>.</p></section>
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Avanzado</span><h2 class="headline" data-anim="rise">Flujos Avanzados</h2></header><div class="use"><p class="use__q" data-anim="pop">¿Qué flujo avanzado necesito?</p><div class="use__branches"><article class="use__branch" data-anim="rise" data-hl="card-par"><h3 class="use__when">Parámetros sensibles</h3><p class="use__go"><strong>PAR</strong>: request uri por back-channel</p><p class="use__note">implementado</p></article><article class="use__branch" data-anim="rise" data-hl="card-hibrido"><h3 class="use__when">Sistema interno</h3><p class="use__go"><strong>híbrido</strong> code id token</p><p class="use__note">valida c_hash y session_state</p></article><article class="use__branch" data-anim="rise" data-hl="card-device"><h3 class="use__when">Sin pantalla ni push</h3><p class="use__go"><strong>device</strong> y <strong>CIBA</strong> simulados</p><p class="use__note">sondeo con slow_down</p></article></div></div><p class="note" data-anim="fade">Implicit (<code>id_token token</code>) se anuncia pero no se responde: devuelve <code>unsupported_response_type</code>.</p></section>
 
     <script>
       (function () {
@@ -31,6 +31,29 @@
         }
 
         var HIGHLIGHTS = {"card-par": [[1.454, 2.393], [10.536, 11.74]], "card-hibrido": [[2.855, 3.751]], "card-device": [[6.272, 7.869]]};
+        var RAILS = [];
+        var TOKENS = [];
+        var rails = root.querySelectorAll('.flow__rail');
+        for (var rail = 0; rail < rails.length; rail += 1) {
+          var span = RAILS[rail] || [0, 0.6];
+          timeline.fromTo(
+            rails[rail],
+            { scaleY: 0 },
+            { scaleY: 1, duration: Math.max(span[1] - span[0], 0.4), ease: 'power2.out' },
+            span[0]
+          );
+        }
+        var tokens = root.querySelectorAll('.flow__token');
+        for (var tok = 0; tok < tokens.length; tok += 1) {
+          var win = TOKENS[tok] || [0, 0];
+          timeline.fromTo(
+            tokens[tok],
+            { opacity: 0, scale: 0 },
+            { opacity: 1, scale: 1, duration: 0.35, ease: 'power3.out' },
+            Math.max(win[0] - 0.15, 0)
+          );
+          timeline.to(tokens[tok], { opacity: 0.25, duration: 0.5, ease: 'power1.out' }, win[1]);
+        }
         var targets = [];
         Object.keys(HIGHLIGHTS).forEach(function (key) {
           var el = root.querySelector('[data-hl="' + key + '"]');

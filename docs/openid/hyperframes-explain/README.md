@@ -4,14 +4,19 @@ Video explicativo de 16:9, en español, que recorre los 12 documentos de
 [`docs/openid/`](../) y muestra cómo OidcMock implementa cada pieza del protocolo.
 
 Su columna vertebral es un **mapa fijo del flujo** (escena 03: seis paradas,
-cuatro actores) que cada escena posterior amplía como **sub-diagrama guiado**
-por la voz, con tira «estás aquí».
+cuatro actores) que cada escena posterior amplía como **diagrama animado**
+guiado por la voz, con tira «estás aquí». Los diagramas usan tres recetas de
+`hyperframes-animation`: la voz enciende cada parada al mencionarla
+(`asr-keyword-glow`), el riel se traza con `scaleY` (`svg-path-draw`
+adaptada, sin medir el DOM) y un token viajero salta por parada
+(`spring-pop-entrance`); todo en el timeline único pausado, seek-safe
+(solo transforms + opacity).
 
 - **Formato:** 1920 × 1080 · 30 fps · H.264
 - **Duración:** 337,6 s (14 escenas)
 - **Voz:** TTS en español con [`@lobehub/tts`](https://www.npmjs.com/package/@lobehub/tts)
   (voces neuronales de Microsoft Edge) — `es-US-PalomaNeural`, `rate: -0.15`,
-  `pitch: -0.1` (≈12 caracteres/s, ritmo de presentador, tono 164 Hz); elegida
+  `pitch: 0` (≈12 caracteres/s, ritmo de presentador, tono natural 182 Hz); elegida
   entre 9 voces candidatas con `scripts/probe_voices.mjs`
 - **Salida:** `dist/oidc-explainer.mp4`
 
@@ -48,7 +53,7 @@ Chrome gestionado que descarga la primera vez, y el doctor lo comprueba.
 index.html              orquestador: root, fondo/marca/progreso, 14 slots + 14 audios
 compositions/           una sub-composición por escena (markup + timeline GSAP)
 scripts/narration.json  guion por escena: id, kicker, título, texto, pistas hl; voz, rate y pitch
-scripts/scene_content.py  markup de cada escena (helpers card/list/chips/steps/flow/lanes + data-hl)
+scripts/scene_content.py  markup de cada escena (helpers card/list/chips/steps/flow/usecase + data-hl/data-token)
 scripts/theme.css       tokens y clases compartidas (Material You oscuro)
 scripts/generate_audio.mjs    TTS + marcas de palabra → audio/segments + timings.json
 scripts/build_composition.py  timings + markup → index.html y compositions/*.html

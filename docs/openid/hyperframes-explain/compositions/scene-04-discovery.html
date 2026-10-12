@@ -6,7 +6,7 @@
     data-height="1080"
     data-duration="23.068"
   >
-<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Paso 1 del mapa</span><h2 class="headline" data-anim="rise">Discovery y JWKS</h2></header><p class="where" data-anim="fade"><span class="where__label">Estás aquí</span><span class="where__crumb where__crumb--on"><span class="where__n">1</span>Discovery</span><span class="where__crumb"><span class="where__n">2-3</span>Authorize</span><span class="where__crumb"><span class="where__n">4</span>Canje</span><span class="where__crumb"><span class="where__n">5-6</span>Uso</span></p><div class="grid grid--2"><article class="card" data-anim="rise" data-hl="card-discovery"><h3 class="card__title">Discovery Document</h3><p class="mono">GET /.well-known/openid-configuration</p><ul class="list"><li>issuer — comparado literalmente por el cliente</li><li>authorization · token · userinfo · introspect · revocation</li><li>scopes_supported y grant_types_supported</li></ul></article><article class="card" data-anim="rise" data-hl="card-jwks"><h3 class="card__title">JWKS</h3><p class="mono">GET /.well-known/openid-configuration/jwks</p><ul class="list"><li>JSON Web Key Set — claves públicas del emisor</li><li>kid identifica qué clave firmó el JWT</li><li>Algoritmo de firma: RS256</li></ul></article></div></section>
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Paso 1 del mapa</span><h2 class="headline" data-anim="rise">Discovery y JWKS</h2></header><p class="where" data-anim="fade"><span class="where__label">Estás aquí</span><span class="where__crumb where__crumb--on"><span class="where__n">1</span>Discovery</span><span class="where__crumb"><span class="where__n">2-3</span>Authorize</span><span class="where__crumb"><span class="where__n">4</span>Canje</span><span class="where__crumb"><span class="where__n">5-6</span>Uso</span></p><ol class="flow" data-anim="fade"><span class="flow__rail" aria-hidden="true"></span><li class="flow__stop" data-anim="pop" data-hl="card-discovery"><span class="flow__n">1</span><span class="flow__label">El cliente pide <code>/.well-known/openid-configuration</code></span><span class="flow__token" data-token="card-discovery" aria-hidden="true"></span></li><li class="flow__stop" data-anim="pop" data-hl="card-discovery"><span class="flow__n">2</span><span class="flow__label">Lee issuer, endpoints y capacidades soportadas</span><span class="flow__token" data-token="card-discovery" aria-hidden="true"></span></li><li class="flow__stop" data-anim="pop" data-hl="card-jwks"><span class="flow__n">3</span><span class="flow__label">Descarga el <strong>JWKS</strong> con las claves públicas RS256</span><span class="flow__token" data-token="card-jwks" aria-hidden="true"></span></li><li class="flow__stop" data-anim="pop" data-hl="card-jwks"><span class="flow__n">4</span><span class="flow__label">Ya sabe a dónde redirigir y con qué validar firmas</span><span class="flow__token" data-token="card-jwks" aria-hidden="true"></span></li></ol></section>
 
     <script>
       (function () {
@@ -31,6 +31,29 @@
         }
 
         var HIGHLIGHTS = {"card-discovery": [[3.849, 5.208]], "card-jwks": [[15.522, 17.146]]};
+        var RAILS = [[3.849, 17.146]];
+        var TOKENS = [[3.849, 5.208], [3.849, 5.208], [15.522, 17.146], [15.522, 17.146]];
+        var rails = root.querySelectorAll('.flow__rail');
+        for (var rail = 0; rail < rails.length; rail += 1) {
+          var span = RAILS[rail] || [0, 0.6];
+          timeline.fromTo(
+            rails[rail],
+            { scaleY: 0 },
+            { scaleY: 1, duration: Math.max(span[1] - span[0], 0.4), ease: 'power2.out' },
+            span[0]
+          );
+        }
+        var tokens = root.querySelectorAll('.flow__token');
+        for (var tok = 0; tok < tokens.length; tok += 1) {
+          var win = TOKENS[tok] || [0, 0];
+          timeline.fromTo(
+            tokens[tok],
+            { opacity: 0, scale: 0 },
+            { opacity: 1, scale: 1, duration: 0.35, ease: 'power3.out' },
+            Math.max(win[0] - 0.15, 0)
+          );
+          timeline.to(tokens[tok], { opacity: 0.25, duration: 0.5, ease: 'power1.out' }, win[1]);
+        }
         var targets = [];
         Object.keys(HIGHLIGHTS).forEach(function (key) {
           var el = root.querySelector('[data-hl="' + key + '"]');

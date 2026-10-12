@@ -6,7 +6,7 @@
     data-height="1080"
     data-duration="29.02"
   >
-<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Pasos 5 y 6 del mapa</span><h2 class="headline" data-anim="rise">UserInfo, API y Revocación</h2></header><p class="where" data-anim="fade"><span class="where__label">Estás aquí</span><span class="where__crumb"><span class="where__n">1</span>Discovery</span><span class="where__crumb"><span class="where__n">2-3</span>Authorize</span><span class="where__crumb"><span class="where__n">4</span>Canje</span><span class="where__crumb where__crumb--on"><span class="where__n">5-6</span>Uso</span></p><div class="lanes"><div class="lane" data-anim="rise"><p class="lane__name">OP · OidcMock</p><p class="hop" data-hl="uso-userinfo"><span class="hop__n">1</span><code>GET /connect/userinfo</code> devuelve los claims del usuario</p><p class="hop" data-hl="uso-introspection"><span class="hop__n">2</span><code>POST /connect/introspect</code> responde <code>active</code> true o false</p><p class="hop" data-hl="uso-revocation"><span class="hop__n">3</span><code>POST /connect/revocation</code> registra el <code>jti</code></p></div><div class="lane lane--off" data-anim="rise"><p class="lane__name">API</p><p class="hop hop--off" data-hl="uso-api"><span class="hop__n">1</span>Valida la firma contra el JWKS y sirve los datos</p></div></div></section>
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Pasos 5 y 6 del mapa</span><h2 class="headline" data-anim="rise">UserInfo, API y Ciclo de Vida</h2></header><p class="where" data-anim="fade"><span class="where__label">Estás aquí</span><span class="where__crumb"><span class="where__n">1</span>Discovery</span><span class="where__crumb"><span class="where__n">2-3</span>Authorize</span><span class="where__crumb"><span class="where__n">4</span>Canje</span><span class="where__crumb where__crumb--on"><span class="where__n">5-6</span>Uso</span></p><ol class="flow" data-anim="fade"><span class="flow__rail" aria-hidden="true"></span><li class="flow__stop" data-anim="pop" data-hl="uso-userinfo"><span class="flow__n">5</span><span class="flow__label"><strong>UserInfo</strong> devuelve los claims del usuario</span><span class="flow__token" data-token="uso-userinfo" aria-hidden="true"></span></li><li class="flow__stop" data-anim="pop" data-hl="uso-api"><span class="flow__n">6</span><span class="flow__label">La <strong>API</strong> valida firma, issuer, aud y expiración</span><span class="flow__token" data-token="uso-api" aria-hidden="true"></span></li><li class="flow__stop" data-anim="pop" data-hl="uso-introspection"><span class="flow__n">7</span><span class="flow__label"><strong>Introspection</strong> responde siempre active sí o no</span><span class="flow__token" data-token="uso-introspection" aria-hidden="true"></span></li><li class="flow__stop" data-anim="pop" data-hl="uso-revocation"><span class="flow__n">8</span><span class="flow__label"><strong>Revocation</strong> registra el jti o revoca la familia</span><span class="flow__token" data-token="uso-revocation" aria-hidden="true"></span></li></ol></section>
 
     <script>
       (function () {
@@ -31,6 +31,29 @@
         }
 
         var HIGHLIGHTS = {"uso-userinfo": [[4.718, 7.028]], "uso-api": [[9.738, 13.183]], "uso-introspection": [[15.522, 17.721]], "uso-revocation": [[22.455, 24.163]]};
+        var RAILS = [[4.718, 24.163]];
+        var TOKENS = [[4.718, 7.028], [9.738, 13.183], [15.522, 17.721], [22.455, 24.163]];
+        var rails = root.querySelectorAll('.flow__rail');
+        for (var rail = 0; rail < rails.length; rail += 1) {
+          var span = RAILS[rail] || [0, 0.6];
+          timeline.fromTo(
+            rails[rail],
+            { scaleY: 0 },
+            { scaleY: 1, duration: Math.max(span[1] - span[0], 0.4), ease: 'power2.out' },
+            span[0]
+          );
+        }
+        var tokens = root.querySelectorAll('.flow__token');
+        for (var tok = 0; tok < tokens.length; tok += 1) {
+          var win = TOKENS[tok] || [0, 0];
+          timeline.fromTo(
+            tokens[tok],
+            { opacity: 0, scale: 0 },
+            { opacity: 1, scale: 1, duration: 0.35, ease: 'power3.out' },
+            Math.max(win[0] - 0.15, 0)
+          );
+          timeline.to(tokens[tok], { opacity: 0.25, duration: 0.5, ease: 'power1.out' }, win[1]);
+        }
         var targets = [];
         Object.keys(HIGHLIGHTS).forEach(function (key) {
           var el = root.querySelector('[data-hl="' + key + '"]');
