@@ -4,7 +4,7 @@
     data-composition-id="scene-02-actores"
     data-width="1920"
     data-height="1080"
-    data-duration="25.132"
+    data-duration="25.108"
   >
 <section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Actores</span><h2 class="headline" data-anim="rise">Actores y Tokens</h2></header><div class="grid grid--2"><article class="card" data-anim="rise"><h3 class="card__title">Cuatro roles (OAuth 2.0)</h3><ul class="list"><li data-hl="role-owner"><strong>Resource Owner</strong> — el usuario</li><li data-hl="role-client"><strong>Client</strong> — la aplicación</li><li data-hl="role-as"><strong>Authorization Server</strong> — emite los tokens</li><li data-hl="role-rs"><strong>Resource Server</strong> — sirve la API protegida</li></ul></article><article class="card" data-anim="rise"><h3 class="card__title">Cuatro tokens</h3><ul class="list"><li data-hl="tok-code"><span class="tok tok--code">code</span> Authorization Code — opaco, un solo uso</li><li data-hl="tok-access"><span class="tok tok--access">access</span> Access Token — JWT para la API</li><li data-hl="tok-id"><span class="tok tok--id">id</span> ID Token — JWT de identidad</li><li data-hl="tok-refresh"><span class="tok tok--refresh">refresh</span> Refresh Token — vida larga</li></ul></article></div></section>
 
@@ -61,8 +61,8 @@
         timeline.to(
           driver,
           {
-            t: 25.132,
-            duration: 25.132,
+            t: 25.108,
+            duration: 25.108,
             ease: 'none',
             onUpdate: function () {
               for (var i = 0; i < targets.length; i += 1) {

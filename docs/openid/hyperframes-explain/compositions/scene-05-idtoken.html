@@ -4,7 +4,7 @@
     data-composition-id="scene-05-idtoken"
     data-width="1920"
     data-height="1080"
-    data-duration="25.468"
+    data-duration="25.444"
   >
 <section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Claims</span><h2 class="headline" data-anim="rise">ID Token y Claims</h2></header><div class="grid grid--2"><article class="card" data-anim="rise"><h3 class="card__title">Claims del JWT</h3><p class="card__label">Obligatorios</p><div class="chiprow" data-anim="fade"><span class="chip chip--accent" data-hl="chip-iss">iss</span><span class="chip chip--accent" data-hl="chip-sub">sub</span><span class="chip chip--accent" data-hl="chip-aud">aud</span><span class="chip chip--accent" data-hl="chip-exp">exp</span><span class="chip chip--accent" data-hl="chip-iat">iat</span><span class="chip chip--accent" data-hl="chip-nonce">nonce</span></div><p class="card__label">Binding</p><div class="chiprow" data-anim="fade" data-hl="chiprow-binding"><span class="chip">at_hash</span><span class="chip">c_hash</span><span class="chip">sid</span></div></article><article class="card" data-anim="rise" data-hl="card-scope"><h3 class="card__title">Proyección por scope</h3><ul class="list"><li><strong>openid</strong> → sub</li><li><strong>profile</strong> → name, given_name, family_name, locale</li><li><strong>email</strong> → email, email_verified</li><li><strong>address</strong> → address</li></ul></article></div></section>
 
@@ -61,8 +61,8 @@
         timeline.to(
           driver,
           {
-            t: 25.468,
-            duration: 25.468,
+            t: 25.444,
+            duration: 25.444,
             ease: 'none',
             onUpdate: function () {
               for (var i = 0; i < targets.length; i += 1) {

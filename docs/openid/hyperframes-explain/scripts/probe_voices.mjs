@@ -12,6 +12,9 @@
  * en el orden de la tabla) + tabla por stdout.
  *
  * Uso:  node scripts/probe_voices.mjs [id-de-voz]
+ *
+ * Los candidatos aceptan `rate` y `pitch` (fracción: -0.15 → prosody "-15%") para
+ * medir si el servicio respeta la prosodia declarada.
  */
 
 import { execFileSync } from 'node:child_process';
@@ -54,6 +57,11 @@ const CANDIDATES = [
   { id: 'alvaro-ritmo', voice: 'es-ES-AlvaroNeural', rate: 0, note: 'rate 0' },
   { id: 'elvira-ritmo', voice: 'es-ES-ElviraNeural', rate: 0, note: 'rate 0' },
   { id: 'paloma-ritmo', voice: 'es-US-PalomaNeural', rate: 0, note: 'rate 0' },
+  { id: 'paloma-tono-01', voice: 'es-US-PalomaNeural', pitch: -0.01, note: 'pitch -1% (control)' },
+  { id: 'paloma-tono-10', voice: 'es-US-PalomaNeural', pitch: -0.1, note: 'pitch -10%' },
+  { id: 'paloma-tono-15', voice: 'es-US-PalomaNeural', pitch: -0.15, note: 'pitch -15%' },
+  { id: 'paloma-tono-20', voice: 'es-US-PalomaNeural', pitch: -0.2, note: 'pitch -20%' },
+  { id: 'paloma-tono-30', voice: 'es-US-PalomaNeural', pitch: -0.3, note: 'pitch -30%' },
 ];
 
 const wordBoundaries = [];
@@ -90,7 +98,11 @@ async function synthesize(candidate, target) {
     EdgeSpeechTTS.createRequest({
       payload: {
         input: PROBE_TEXT,
-        options: { voice: candidate.voice, rate: candidate.rate ?? RATE },
+        options: {
+          voice: candidate.voice,
+          rate: candidate.rate ?? RATE,
+          ...(candidate.pitch ? { pitch: candidate.pitch } : {}),
+        },
       },
     }),
     new Promise((resolve) => setTimeout(() => resolve(null), SYNTHESIS_TIMEOUT_MS)),

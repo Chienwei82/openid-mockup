@@ -1,6 +1,7 @@
 {
   "voice": "es-US-PalomaNeural",
   "rate": -0.15,
+  "pitch": -0.1,
   "scenes": [
     {
       "id": "scene-01-title",

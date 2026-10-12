@@ -1399,7 +1399,8 @@ voz y se anadio resaltado de pantalla sincronizado con lo que se pronuncia.
   `rate: -0.15` y el video paso de 177 s a 264 s, que es lo que cuesta hablar
   con calma un guion denso de 12 escenas.
 - **Lo que el servicio no deja cambiar, medido antes de tocar nada.** `pitch` no
-  tiene efecto audible (audio identico con 50%/100%/150%) y el SSML con
+  tiene efecto audible (audio identico con 50%/100%/150%) — conclusion ERRONEA,
+  corregida el mismo dia en «Tono de la voz: `pitch` firmado» más abajo— y el SSML con
   `<break>` o `<mstts:express-as style>` se rechaza: el turno termina sin audio y
   la promesa se queda colgada (ahora `generate_audio.mjs` falla ruidosamente con
   timeout). Las pausas se consiguen solo con puntuacion: una coma +0,5 s y un
@@ -1509,3 +1510,36 @@ El propietario pidio reemplazar la voz del video por una mas natural. La anterio
   no devolvio audio; la sonda reintenta una vez antes de reportar RECHAZADO.
 - **Verificacion:** `npm run audio` + `npm run build` + `npm run check` en verde (0 errores,
   0 avisos; contraste 87/87 WCAG AA).
+
+
+## Tono de la voz: pitch firmado (2026-10-11)
+
+El usuario noto la narracion «demasiado aguda». No era cuestion de gusto: venia
+agudizada por un default de la libreria.
+
+- **La voz sonaba ~50% mas aguda de lo natural por `genSSML`.** `@lobehub/tts`
+  construye `<prosody pitch="${Math.floor((pitch || 1) * 100)}%">`, asi que si
+  `scripts/narration.json` no declara `pitch` emite igual `pitch="100%"`, y Edge
+  lo interpreta como ≈+50% en lugar de «sin cambios». Medido con
+  `scripts/probe_voices.mjs` (misma frase, `rate: -0.15`): con `pitch="100%"` la
+  F0 mediana era **270 Hz**; con la voz sin prosodia de tono, **182 Hz**
+  (`paloma-ritmo`, rate 0, daba 181,8 Hz). Ese 270 Hz es el audio que ya estaba
+  versionado en `audio/segments/`.
+- **`pitch` con signo sí funciona: la conclusion del 2026-10-10 era erronea.**
+  Solo se habian probado porcentajes sin signo (50/100/150). Escala medida
+  variando unicamente `pitch`: −1% → 179 Hz, −10% → 163, −15% → 155, −20% → 146,
+  −30% → 130; la duracion no se mueve (10,92 s en las cinco muestras), asi que
+  tiempos, `WordBoundary` y resaltados quedan intactos.
+- **Decision: `pitch: -0.1`.** La narracion regenerada mide 163-167 Hz de
+  mediana (vs 270 Hz antes), unos 7 semitones mas grave, manteniendo el tono de
+  voz natural de Paloma (182 Hz) sin caer en un tono demasiado grave. Es un punto
+  de partida escuchable: los extremos quedan en los MP3
+  `audio/voice-samples/paloma-tono-{01,10,15,20,30}.mp3`, y retocar el tono es un
+  cambio de `pitch` + `npm run audio` (+ build y render).
+- **La sonda queda con el pulso puesto.** `probe_voices.mjs` acepta `pitch` por
+  candidato (incluido el control −1% que desenmascara el default `100%`) y
+  `probe_voice.mjs` añade la variante `pitch-15`; `generate_audio.mjs` documenta
+  el efecto en su cabecera.
+- **Verificacion:** `npm run audio` (259,152 s, 57 resaltados, 0 avisos) +
+  `npm run build` + `npm run check` en verde (0 errores, 0 avisos; contraste
+  87/87 WCAG AA).

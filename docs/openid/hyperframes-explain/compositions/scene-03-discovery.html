@@ -4,7 +4,7 @@
     data-composition-id="scene-03-discovery"
     data-width="1920"
     data-height="1080"
-    data-duration="23.092"
+    data-duration="23.068"
   >
 <section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Discovery</span><h2 class="headline" data-anim="rise">Discovery y JWKS</h2></header><div class="grid grid--2"><article class="card" data-anim="rise" data-hl="card-discovery"><h3 class="card__title">Discovery Document</h3><p class="mono">GET /.well-known/openid-configuration</p><ul class="list"><li>issuer — comparado literalmente por el cliente</li><li>authorization · token · userinfo · introspect · revocation</li><li>scopes_supported y grant_types_supported</li></ul></article><article class="card" data-anim="rise" data-hl="card-jwks"><h3 class="card__title">JWKS</h3><p class="mono">GET /.well-known/openid-configuration/jwks</p><ul class="list"><li>JSON Web Key Set — claves públicas del emisor</li><li>kid identifica qué clave firmó el JWT</li><li>Algoritmo de firma: RS256</li></ul></article></div></section>
 
@@ -61,8 +61,8 @@
         timeline.to(
           driver,
           {
-            t: 23.092,
-            duration: 23.092,
+            t: 23.068,
+            duration: 23.068,
             ease: 'none',
             onUpdate: function () {
               for (var i = 0; i < targets.length; i += 1) {

@@ -69,6 +69,7 @@ const VARIANTS = [
   { id: 'punct-commas', options: { rate: -0.15 }, input: COMMAS },
   { id: 'punct-ellipsis-mid', options: { rate: -0.15 }, input: ELLIPSIS_MID },
   { id: 'punct-two-sentences', options: { rate: -0.15 }, input: TWO_SENTENCES },
+  { id: 'pitch-15', options: { rate: -0.15, pitch: -0.15 } },
 ];
 
 const serviceLog = [];

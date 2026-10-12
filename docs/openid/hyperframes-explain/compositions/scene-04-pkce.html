@@ -4,7 +4,7 @@
     data-composition-id="scene-04-pkce"
     data-width="1920"
     data-height="1080"
-    data-duration="26.356"
+    data-duration="26.332"
   >
 <section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Flujo principal</span><h2 class="headline" data-anim="rise">Authorization Code + PKCE</h2></header><ol class="steps"><li data-anim="slide" data-hl="step-verifier"><span class="steps__n">1</span>El cliente genera <code>code_verifier</code> y <code>code_challenge</code></li><li data-anim="slide" data-hl="step-authorize"><span class="steps__n">2</span>Redirige a <code>/connect/authorize</code> con el challenge y <code>state</code></li><li data-anim="slide"><span class="steps__n">3</span>El OP autentica al usuario y pide consentimiento</li><li data-anim="slide"><span class="steps__n">4</span>Vuelve al cliente con el <code>authorization_code</code></li><li data-anim="slide" data-hl="step-canje"><span class="steps__n">5</span>El cliente canjea en <code>/connect/token</code> con el <code>code_verifier</code></li><li data-anim="slide" data-hl="step-compara"><span class="steps__n">6</span>Comparación en tiempo constante · S256 recomendado sobre plain</li></ol></section>
 
@@ -61,8 +61,8 @@
         timeline.to(
           driver,
           {
-            t: 26.356,
-            duration: 26.356,
+            t: 26.332,
+            duration: 26.332,
             ease: 'none',
             onUpdate: function () {
               for (var i = 0; i < targets.length; i += 1) {

@@ -1,5 +1,5 @@
 {
-  "total": 259.392,
+  "total": 259.152,
   "leadIn": 0.9,
   "tail": 1,
   "scenes": [
@@ -11,9 +11,9 @@
       "text": "Bienvenidos a esta explicación de OpenID Connect, el estándar moderno de autenticación que usaremos para desarrollo local. Veremos la teoría, el servidor de referencia, y cómo OidcMock lo imita.",
       "audio": "audio/segments/seg-01.mp3",
       "start": 0,
-      "duration": 16.276,
+      "duration": 16.252,
       "audioStart": 0.9,
-      "audioDuration": 14.376,
+      "audioDuration": 14.352,
       "highlights": [
         {
           "key": "title-oidc",
@@ -181,10 +181,10 @@
       "title": "Actores y Tokens",
       "text": "OpenID Connect define cuatro actores: el Resource Owner, que es el usuario; el Cliente, que es la aplicación; el Authorization Server, que emite los tokens; y el Resource Server, que sirve los datos protegidos. Y cuatro tokens: authorization code, access token, id token y refresh token.",
       "audio": "audio/segments/seg-02.mp3",
-      "start": 16.276,
-      "duration": 25.132,
-      "audioStart": 17.176,
-      "audioDuration": 23.232,
+      "start": 16.252,
+      "duration": 25.108,
+      "audioStart": 17.152,
+      "audioDuration": 23.208,
       "highlights": [
         {
           "key": "role-owner",
@@ -467,10 +467,10 @@
       "title": "Discovery y JWKS",
       "text": "Antes de redirigir a nadie a login, el cliente descubre los endpoints en el well-known de openid-configuration. Allí encuentra el issuer, las URLs de cada endpoint y las capacidades soportadas. El JWKS contiene las claves públicas para validar las firmas de los JWT.",
       "audio": "audio/segments/seg-03.mp3",
-      "start": 41.408,
-      "duration": 23.092,
-      "audioStart": 42.308,
-      "audioDuration": 21.192,
+      "start": 41.36,
+      "duration": 23.068,
+      "audioStart": 42.26,
+      "audioDuration": 21.168,
       "highlights": [
         {
           "key": "card-discovery",
@@ -708,10 +708,10 @@
       "title": "Authorization Code + PKCE",
       "text": "El flujo principal es Authorization Code con PKCE. El cliente genera un code verifier y su challenge, y los envía al authorize endpoint. Al canjear el código, el servidor compara el verifier en tiempo constante. Los métodos son plain y S256, siendo el S256 el recomendado.",
       "audio": "audio/segments/seg-04.mp3",
-      "start": 64.5,
-      "duration": 26.356,
-      "audioStart": 65.4,
-      "audioDuration": 24.456,
+      "start": 64.428,
+      "duration": 26.332,
+      "audioStart": 65.328,
+      "audioDuration": 24.432,
       "highlights": [
         {
           "key": "step-verifier",
@@ -979,10 +979,10 @@
       "title": "ID Token y Claims",
       "text": "El ID Token es lo que convierte OAuth en OpenID Connect. Es un JWT con claims obligatorios: iss, sub, aud, exp, iat y nonce. Los claims de binding, at hash y c hash, lo vinculan con el access token y con el código. Los claims del usuario salen del scope concedido.",
       "audio": "audio/segments/seg-05.mp3",
-      "start": 90.856,
-      "duration": 25.468,
-      "audioStart": 91.756,
-      "audioDuration": 23.568,
+      "start": 90.76,
+      "duration": 25.444,
+      "audioStart": 91.66,
+      "audioDuration": 23.544,
       "highlights": [
         {
           "key": "chip-iss",
@@ -1290,10 +1290,10 @@
       "title": "Token Endpoint y Grant Types",
       "text": "El token endpoint, en connect token, es donde cada grant type obtiene sus tokens. Soportamos siete: authorization code, refresh token, client credentials, password, device code, ciba e implicit. Un patrón strategy despacha cada grant a su handler.",
       "audio": "audio/segments/seg-06.mp3",
-      "start": 116.324,
-      "duration": 22.924,
-      "audioStart": 117.224,
-      "audioDuration": 21.024,
+      "start": 116.204,
+      "duration": 22.9,
+      "audioStart": 117.104,
+      "audioDuration": 21,
       "highlights": [
         {
           "key": "line-token",
@@ -1541,9 +1541,9 @@
       "title": "UserInfo, Introspection y Revocation",
       "text": "UserInfo devuelve los claims del usuario a partir del access token. Introspection responde siempre con active verdadero o falso, sin revelar si el token existía. Revocation registra el jti o revoca toda la familia de refresh tokens.",
       "audio": "audio/segments/seg-07.mp3",
-      "start": 139.248,
+      "start": 139.104,
       "duration": 19.516,
-      "audioStart": 140.148,
+      "audioStart": 140.004,
       "audioDuration": 17.616,
       "highlights": [
         {
@@ -1757,10 +1757,10 @@
       "title": "Sesión y Logout",
       "text": "Hay tres sesiones: la del OP, que habilita el SSO; la del cliente, con su propia cookie; y el sid, que conecta el id token con la sesión del OP. El logout usa connect end session con id token hint y post logout redirect uri. El prompt admite none, login, consent o select account.",
       "audio": "audio/segments/seg-08.mp3",
-      "start": 158.764,
-      "duration": 24.772,
-      "audioStart": 159.664,
-      "audioDuration": 22.872,
+      "start": 158.62,
+      "duration": 24.748,
+      "audioStart": 159.52,
+      "audioDuration": 22.848,
       "highlights": [
         {
           "key": "card-op",
@@ -2068,9 +2068,9 @@
       "title": "Flujos Avanzados",
       "text": "Tenemos PAR implementado, el flujo híbrido code id token para el sistema interno, y device y CIBA simulados para completar el discovery. PAR usa request uri y envía los parámetros sensibles por back-channel.",
       "audio": "audio/segments/seg-09.mp3",
-      "start": 183.536,
+      "start": 183.368,
       "duration": 16.564,
-      "audioStart": 184.436,
+      "audioStart": 184.268,
       "audioDuration": 14.664,
       "highlights": [
         {
@@ -2269,10 +2269,10 @@
       "title": "Matriz de Paridad",
       "text": "La matriz de paridad compara la teoría, el servidor de referencia y OidcMock. Los tokens tienen vidas definidas: el código cinco minutos, el access token y el id token treinta minutos, y el refresh token ocho horas. Los errores siguen los códigos HTTP definidos por RFC.",
       "audio": "audio/segments/seg-10.mp3",
-      "start": 200.1,
-      "duration": 23.956,
-      "audioStart": 201,
-      "audioDuration": 22.056,
+      "start": 199.932,
+      "duration": 23.932,
+      "audioStart": 200.832,
+      "audioDuration": 22.032,
       "highlights": [
         {
           "key": "row-code",
@@ -2540,10 +2540,10 @@
       "title": "Arrancar OidcMock",
       "text": "Para arrancar OidcMock ejecutamos dotnet run sobre el proyecto Host. El issuer se configura por opciones, HTTPS o HTTP, y los clientes de ejemplo se declaran en JSON. Todo el estado vive en memoria, sin base de datos.",
       "audio": "audio/segments/seg-11.mp3",
-      "start": 224.056,
-      "duration": 19.996,
-      "audioStart": 224.956,
-      "audioDuration": 18.096,
+      "start": 223.864,
+      "duration": 19.972,
+      "audioStart": 224.764,
+      "audioDuration": 18.072,
       "highlights": [
         {
           "key": "cmd-run",
@@ -2761,10 +2761,10 @@
       "title": "Desarrolla sin dependencias externas",
       "text": "OidcMock replica el comportamiento del servidor de referencia para desarrollo local, con configuración JSON y estado en memoria, y nunca debe exponerse fuera de localhost. Gracias por ver.",
       "audio": "audio/segments/seg-12.mp3",
-      "start": 244.052,
-      "duration": 15.34,
-      "audioStart": 244.952,
-      "audioDuration": 13.44,
+      "start": 243.836,
+      "duration": 15.316,
+      "audioStart": 244.736,
+      "audioDuration": 13.416,
       "highlights": [
         {
           "key": "lede",
