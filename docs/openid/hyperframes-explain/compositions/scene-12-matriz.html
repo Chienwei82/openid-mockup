@@ -1,16 +1,16 @@
 <template>
   <div
     class="scene-root"
-    data-composition-id="scene-11-arranque"
+    data-composition-id="scene-12-matriz"
     data-width="1920"
     data-height="1080"
-    data-duration="19.972"
+    data-duration="23.932"
   >
-<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Práctico</span><h2 class="headline" data-anim="rise">Arrancar OidcMock</h2></header><div class="grid grid--2"><article class="card" data-anim="rise"><h3 class="card__title">Comandos</h3><pre class="code" data-hl="cmd-run"><code>dotnet run --project src/OidcMock.Host</code></pre><pre class="code" data-hl="cmd-issuer"><code>--OidcMock:Issuer=https://localhost:5443/personafisica/</code></pre><pre class="code"><code>--OidcMock:Serving:UseHttps=false --OidcMock:Serving:AllowHttp=true</code></pre></article><article class="card" data-anim="rise" data-hl="card-clientes"><h3 class="card__title">Clientes de ejemplo (config/)</h3><ul class="list"><li><span class="tok tok--code">público</span> web-app-spa — PKCE, sin secreto</li><li><span class="tok tok--access">confidencial</span> web-app-confidencial</li><li><span class="tok tok--refresh">servicio</span> backend-service — client_credentials</li></ul><p class="card__label">Opciones clave</p><div class="chiprow" data-anim="fade"><span class="chip">PathBase /personafisica</span><span class="chip">ConfigDirectory ./config</span><span class="chip">ReloadOnChange true</span></div></article></div></section>
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Resumen</span><h2 class="headline" data-anim="rise">Matriz de Paridad</h2></header><div class="grid grid--matrix"><table class="table" data-anim="rise"><thead><tr><th>Token</th><th>Vida</th><th>Notas</th></tr></thead><tbody><tr data-hl="row-code"><td class="mono">authorization_code</td><td>5 min</td><td>opaco, un solo uso</td></tr><tr data-hl="row-access"><td class="mono">access_token</td><td>30 min</td><td>JWT RS256, aud = client_id</td></tr><tr data-hl="row-id"><td class="mono">id_token</td><td>30 min</td><td>solo con scope openid</td></tr><tr data-hl="row-refresh"><td class="mono">refresh_token</td><td>8 h</td><td>rota, requiere offline_access</td></tr></tbody></table><article class="card" data-anim="rise" data-hl="card-errores"><h3 class="card__title">Errores de protocolo</h3><p class="errow"><span class="chip chip--accent">invalid_request</span><span class="errow__http">400</span>falta o estorba un parámetro</p><p class="errow"><span class="chip chip--accent">invalid_client</span><span class="errow__http">401</span>credenciales de cliente inválidas</p><p class="errow"><span class="chip chip--accent">invalid_grant</span><span class="errow__http">400</span>code, refresh o PKCE no válidos</p><p class="errow"><span class="chip chip--accent">unsupported_grant_type</span><span class="errow__http">400</span>grant desconocido</p><p class="errow"><span class="chip chip--accent">invalid_scope</span><span class="errow__http">400</span>scope no permitido</p><p class="errow"><span class="chip chip--accent">invalid_token</span><span class="errow__http">401</span>reto Bearer en /userinfo</p></article></div><p class="note" data-anim="fade">El usuario denegó: <code>access_denied</code> · <code>request_uri</code> caducado: <code>invalid_request_uri</code>.</p></section>
 
     <script>
       (function () {
-        var root = document.querySelector('[data-composition-id="scene-11-arranque"]');
+        var root = document.querySelector('[data-composition-id="scene-12-matriz"]');
         if (!root || typeof gsap === 'undefined') { return; }
         var timeline = gsap.timeline({ paused: true });
 
@@ -30,7 +30,7 @@
           );
         }
 
-        var HIGHLIGHTS = {"cmd-run": [[2.911, 3.597]], "cmd-issuer": [[6.026, 7.273]], "card-clientes": [[11.082, 12.23]]};
+        var HIGHLIGHTS = {"row-code": [[9.457, 11.11]], "row-access": [[11.446, 12.497]], "row-id": [[12.581, 13.771]], "row-refresh": [[14.808, 16.754]], "card-errores": [[17.735, 18.659]]};
         var targets = [];
         Object.keys(HIGHLIGHTS).forEach(function (key) {
           var el = root.querySelector('[data-hl="' + key + '"]');
@@ -61,8 +61,8 @@
         timeline.to(
           driver,
           {
-            t: 19.972,
-            duration: 19.972,
+            t: 23.932,
+            duration: 23.932,
             ease: 'none',
             onUpdate: function () {
               for (var i = 0; i < targets.length; i += 1) {
@@ -77,7 +77,7 @@
           0
         );
 
-        window.__timelines['scene-11-arranque'] = timeline;
+        window.__timelines['scene-12-matriz'] = timeline;
       })();
     </script>
   </div>

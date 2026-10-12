@@ -3,8 +3,12 @@
 Video explicativo de 16:9, en español, que recorre los 12 documentos de
 [`docs/openid/`](../) y muestra cómo OidcMock implementa cada pieza del protocolo.
 
+Su columna vertebral es un **mapa fijo del flujo** (escena 03: seis paradas,
+cuatro actores) que cada escena posterior amplía como **sub-diagrama guiado**
+por la voz, con tira «estás aquí».
+
 - **Formato:** 1920 × 1080 · 30 fps · H.264
-- **Duración:** 259,2 s (12 escenas)
+- **Duración:** 337,6 s (14 escenas)
 - **Voz:** TTS en español con [`@lobehub/tts`](https://www.npmjs.com/package/@lobehub/tts)
   (voces neuronales de Microsoft Edge) — `es-US-PalomaNeural`, `rate: -0.15`,
   `pitch: -0.1` (≈12 caracteres/s, ritmo de presentador, tono 164 Hz); elegida
@@ -41,10 +45,10 @@ Chrome gestionado que descarga la primera vez, y el doctor lo comprueba.
 ## Estructura
 
 ```
-index.html              orquestador: root, fondo/marca/progreso, 12 slots + 12 audios
+index.html              orquestador: root, fondo/marca/progreso, 14 slots + 14 audios
 compositions/           una sub-composición por escena (markup + timeline GSAP)
 scripts/narration.json  guion por escena: id, kicker, título, texto, pistas hl; voz, rate y pitch
-scripts/scene_content.py  markup de cada escena (helpers card/list/chips/steps + data-hl)
+scripts/scene_content.py  markup de cada escena (helpers card/list/chips/steps/flow/lanes + data-hl)
 scripts/theme.css       tokens y clases compartidas (Material You oscuro)
 scripts/generate_audio.mjs    TTS + marcas de palabra → audio/segments + timings.json
 scripts/build_composition.py  timings + markup → index.html y compositions/*.html
@@ -179,16 +183,18 @@ caracteres y se avisa por consola.
 | --- | --- |
 | 01 Título | introducción a la serie |
 | 02 Actores y tokens | [`01-actores-y-tokens`](../01-actores-y-tokens.md) |
-| 03 Discovery y JWKS | [`02-discovery-y-jwks`](../02-discovery-y-jwks.md) |
-| 04 Authorization Code + PKCE | [`03-authorization-code-y-pkce`](../03-authorization-code-y-pkce.md) |
-| 05 ID Token y claims | [`04-id-token-y-claims`](../04-id-token-y-claims.md) |
-| 06 Token endpoint y grants | [`05-token-endpoint-y-grants`](../05-token-endpoint-y-grants.md) |
-| 07 UserInfo, introspection y revocation | [`06-userinfo`](../06-userinfo.md) · [`07-introspection-y-revocation`](../07-introspection-y-revocation.md) |
-| 08 Sesión y logout | [`08-sesion-y-logout`](../08-sesion-y-logout.md) |
-| 09 Flujos avanzados | [`09-flujo-hibrido`](../09-flujo-hibrido.md) · [`10-par-device-ciba`](../10-par-device-ciba.md) |
-| 10 Matriz de paridad | [`11-matriz-de-paridad`](../11-matriz-de-paridad.md) |
-| 11 Arranque y uso | [`12-cheatsheet`](../12-cheatsheet.md) |
-| 12 Cierre | resumen y recordatorio de `localhost` |
+| 03 El mapa (diagrama fijo, 6 pasos) | síntesis de toda la serie |
+| 04 Discovery y JWKS (paso 1) | [`02-discovery-y-jwks`](../02-discovery-y-jwks.md) |
+| 05 Authorization Code + PKCE (pasos 2-3) | [`03-authorization-code-y-pkce`](../03-authorization-code-y-pkce.md) |
+| 06 ID Token y claims (paso 4) | [`04-id-token-y-claims`](../04-id-token-y-claims.md) |
+| 07 El canje (paso 4 por dentro) | [`05-token-endpoint-y-grants`](../05-token-endpoint-y-grants.md) |
+| 08 Otros grants | [`05-token-endpoint-y-grants`](../05-token-endpoint-y-grants.md) |
+| 09 UserInfo, API y revocación (pasos 5-6) | [`06-userinfo`](../06-userinfo.md) · [`07-introspection-y-revocation`](../07-introspection-y-revocation.md) |
+| 10 Sesión y logout | [`08-sesion-y-logout`](../08-sesion-y-logout.md) |
+| 11 Flujos avanzados | [`09-flujo-hibrido`](../09-flujo-hibrido.md) · [`10-par-device-ciba`](../10-par-device-ciba.md) |
+| 12 Matriz de paridad | [`11-matriz-de-paridad`](../11-matriz-de-paridad.md) |
+| 13 Arranque y uso | [`12-cheatsheet`](../12-cheatsheet.md) |
+| 14 Cierre | resumen y recordatorio de `localhost` |
 
 ## Criterios de calidad
 

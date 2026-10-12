@@ -82,6 +82,74 @@ def steps(items: tuple[str | tuple[str, str], ...]) -> str:
     )
 
 
+def where_you_are(active: str) -> str:
+    crumbs = (
+        ("1", "Discovery"),
+        ("2-3", "Authorize"),
+        ("4", "Canje"),
+        ("5-6", "Uso"),
+    )
+    return (
+        '<p class="where" data-anim="fade">'
+        '<span class="where__label">Estás aquí</span>'
+        + "".join(
+            f'<span class="where__crumb{" where__crumb--on" if label == active else ""}">'
+            f"<span class=\"where__n\">{number}</span>{label}</span>"
+            for number, label in crumbs
+        )
+        + "</p>"
+    )
+
+
+def lanes(
+    lanes: tuple[tuple[str, tuple[str | tuple[str, str], ...]], ...],
+    active_lane: int,
+) -> str:
+    return (
+        '<div class="lanes">'
+        + "".join(
+            f'<div class="lane{" lane--off" if index != active_lane else ""}" data-anim="rise">'
+            f'<p class="lane__name">{name}</p>'
+            + "".join(
+                f'<p class="hop{"" if index == active_lane else " hop--off"}"{hl_attr(key)}>'
+                f'<span class="hop__n">{number}</span>{text}</p>'
+                for number, (key, text) in enumerate(with_keys(hops), start=1)
+            )
+            + "</div>"
+            for index, (name, hops) in enumerate(lanes)
+        )
+        + "</div>"
+    )
+
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# El mapa fijo: el flujo completo en seis paradas, con sus seis claves de voz.
+FLOW_STOPS: tuple[tuple[str, str], ...] = (
+    ("flujo-discovery", "El cliente descubre los endpoints"),
+    ("flujo-authorize", "Redirige al navegador al authorize"),
+    ("flujo-aprueba", "El usuario aprueba y vuelve con el código"),
+    ("flujo-canje", "El cliente canjea el código por tokens"),
+    ("flujo-userinfo", "Lee la identidad en userinfo"),
+    ("flujo-api", "Llama a la API con el access token"),
+)
+
+MAP_ACTORS: tuple[str, ...] = ("Cliente", "Navegador", "OP · OidcMock", "API")
+
+
+def flow_map(active: int | None = None) -> str:
+    stops = "".join(
+        f'<li class="map__stop{" map__stop--on" if number == active else ""}"'
+        f' data-anim="slide"{hl_attr(key)}>'
+        f'<span class="map__n">{number}</span>{label}</li>'
+        for number, (key, label) in enumerate(FLOW_STOPS, start=1)
+    )
+    actors = "".join(
+        f'<span class="map__actor" data-anim="pop">{actor}</span>' for actor in MAP_ACTORS
+    )
+    return f'<div class="map" data-anim="fade"><p class="map__actors">{actors}</p><ol class="map__stops">{stops}</ol></div>'
+
+
 SCENE_BODY: dict[str, str] = {}
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -126,9 +194,18 @@ SCENE_BODY["scene-02-actores"] = (
     + "</div></section>"
 )
 
-SCENE_BODY["scene-03-discovery"] = (
+SCENE_BODY["scene-03-flujo"] = (
     '<section class="scene">'
-    + head("Discovery", "Discovery y JWKS")
+    + head("El mapa", "El Flujo Completo, en Seis Pasos")
+    + flow_map()
+    + '<p class="note" data-anim="fade">Memoriza este mapa: cada escena siguiente amplía una de sus paradas.</p>'
+    + "</section>"
+)
+
+SCENE_BODY["scene-04-discovery"] = (
+    '<section class="scene">'
+    + head("Paso 1 del mapa", "Discovery y JWKS")
+    + where_you_are("Discovery")
     + '<div class="grid grid--2">'
     + card(
         "Discovery Document",
@@ -157,25 +234,37 @@ SCENE_BODY["scene-03-discovery"] = (
     + "</div></section>"
 )
 
-SCENE_BODY["scene-04-pkce"] = (
+SCENE_BODY["scene-05-pkce"] = (
     '<section class="scene">'
-    + head("Flujo principal", "Authorization Code + PKCE")
-    + steps(
+    + head("Pasos 2 y 3 del mapa", "Authorization Code + PKCE")
+    + where_you_are("Authorize")
+    + lanes(
         (
-            ("step-verifier", "El cliente genera <code>code_verifier</code> y <code>code_challenge</code>"),
-            ("step-authorize", "Redirige a <code>/connect/authorize</code> con el challenge y <code>state</code>"),
-            "El OP autentica al usuario y pide consentimiento",
-            "Vuelve al cliente con el <code>authorization_code</code>",
-            ("step-canje", "El cliente canjea en <code>/connect/token</code> con el <code>code_verifier</code>"),
-            ("step-compara", "Comparación en tiempo constante · S256 recomendado sobre plain"),
-        )
+            (
+                "Cliente",
+                (
+                    ("step-verifier", "Genera <code>code_verifier</code> y <code>code_challenge</code>"),
+                    ("step-authorize", "Redirige a <code>/connect/authorize</code> con challenge y <code>state</code>"),
+                ),
+            ),
+            (
+                "OP · OidcMock",
+                (
+                    ("step-aprueba", "Autentica al usuario y pide consentimiento"),
+                    ("step-canje", "Devuelve el <code>authorization_code</code> al redirect_uri"),
+                    ("step-compara", "Al canjear, compara en tiempo constante · S256 sobre plain"),
+                ),
+            ),
+        ),
+        1,
     )
     + "</section>"
 )
 
-SCENE_BODY["scene-05-idtoken"] = (
+SCENE_BODY["scene-06-idtoken"] = (
     '<section class="scene">'
-    + head("Claims", "ID Token y Claims")
+    + head("Paso 4 del mapa", "ID Token y Claims")
+    + where_you_are("Canje")
     + '<div class="grid grid--2">'
     + card(
         "Claims del JWT",
@@ -209,79 +298,75 @@ SCENE_BODY["scene-05-idtoken"] = (
     + "</div></section>"
 )
 
-SCENE_BODY["scene-06-grants"] = (
+SCENE_BODY["scene-07-canje"] = (
     '<section class="scene">'
-    + head("Grants", "Token Endpoint y Grant Types")
-    + '<p class="mono" data-anim="fade" data-hl="line-token">POST /connect/token</p>'
-    + '<div class="statrow">'
-    + "".join(
-        f'<div class="stat" data-anim="pop"{hl_attr(hl)}><span class="stat__num">{value}</span>'
-        f'<span class="stat__label">{label}</span></div>'
-        for value, label, hl in (
-            ("7", "grant types anunciados", "stat-grants"),
-            ("6", "endpoints de protocolo", None),
-            ("1", "handler por grant", "stat-handler"),
-        )
-    )
-    + "</div>"
-    + chips(
+    + head("Paso 4 del mapa", "El Canje en el Token Endpoint")
+    + where_you_are("Canje")
+    + steps(
         (
-            ("chip-authorization-code", "authorization_code"),
-            ("chip-refresh-token", "refresh_token"),
-            ("chip-client-credentials", "client_credentials"),
-            ("chip-password", "password"),
-            ("chip-device-code", "device_code"),
-            ("chip-ciba", "ciba"),
-            ("chip-implicit", "implicit"),
+            ("paso-envia", "El cliente envía <code>code</code>, <code>redirect_uri</code> y <code>code_verifier</code>"),
+            ("paso-valida", "El servidor valida el código: existe, es de ese cliente y no se usó"),
+            ("paso-comprueba", "Comprueba el verifier contra el challenge guardado"),
+            ("paso-responde", "Responde <code>access_token</code> + <code>id_token</code> + <code>refresh_token</code>"),
+            ("paso-repite", "Repetir el código es <code>invalid_grant</code>: ya no vale"),
         )
     )
     + "</section>"
 )
 
-SCENE_BODY["scene-07-userinfo"] = (
+SCENE_BODY["scene-08-grants"] = (
     '<section class="scene">'
-    + head("Gestión", "UserInfo, Introspection y Revocation")
-    + '<div class="grid grid--3">'
+    + head("Otros caminos", "Otros Grants del Token Endpoint")
+    + '<p class="mono" data-anim="fade">POST /connect/token — un handler por grant</p>'
+    + '<div class="grid grid--2">'
     + card(
-        "UserInfo",
-        '<p class="mono">GET /connect/userinfo</p>'
-        + bullet_list(
+        "Con usuario",
+        bullet_list(
             (
-                "Devuelve los claims del usuario",
-                "Requiere <code>Authorization: Bearer</code>",
-                "Reto <code>WWW-Authenticate</code> si el token no vale",
+                ("card-refresh", "<strong>refresh_token</strong> — pide tokens nuevos sin login, rota en cada uso"),
+                ("card-password", "<strong>password</strong> — valida usuario y contraseña directamente"),
             )
         ),
-        hl="card-userinfo",
     )
     + card(
-        "Introspection",
-        '<p class="mono">POST /connect/introspect</p>'
-        + bullet_list(
+        "Sin usuario",
+        bullet_list(
             (
-                "Responde <code>active: true</code> o <code>false</code>",
-                "Nunca revela si el token existía",
-                "RFC 7662, autenticado como cliente",
+                ("card-client", "<strong>client_credentials</strong> — tokens de servicio, sin usuario"),
+                ("card-device", "<strong>device_code y CIBA</strong> — simulados para completar el discovery"),
             )
         ),
-        hl="card-introspection",
-    )
-    + card(
-        "Revocation",
-        '<p class="mono">POST /connect/revocation</p>'
-        + bullet_list(
-            (
-                "Access token: registra su <code>jti</code>",
-                "Refresh token: revoca la familia completa",
-                "RFC 7009, idempotente",
-            )
-        ),
-        hl="card-revocation",
     )
     + "</div></section>"
 )
 
-SCENE_BODY["scene-08-sesion"] = (
+SCENE_BODY["scene-09-uso"] = (
+    '<section class="scene">'
+    + head("Pasos 5 y 6 del mapa", "UserInfo, API y Revocación")
+    + where_you_are("Uso")
+    + lanes(
+        (
+            (
+                "OP · OidcMock",
+                (
+                    ("uso-userinfo", "<code>GET /connect/userinfo</code> devuelve los claims del usuario"),
+                    ("uso-introspection", "<code>POST /connect/introspect</code> responde <code>active</code> true o false"),
+                    ("uso-revocation", "<code>POST /connect/revocation</code> registra el <code>jti</code>"),
+                ),
+            ),
+            (
+                "API",
+                (
+                    ("uso-api", "Valida la firma contra el JWKS y sirve los datos"),
+                ),
+            ),
+        ),
+        0,
+    )
+    + "</section>"
+)
+
+SCENE_BODY["scene-10-sesion"] = (
     '<section class="scene">'
     + head("Sesión", "Sesión y Logout")
     + '<div class="grid grid--3">'
@@ -315,7 +400,7 @@ SCENE_BODY["scene-08-sesion"] = (
     + "</div></section>"
 )
 
-SCENE_BODY["scene-09-avanzados"] = (
+SCENE_BODY["scene-11-avanzados"] = (
     '<section class="scene">'
     + head("Avanzado", "Flujos Avanzados")
     + '<div class="grid grid--3">'
@@ -357,7 +442,7 @@ SCENE_BODY["scene-09-avanzados"] = (
     + "</section>"
 )
 
-SCENE_BODY["scene-10-matriz"] = (
+SCENE_BODY["scene-12-matriz"] = (
     '<section class="scene">'
     + head("Resumen", "Matriz de Paridad")
     + '<div class="grid grid--matrix">'
@@ -381,7 +466,7 @@ SCENE_BODY["scene-10-matriz"] = (
     + "</section>"
 )
 
-SCENE_BODY["scene-11-arranque"] = (
+SCENE_BODY["scene-13-arranque"] = (
     '<section class="scene">'
     + head("Práctico", "Arrancar OidcMock")
     + '<div class="grid grid--2">'
@@ -407,7 +492,7 @@ SCENE_BODY["scene-11-arranque"] = (
     + "</div></section>"
 )
 
-SCENE_BODY["scene-12-outro"] = (
+SCENE_BODY["scene-14-outro"] = (
     '<section class="scene scene--center">'
     '<span class="kicker" data-anim="pop">Cierre</span>'
     '<h2 class="headline" data-anim="rise">Desarrolla sin dependencias externas</h2>'

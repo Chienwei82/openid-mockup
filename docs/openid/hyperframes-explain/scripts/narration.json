@@ -30,8 +30,22 @@
       ]
     },
     {
-      "id": "scene-03-discovery",
-      "kicker": "Discovery",
+      "id": "scene-03-flujo",
+      "kicker": "El mapa",
+      "title": "El Flujo Completo, en Seis Pasos",
+      "text": "Todo login sigue el mismo mapa, con cuatro actores. Primero el cliente descubre los endpoints. Segundo, redirige al navegador al authorize. Tercero, el usuario aprueba y vuelve con el código. Cuarto, el cliente canjea el código por tokens. Quinto, lee la identidad en userinfo. Y sexto, llama a la API con el access token.",
+      "hl": [
+        { "key": "flujo-discovery", "say": "descubre los endpoints" },
+        { "key": "flujo-authorize", "say": "redirige al navegador al authorize" },
+        { "key": "flujo-aprueba", "say": "el usuario aprueba y vuelve con el código" },
+        { "key": "flujo-canje", "say": "canjea el código por tokens" },
+        { "key": "flujo-userinfo", "say": "lee la identidad en userinfo" },
+        { "key": "flujo-api", "say": "llama a la API con el access token" }
+      ]
+    },
+    {
+      "id": "scene-04-discovery",
+      "kicker": "Paso 1 del mapa",
       "title": "Discovery y JWKS",
       "text": "Antes de redirigir a nadie a login, el cliente descubre los endpoints en el well-known de openid-configuration. Allí encuentra el issuer, las URLs de cada endpoint y las capacidades soportadas. El JWKS contiene las claves públicas para validar las firmas de los JWT.",
       "hl": [
@@ -40,23 +54,24 @@
       ]
     },
     {
-      "id": "scene-04-pkce",
-      "kicker": "Flujo principal",
+      "id": "scene-05-pkce",
+      "kicker": "Pasos 2 y 3 del mapa",
       "title": "Authorization Code + PKCE",
-      "text": "El flujo principal es Authorization Code con PKCE. El cliente genera un code verifier y su challenge, y los envía al authorize endpoint. Al canjear el código, el servidor compara el verifier en tiempo constante. Los métodos son plain y S256, siendo el S256 el recomendado.",
+      "text": "Pasos dos y tres del mapa: el cliente genera un code verifier y su challenge, y redirige al authorize endpoint. El usuario aprueba en la pantalla de login, y vuelve al cliente con el código. Al canjear, el servidor compara el verifier en tiempo constante. Los métodos son plain y S256, siendo el S256 el recomendado.",
       "hl": [
         { "key": "step-verifier", "say": "code verifier y su challenge" },
-        { "key": "step-authorize", "say": "authorize endpoint" },
-        { "key": "step-canje", "say": "Al canjear el código" },
+        { "key": "step-authorize", "say": "redirige al authorize endpoint" },
+        { "key": "step-aprueba", "say": "El usuario aprueba en la pantalla de login" },
+        { "key": "step-canje", "say": "vuelve al cliente con el código" },
         { "key": "step-compara", "say": "compara el verifier en tiempo constante" },
         { "key": "step-compara", "say": "el recomendado" }
       ]
     },
     {
-      "id": "scene-05-idtoken",
-      "kicker": "Claims",
+      "id": "scene-06-idtoken",
+      "kicker": "Paso 4 del mapa",
       "title": "ID Token y Claims",
-      "text": "El ID Token es lo que convierte OAuth en OpenID Connect. Es un JWT con claims obligatorios: iss, sub, aud, exp, iat y nonce. Los claims de binding, at hash y c hash, lo vinculan con el access token y con el código. Los claims del usuario salen del scope concedido.",
+      "text": "Paso cuatro del mapa, lo que llega en el canje: el ID Token convierte OAuth en OpenID Connect. Es un JWT con claims obligatorios: iss, sub, aud, exp, iat y nonce. Los claims de binding, at hash y c hash, lo vinculan con el access token y con el código. Los claims del usuario salen del scope concedido.",
       "hl": [
         { "key": "chip-iss", "say": "iss" },
         { "key": "chip-sub", "say": "sub" },
@@ -69,36 +84,44 @@
       ]
     },
     {
-      "id": "scene-06-grants",
-      "kicker": "Grants",
-      "title": "Token Endpoint y Grant Types",
-      "text": "El token endpoint, en connect token, es donde cada grant type obtiene sus tokens. Soportamos siete: authorization code, refresh token, client credentials, password, device code, ciba e implicit. Un patrón strategy despacha cada grant a su handler.",
+      "id": "scene-07-canje",
+      "kicker": "Paso 4 del mapa",
+      "title": "El Canje en el Token Endpoint",
+      "text": "Paso cuatro del mapa, visto por dentro: el cliente envía el código, el redirect uri y el code verifier al token endpoint. El servidor valida el código de un solo uso, comprueba el verifier contra el challenge y responde con access token, id token y refresh token. El código ya no vale: si se repite, el servidor responde invalid grant.",
       "hl": [
-        { "key": "line-token", "say": "El token endpoint" },
-        { "key": "stat-grants", "say": "Soportamos siete" },
-        { "key": "chip-authorization-code", "say": "authorization code" },
-        { "key": "chip-refresh-token", "say": "refresh token" },
-        { "key": "chip-client-credentials", "say": "client credentials" },
-        { "key": "chip-password", "say": "password" },
-        { "key": "chip-device-code", "say": "device code" },
-        { "key": "chip-ciba", "say": "ciba" },
-        { "key": "chip-implicit", "say": "implicit" },
-        { "key": "stat-handler", "say": "despacha cada grant" }
+        { "key": "paso-envia", "say": "envía el código" },
+        { "key": "paso-valida", "say": "valida el código de un solo uso" },
+        { "key": "paso-comprueba", "say": "comprueba el verifier contra el challenge" },
+        { "key": "paso-responde", "say": "responde con access token" },
+        { "key": "paso-repite", "say": "si se repite" }
       ]
     },
     {
-      "id": "scene-07-userinfo",
-      "kicker": "Gestión",
-      "title": "UserInfo, Introspection y Revocation",
-      "text": "UserInfo devuelve los claims del usuario a partir del access token. Introspection responde siempre con active verdadero o falso, sin revelar si el token existía. Revocation registra el jti o revoca toda la familia de refresh tokens.",
+      "id": "scene-08-grants",
+      "kicker": "Otros caminos",
+      "title": "Otros Grants del Token Endpoint",
+      "text": "El mismo token endpoint atiende otros caminos. El refresh token pide tokens nuevos sin login, y rota en cada uso. Client credentials emite tokens de servicio, sin usuario. Y el grant password valida usuario y contraseña directamente. Los grants de dispositivo y CIBA están simulados para completar el discovery.",
       "hl": [
-        { "key": "card-userinfo", "say": "UserInfo devuelve" },
-        { "key": "card-introspection", "say": "Introspection responde" },
-        { "key": "card-revocation", "say": "Revocation registra" }
+        { "key": "card-refresh", "say": "El refresh token pide tokens nuevos" },
+        { "key": "card-client", "say": "Client credentials emite tokens de servicio" },
+        { "key": "card-password", "say": "el grant password valida usuario y contraseña" },
+        { "key": "card-device", "say": "están simulados" }
       ]
     },
     {
-      "id": "scene-08-sesion",
+      "id": "scene-09-uso",
+      "kicker": "Pasos 5 y 6 del mapa",
+      "title": "UserInfo, API y Revocación",
+      "text": "Pasos cinco y seis del mapa: con los tokens en mano, UserInfo devuelve los claims del usuario a partir del access token. La API valida la firma contra el JWKS y sirve los datos. Introspection responde siempre con active verdadero o falso, sin revelar si el token existía. Y Revocation registra el jti o revoca toda la familia de refresh tokens.",
+      "hl": [
+        { "key": "uso-userinfo", "say": "UserInfo devuelve los claims del usuario" },
+        { "key": "uso-api", "say": "La API valida la firma contra el JWKS" },
+        { "key": "uso-introspection", "say": "Introspection responde siempre con active" },
+        { "key": "uso-revocation", "say": "Revocation registra el jti" }
+      ]
+    },
+    {
+      "id": "scene-10-sesion",
       "kicker": "Sesión",
       "title": "Sesión y Logout",
       "text": "Hay tres sesiones: la del OP, que habilita el SSO; la del cliente, con su propia cookie; y el sid, que conecta el id token con la sesión del OP. El logout usa connect end session con id token hint y post logout redirect uri. El prompt admite none, login, consent o select account.",
@@ -111,7 +134,7 @@
       ]
     },
     {
-      "id": "scene-09-avanzados",
+      "id": "scene-11-avanzados",
       "kicker": "Avanzado",
       "title": "Flujos Avanzados",
       "text": "Tenemos PAR implementado, el flujo híbrido code id token para el sistema interno, y device y CIBA simulados para completar el discovery. PAR usa request uri y envía los parámetros sensibles por back-channel.",
@@ -123,7 +146,7 @@
       ]
     },
     {
-      "id": "scene-10-matriz",
+      "id": "scene-12-matriz",
       "kicker": "Resumen",
       "title": "Matriz de Paridad",
       "text": "La matriz de paridad compara la teoría, el servidor de referencia y OidcMock. Los tokens tienen vidas definidas: el código cinco minutos, el access token y el id token treinta minutos, y el refresh token ocho horas. Los errores siguen los códigos HTTP definidos por RFC.",
@@ -136,7 +159,7 @@
       ]
     },
     {
-      "id": "scene-11-arranque",
+      "id": "scene-13-arranque",
       "kicker": "Práctico",
       "title": "Arrancar OidcMock",
       "text": "Para arrancar OidcMock ejecutamos dotnet run sobre el proyecto Host. El issuer se configura por opciones, HTTPS o HTTP, y los clientes de ejemplo se declaran en JSON. Todo el estado vive en memoria, sin base de datos.",
@@ -147,7 +170,7 @@
       ]
     },
     {
-      "id": "scene-12-outro",
+      "id": "scene-14-outro",
       "kicker": "Cierre",
       "title": "Desarrolla sin dependencias externas",
       "text": "OidcMock replica el comportamiento del servidor de referencia para desarrollo local, con configuración JSON y estado en memoria, y nunca debe exponerse fuera de localhost. Gracias por ver.",

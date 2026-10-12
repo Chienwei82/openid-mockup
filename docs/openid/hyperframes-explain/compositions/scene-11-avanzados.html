@@ -1,16 +1,16 @@
 <template>
   <div
     class="scene-root"
-    data-composition-id="scene-12-outro"
+    data-composition-id="scene-11-avanzados"
     data-width="1920"
     data-height="1080"
-    data-duration="15.316"
+    data-duration="16.564"
   >
-<section class="scene scene--center"><span class="kicker" data-anim="pop">Cierre</span><h2 class="headline" data-anim="rise">Desarrolla sin dependencias externas</h2><p class="lede" data-anim="fade" data-hl="lede">OidcMock replica el comportamiento del servidor de referencia para desarrollo local: configuración JSON, estado en memoria y ningún artefacto fuera de <code data-hl="code-localhost">localhost</code>.</p><div class="chiprow" data-anim="fade"><span class="chip">docs/openid/</span><span class="chip">scripts/test.sh</span><span class="chip">OidcMock v1.0</span></div></section>
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Avanzado</span><h2 class="headline" data-anim="rise">Flujos Avanzados</h2></header><div class="grid grid--3"><article class="card" data-anim="rise" data-hl="card-par"><h3 class="card__title">PAR <span class="badge badge--ok">implementado</span></h3><ul class="list"><li>RFC 9126, un solo uso</li><li>Envía los parámetros por back-channel</li><li>Devuelve <code>request_uri</code> al cliente</li></ul></article><article class="card" data-anim="rise" data-hl="card-hibrido"><h3 class="card__title">Híbrido <span class="badge badge--ok">implementado</span></h3><ul class="list"><li><code>code id_token</code> en el fragmento</li><li>Incluye <code>c_hash</code> y <code>session_state</code></li><li>Pensado para el sistema interno</li></ul></article><article class="card" data-anim="rise" data-hl="card-device"><h3 class="card__title">Device y CIBA <span class="badge badge--warn">simulados</span></h3><ul class="list"><li>Ciclo de sondeo, sin pantalla ni push</li><li><code>authorization_pending</code>, <code>slow_down</code></li><li>Validan el discovery anunciado</li></ul></article></div><p class="note" data-anim="fade">Implicit (<code>id_token token</code>) se anuncia pero no se responde: devuelve <code>unsupported_response_type</code>.</p></section>
 
     <script>
       (function () {
-        var root = document.querySelector('[data-composition-id="scene-12-outro"]');
+        var root = document.querySelector('[data-composition-id="scene-11-avanzados"]');
         if (!root || typeof gsap === 'undefined') { return; }
         var timeline = gsap.timeline({ paused: true });
 
@@ -30,7 +30,7 @@
           );
         }
 
-        var HIGHLIGHTS = {"lede": [[1.524, 2.841]], "code-localhost": [[10.544, 11.216]]};
+        var HIGHLIGHTS = {"card-par": [[1.454, 2.393], [10.536, 11.74]], "card-hibrido": [[2.855, 3.751]], "card-device": [[6.272, 7.869]]};
         var targets = [];
         Object.keys(HIGHLIGHTS).forEach(function (key) {
           var el = root.querySelector('[data-hl="' + key + '"]');
@@ -61,8 +61,8 @@
         timeline.to(
           driver,
           {
-            t: 15.316,
-            duration: 15.316,
+            t: 16.564,
+            duration: 16.564,
             ease: 'none',
             onUpdate: function () {
               for (var i = 0; i < targets.length; i += 1) {
@@ -77,7 +77,7 @@
           0
         );
 
-        window.__timelines['scene-12-outro'] = timeline;
+        window.__timelines['scene-11-avanzados'] = timeline;
       })();
     </script>
   </div>

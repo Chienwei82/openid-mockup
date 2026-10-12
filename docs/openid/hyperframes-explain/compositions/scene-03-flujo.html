@@ -1,0 +1,84 @@
+<template>
+  <div
+    class="scene-root"
+    data-composition-id="scene-03-flujo"
+    data-width="1920"
+    data-height="1080"
+    data-duration="31.492"
+  >
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">El mapa</span><h2 class="headline" data-anim="rise">El Flujo Completo, en Seis Pasos</h2></header><div class="map" data-anim="fade"><p class="map__actors"><span class="map__actor" data-anim="pop">Cliente</span><span class="map__actor" data-anim="pop">Navegador</span><span class="map__actor" data-anim="pop">OP · OidcMock</span><span class="map__actor" data-anim="pop">API</span></p><ol class="map__stops"><li class="map__stop" data-anim="slide" data-hl="flujo-discovery"><span class="map__n">1</span>El cliente descubre los endpoints</li><li class="map__stop" data-anim="slide" data-hl="flujo-authorize"><span class="map__n">2</span>Redirige al navegador al authorize</li><li class="map__stop" data-anim="slide" data-hl="flujo-aprueba"><span class="map__n">3</span>El usuario aprueba y vuelve con el código</li><li class="map__stop" data-anim="slide" data-hl="flujo-canje"><span class="map__n">4</span>El cliente canjea el código por tokens</li><li class="map__stop" data-anim="slide" data-hl="flujo-userinfo"><span class="map__n">5</span>Lee la identidad en userinfo</li><li class="map__stop" data-anim="slide" data-hl="flujo-api"><span class="map__n">6</span>Llama a la API con el access token</li></ol></div><p class="note" data-anim="fade">Memoriza este mapa: cada escena siguiente amplía una de sus paradas.</p></section>
+
+    <script>
+      (function () {
+        var root = document.querySelector('[data-composition-id="scene-03-flujo"]');
+        if (!root || typeof gsap === 'undefined') { return; }
+        var timeline = gsap.timeline({ paused: true });
+
+        var FROM = {
+          rise: { opacity: 0, y: 36 },
+          pop: { opacity: 0, y: 22, scale: 0.92 },
+          slide: { opacity: 0, x: -40 },
+          fade: { opacity: 0 },
+        };
+        var items = root.querySelectorAll('[data-anim]');
+        for (var index = 0; index < items.length; index += 1) {
+          var from = FROM[items[index].getAttribute('data-anim')] || FROM.rise;
+          timeline.from(
+            items[index],
+            Object.assign({ duration: 0.65, ease: 'power3.out' }, from),
+            0.45 + index * 0.24
+          );
+        }
+
+        var HIGHLIGHTS = {"flujo-discovery": [[6.474, 8.071]], "flujo-authorize": [[10.032, 12.441]], "flujo-aprueba": [[14.345, 17.006]], "flujo-canje": [[19.443, 21.544]], "flujo-userinfo": [[23.295, 25.228]], "flujo-api": [[27.16, 29.513]]};
+        var targets = [];
+        Object.keys(HIGHLIGHTS).forEach(function (key) {
+          var el = root.querySelector('[data-hl="' + key + '"]');
+          if (el) { targets.push({ el: el, windows: HIGHLIGHTS[key] }); }
+        });
+        var ATTACK = 0.22;
+        var RELEASE = 0.55;
+        function envelope(time, start, end) {
+          if (time < start) { return 0; }
+          if (time < end) { return Math.min((time - start) / ATTACK, 1); }
+          if (time < end + RELEASE) { return 1 - (time - end) / RELEASE; }
+          return 0;
+        }
+        function paint(target, env) {
+          var el = target.el;
+          if (env <= 0.001) {
+            el.style.borderColor = '';
+            el.style.boxShadow = '';
+            el.style.textShadow = '';
+            return;
+          }
+          el.style.borderColor =
+            'rgb(' + Math.round(58 + 19 * env) + ', ' + Math.round(63 + 145 * env) + ', ' + Math.round(71 + 154 * env) + ')';
+          el.style.boxShadow = '0 0 ' + (36 * env).toFixed(1) + 'px rgba(77, 208, 225, ' + (0.28 * env).toFixed(3) + ')';
+          el.style.textShadow = '0 0 ' + (16 * env).toFixed(1) + 'px rgba(77, 208, 225, ' + (0.4 * env).toFixed(3) + ')';
+        }
+        var driver = { t: 0 };
+        timeline.to(
+          driver,
+          {
+            t: 31.492,
+            duration: 31.492,
+            ease: 'none',
+            onUpdate: function () {
+              for (var i = 0; i < targets.length; i += 1) {
+                var env = 0;
+                for (var w = 0; w < targets[i].windows.length; w += 1) {
+                  env = Math.max(env, envelope(driver.t, targets[i].windows[w][0], targets[i].windows[w][1]));
+                }
+                paint(targets[i], env);
+              }
+            },
+          },
+          0
+        );
+
+        window.__timelines['scene-03-flujo'] = timeline;
+      })();
+    </script>
+  </div>
+</template>

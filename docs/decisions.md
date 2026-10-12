@@ -1543,3 +1543,27 @@ agudizada por un default de la libreria.
 - **Verificacion:** `npm run audio` (259,152 s, 57 resaltados, 0 avisos) +
   `npm run build` + `npm run check` en verde (0 errores, 0 avisos; contraste
   87/87 WCAG AA).
+
+
+## Claridad de la explicación: mapa fijo + sub-diagramas (2026-10-12)
+
+El usuario pidio que la rama refleje claridad de explicacion y que el video sea
+mas grafico: un diagrama de flujo muy generalizado y fijo, con sub-diagramas mas
+detallados despues, en un recorrido guiado.
+
+- **Rama `video/voz-natural` → `video/claridad-explicacion`.** Mantiene el prefijo
+  `video/` y describe la intencion, no la tecnica. El fix de tono quedo commiteado
+  debajo (`5451cf52`); la rama vieja no existia en remoto, asi que no hubo que borrarla.
+- **Opcion B: 12 → 14 escenas renumeradas.** Escena 03 nueva con el mapa fijo (4 actores,
+  6 paradas numeradas); el token endpoint se parte en dos (07 el canje paso a paso, 08 los
+  demas grants); userinfo se reenfoca como pasos 5-6 con carril API. Regeneracion completa
+  de audio: 337,6 s, 63 resaltados.
+- **Recorrido guiado con lo ya inventado.** Cada escena de flujo lleva tira «estás aquí»
+  (Discovery / Authorize / Canje / Uso) y los sub-diagramas son carriles por actor
+  (`lanes()` con `hop` numerados) o pasos (`steps()`); la voz enciende cada parada con el
+  driver de resaltado existente, sin cambiar `build_composition.py`.
+- **Sin Mermaid ni SVG dibujado a mano:** nodos HTML + CSS (`map`, `where`, `lanes`,
+  `minimap`), que sí animan por pasos y sí pasan `hyperframes check`. Contrato intacto:
+  sin `<br>` en cuerpo, sin `id`, todo animado con `data-anim`, todo mencionado con `data-hl`.
+- **TDD no aplicable:** no hay cambios en `src/` ni `tests/`; la verificacion es
+  `npm run audio` (0 avisos) + `npm run build` + `npm run check` + `dotnet build/test` en verde.
