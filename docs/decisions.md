@@ -1567,3 +1567,33 @@ detallados despues, en un recorrido guiado.
   sin `<br>` en cuerpo, sin `id`, todo animado con `data-anim`, todo mencionado con `data-hl`.
 - **TDD no aplicable:** no hay cambios en `src/` ni `tests/`; la verificacion es
   `npm run audio` (0 avisos) + `npm run build` + `npm run check` + `dotnet build/test` en verde.
+
+
+## Pitch natural (0) + diagramas de flujo y casos de uso animados (2026-10-12)
+
+El usuario quiso probar `pitch: 0` y reestructurar la presentacion con graficos
+estilo diagrama de flujo animado, diagramas de casos de uso animados y cualquier
+otro diagrama que encajara.
+
+- **`pitch: 0` exige parchear el TTS.** `genSSML` de `@lobehub/tts` hace
+  `pitch || 1`: con `pitch: 0` (falsy) emitiria `pitch="100%"` (≈+50 %, agudo).
+  `generate_audio.mjs` lo traduce a `0.001`, que llega como `0 %` → tono natural
+  de Paloma (≈182 Hz). Commit `8c95e27b`.
+- **Sistema de diagramas con tres recetas de hyperframes-animation:**
+  `asr-keyword-glow` (la voz enciende cada parada, driver ya existente),
+  `svg-path-draw` adaptada a `scaleY` (el riel se traza sin medir el DOM: en
+  multi-escena `getTotalLength()`/`getBoundingClientRect()` en tween-time desincroniza),
+  y `spring-pop-entrance` para el token viajero que salta por parada al ritmo de
+  su ventana de habla. Todo en el timeline único pausado y solo transforms
+  (scale) + opacity: seek-safe en ambas direcciones.
+- **Dos formas de diagrama.** `flow()` —cadena de paradas numeradas con riel y
+  token— para los flujos secuenciales (03 mapa, 04 discovery, 05 PKCE, 07 canje,
+  09 uso). `usecase()` —pregunta + tres ramas— para decisiones (06 qué trae el
+  id token, 08 qué grant uso, 10 qué sesión se cierra, 11 qué flujo avanzado).
+  Escenas tabulares (01, 02, 12, 13, 14) conservan tarjetas/tablas: la forma
+  sigue al contenido.
+- **Anudado estricto:** las claves `hl` del guion se reescribieron para las
+  escenas convertidas (0 huérfanos) y `build_scene` sigue fallando en ruido si
+  aparece alguna.
+- **TDD no aplicable:** sin cambios en `src/` ni `tests/`; verificacion
+  `dotnet build` + 726 tests, `npm run check` y render de prueba.
