@@ -18,7 +18,7 @@ import { EdgeSpeechTTS } from '@lobehub/tts';
 import WebSocket from 'ws';
 
 const PROBE_DIR = '/tmp/hf-voice-probe';
-const VOICE = 'es-ES-AlvaroNeural';
+const VOICE = 'es-US-PalomaNeural';
 const PROBE_TEXT =
   'El cliente genera un código de verificación y lo envía al servidor para canjearlo por sus tokens de acceso.';
 
@@ -69,6 +69,7 @@ const VARIANTS = [
   { id: 'punct-commas', options: { rate: -0.15 }, input: COMMAS },
   { id: 'punct-ellipsis-mid', options: { rate: -0.15 }, input: ELLIPSIS_MID },
   { id: 'punct-two-sentences', options: { rate: -0.15 }, input: TWO_SENTENCES },
+  { id: 'pitch-15', options: { rate: -0.15, pitch: -0.15 } },
 ];
 
 const serviceLog = [];

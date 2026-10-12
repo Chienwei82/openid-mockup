@@ -10,6 +10,7 @@ Lee `audio/timings.json` (producido por generate_audio.py) y escribe:
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from scene_content import SCENE_BODY
@@ -32,6 +33,12 @@ AUDIO_TRACK = 10
 # elemento [data-hl] con una envolvente ataque-sostén-caída (adaptado de la
 # receta asr-keyword-glow de hyperframes-animation). Solo se pintan bordes y
 # sombras de texto: nada que pueda empeorar el contraste AA auditado.
+# Los diagramas de flujo añaden dos piezas seek-safe al mismo timeline:
+# el riel (.flow__rail) se traza con scaleY 0→1 (receta svg-path-draw
+# adaptada: sin getTotalLength, sin dashoffset) y cada token viajero
+# (.flow__token) aparece con pop + glow justo en la ventana de habla de su
+# parada (receta spring-pop-entrance sobre el driver lineal). Solo
+# transforms (scale) + opacity: nada de top/left/width en los tweens.
 SCENE_TEMPLATE = """<template>
   <div
     class="scene-root"
@@ -65,6 +72,29 @@ __BODY__
         }
 
         var HIGHLIGHTS = __HIGHLIGHTS__;
+        var RAILS = __RAILS__;
+        var TOKENS = __TOKENS__;
+        var rails = root.querySelectorAll('.flow__rail');
+        for (var rail = 0; rail < rails.length; rail += 1) {
+          var span = RAILS[rail] || [0, 0.6];
+          timeline.fromTo(
+            rails[rail],
+            { scaleY: 0 },
+            { scaleY: 1, duration: Math.max(span[1] - span[0], 0.4), ease: 'power2.out' },
+            span[0]
+          );
+        }
+        var tokens = root.querySelectorAll('.flow__token');
+        for (var tok = 0; tok < tokens.length; tok += 1) {
+          var win = TOKENS[tok] || [0, 0];
+          timeline.fromTo(
+            tokens[tok],
+            { opacity: 0, scale: 0 },
+            { opacity: 1, scale: 1, duration: 0.35, ease: 'power3.out' },
+            Math.max(win[0] - 0.15, 0)
+          );
+          timeline.to(tokens[tok], { opacity: 0.25, duration: 0.5, ease: 'power1.out' }, win[1]);
+        }
         var targets = [];
         Object.keys(HIGHLIGHTS).forEach(function (key) {
           var el = root.querySelector('[data-hl="' + key + '"]');
@@ -157,7 +187,7 @@ __THEME__
         <span class="hf-brandbar__mark"><span class="hf-brandbar__dot"></span>OidcMock · OpenID Connect</span>
         <span class="hf-brandbar__tag">/personafisica</span>
       </header>
-      <div class="hf-rail__label">Explicador OIDC · 12 escenas</div>
+      <div class="hf-rail__label">Explicador OIDC · __SCENECOUNT__ escenas</div>
       <div class="hf-rail"><div class="hf-rail__fill"></div></div>
 
       <!-- Escenas: cada una es una sub-composición independiente -->
@@ -200,6 +230,19 @@ def highlight_windows(scene: dict[str, object], lead_in: float) -> dict[str, lis
     return grouped
 
 
+def flow_motion(scene: dict[str, object], lead_in: float) -> tuple[list[list[float]], list[list[float]]]:
+    windows = highlight_windows(scene, lead_in)
+    body = SCENE_BODY[str(scene["id"])]
+    tokens = re.findall(r'data-token="([^"]+)"', body)
+    rails = len(re.findall(r'class="flow__rail"', body))
+    bounds = [window for key in tokens for window in windows.get(key, [])]
+    span = [bounds[0][0], bounds[-1][1]] if bounds else [round(lead_in, 3), round(lead_in + 0.6, 3)]
+    return (
+        [span for _ in range(rails)],
+        [windows.get(key, [span])[0] for key in tokens],
+    )
+
+
 def build_scene(scene: dict[str, object], lead_in: float) -> None:
     scene_id = str(scene["id"])
     body = SCENE_BODY[scene_id]
@@ -207,6 +250,7 @@ def build_scene(scene: dict[str, object], lead_in: float) -> None:
     missing = [key for key in windows if f'data-hl="{key}"' not in body]
     if missing:
         print(f"aviso: {scene_id} resalta claves sin elemento data-hl: {missing}")
+    rails, tokens = flow_motion(scene, lead_in)
     document = (
         SCENE_TEMPLATE.replace("__SCENE_ID__", scene_id)
         .replace("__WIDTH__", str(WIDTH))
@@ -216,6 +260,8 @@ def build_scene(scene: dict[str, object], lead_in: float) -> None:
         .replace("__FIRST_DELAY__", str(FIRST_ITEM_DELAY))
         .replace("__STAGGER__", str(reveal_stagger(body, float(scene["audioDuration"]))))
         .replace("__HIGHLIGHTS__", json.dumps(windows))
+        .replace("__RAILS__", json.dumps(rails))
+        .replace("__TOKENS__", json.dumps(tokens))
     )
     (COMPOSITIONS_DIR / f"{scene_id}.html").write_text(document, encoding="utf-8")
 
@@ -251,6 +297,7 @@ def build_orchestrator(scenes: list[dict[str, object]], total: float) -> None:
         .replace("__HEIGHT__", str(HEIGHT))
         .replace("__FPS__", str(FPS))
         .replace("__TOTAL__", str(total))
+        .replace("__SCENECOUNT__", str(len(scenes)))
         .replace("__SLOTS__", slots)
         .replace("__AUDIOS__", audios)
     )

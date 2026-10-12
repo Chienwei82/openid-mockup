@@ -16,3 +16,6 @@ audio/concat.txt
 # Caches locales de las sondas de voz y forma de onda. Se regeneran solo.
 .thumbnails/
 .waveform-cache/
+
+# Muestras de la sonda de voces: se regeneran con scripts/probe_voices.mjs.
+audio/voice-samples/

@@ -1,0 +1,107 @@
+<template>
+  <div
+    class="scene-root"
+    data-composition-id="scene-12-matriz"
+    data-width="1920"
+    data-height="1080"
+    data-duration="23.932"
+  >
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Resumen</span><h2 class="headline" data-anim="rise">Matriz de Paridad</h2></header><div class="grid grid--matrix"><table class="table" data-anim="rise"><thead><tr><th>Token</th><th>Vida</th><th>Notas</th></tr></thead><tbody><tr data-hl="row-code"><td class="mono">authorization_code</td><td>5 min</td><td>opaco, un solo uso</td></tr><tr data-hl="row-access"><td class="mono">access_token</td><td>30 min</td><td>JWT RS256, aud = client_id</td></tr><tr data-hl="row-id"><td class="mono">id_token</td><td>30 min</td><td>solo con scope openid</td></tr><tr data-hl="row-refresh"><td class="mono">refresh_token</td><td>8 h</td><td>rota, requiere offline_access</td></tr></tbody></table><article class="card" data-anim="rise" data-hl="card-errores"><h3 class="card__title">Errores de protocolo</h3><p class="errow"><span class="chip chip--accent">invalid_request</span><span class="errow__http">400</span>falta o estorba un parámetro</p><p class="errow"><span class="chip chip--accent">invalid_client</span><span class="errow__http">401</span>credenciales de cliente inválidas</p><p class="errow"><span class="chip chip--accent">invalid_grant</span><span class="errow__http">400</span>code, refresh o PKCE no válidos</p><p class="errow"><span class="chip chip--accent">unsupported_grant_type</span><span class="errow__http">400</span>grant desconocido</p><p class="errow"><span class="chip chip--accent">invalid_scope</span><span class="errow__http">400</span>scope no permitido</p><p class="errow"><span class="chip chip--accent">invalid_token</span><span class="errow__http">401</span>reto Bearer en /userinfo</p></article></div><p class="note" data-anim="fade">El usuario denegó: <code>access_denied</code> · <code>request_uri</code> caducado: <code>invalid_request_uri</code>.</p></section>
+
+    <script>
+      (function () {
+        var root = document.querySelector('[data-composition-id="scene-12-matriz"]');
+        if (!root || typeof gsap === 'undefined') { return; }
+        var timeline = gsap.timeline({ paused: true });
+
+        var FROM = {
+          rise: { opacity: 0, y: 36 },
+          pop: { opacity: 0, y: 22, scale: 0.92 },
+          slide: { opacity: 0, x: -40 },
+          fade: { opacity: 0 },
+        };
+        var items = root.querySelectorAll('[data-anim]');
+        for (var index = 0; index < items.length; index += 1) {
+          var from = FROM[items[index].getAttribute('data-anim')] || FROM.rise;
+          timeline.from(
+            items[index],
+            Object.assign({ duration: 0.65, ease: 'power3.out' }, from),
+            0.45 + index * 0.24
+          );
+        }
+
+        var HIGHLIGHTS = {"row-code": [[9.457, 11.11]], "row-access": [[11.446, 12.497]], "row-id": [[12.581, 13.771]], "row-refresh": [[14.808, 16.754]], "card-errores": [[17.735, 18.659]]};
+        var RAILS = [];
+        var TOKENS = [];
+        var rails = root.querySelectorAll('.flow__rail');
+        for (var rail = 0; rail < rails.length; rail += 1) {
+          var span = RAILS[rail] || [0, 0.6];
+          timeline.fromTo(
+            rails[rail],
+            { scaleY: 0 },
+            { scaleY: 1, duration: Math.max(span[1] - span[0], 0.4), ease: 'power2.out' },
+            span[0]
+          );
+        }
+        var tokens = root.querySelectorAll('.flow__token');
+        for (var tok = 0; tok < tokens.length; tok += 1) {
+          var win = TOKENS[tok] || [0, 0];
+          timeline.fromTo(
+            tokens[tok],
+            { opacity: 0, scale: 0 },
+            { opacity: 1, scale: 1, duration: 0.35, ease: 'power3.out' },
+            Math.max(win[0] - 0.15, 0)
+          );
+          timeline.to(tokens[tok], { opacity: 0.25, duration: 0.5, ease: 'power1.out' }, win[1]);
+        }
+        var targets = [];
+        Object.keys(HIGHLIGHTS).forEach(function (key) {
+          var el = root.querySelector('[data-hl="' + key + '"]');
+          if (el) { targets.push({ el: el, windows: HIGHLIGHTS[key] }); }
+        });
+        var ATTACK = 0.22;
+        var RELEASE = 0.55;
+        function envelope(time, start, end) {
+          if (time < start) { return 0; }
+          if (time < end) { return Math.min((time - start) / ATTACK, 1); }
+          if (time < end + RELEASE) { return 1 - (time - end) / RELEASE; }
+          return 0;
+        }
+        function paint(target, env) {
+          var el = target.el;
+          if (env <= 0.001) {
+            el.style.borderColor = '';
+            el.style.boxShadow = '';
+            el.style.textShadow = '';
+            return;
+          }
+          el.style.borderColor =
+            'rgb(' + Math.round(58 + 19 * env) + ', ' + Math.round(63 + 145 * env) + ', ' + Math.round(71 + 154 * env) + ')';
+          el.style.boxShadow = '0 0 ' + (36 * env).toFixed(1) + 'px rgba(77, 208, 225, ' + (0.28 * env).toFixed(3) + ')';
+          el.style.textShadow = '0 0 ' + (16 * env).toFixed(1) + 'px rgba(77, 208, 225, ' + (0.4 * env).toFixed(3) + ')';
+        }
+        var driver = { t: 0 };
+        timeline.to(
+          driver,
+          {
+            t: 23.932,
+            duration: 23.932,
+            ease: 'none',
+            onUpdate: function () {
+              for (var i = 0; i < targets.length; i += 1) {
+                var env = 0;
+                for (var w = 0; w < targets[i].windows.length; w += 1) {
+                  env = Math.max(env, envelope(driver.t, targets[i].windows[w][0], targets[i].windows[w][1]));
+                }
+                paint(targets[i], env);
+              }
+            },
+          },
+          0
+        );
+
+        window.__timelines['scene-12-matriz'] = timeline;
+      })();
+    </script>
+  </div>
+</template>

@@ -1,16 +1,16 @@
 <template>
   <div
     class="scene-root"
-    data-composition-id="scene-08-sesion"
+    data-composition-id="scene-11-avanzados"
     data-width="1920"
     data-height="1080"
-    data-duration="25.012"
+    data-duration="16.564"
   >
-<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Sesión</span><h2 class="headline" data-anim="rise">Sesión y Logout</h2></header><div class="grid grid--3"><article class="card" data-anim="rise" data-hl="card-op"><h3 class="card__title">Sesión del OP</h3><ul class="list"><li>Habilita el SSO</li><li>Cookie del navegador</li><li>Vida por defecto 8 h</li></ul></article><article class="card" data-anim="rise" data-hl="card-cliente"><h3 class="card__title">Sesión del cliente</h3><ul class="list"><li>Cookie propia de la aplicación</li><li>Independiente del OP</li><li>Se cierra con el logout</li></ul></article><article class="card" data-anim="rise" data-hl="card-sid"><h3 class="card__title">sid</h3><ul class="list"><li>Conecta el id_token con la sesión</li><li>Viaja también en el logout</li><li>Permite front-channel logout</li></ul></article></div><div class="grid grid--2 grid--tight"><article class="card" data-anim="rise" data-hl="card-prompt"><h3 class="card__title">prompt</h3><div class="chiprow" data-anim="fade"><span class="chip">none</span><span class="chip">login</span><span class="chip">consent</span><span class="chip">select_account</span></div></article><article class="card" data-anim="rise" data-hl="card-logout"><h3 class="card__title">RP-Initiated Logout</h3><p class="mono">/connect/endsession · id_token_hint · post_logout_redirect_uri</p></article></div></section>
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Avanzado</span><h2 class="headline" data-anim="rise">Flujos Avanzados</h2></header><div class="use"><p class="use__q" data-anim="pop">¿Qué flujo avanzado necesito?</p><div class="use__branches"><article class="use__branch" data-anim="rise" data-hl="card-par"><h3 class="use__when">Parámetros sensibles</h3><p class="use__go"><strong>PAR</strong>: request uri por back-channel</p><p class="use__note">implementado</p></article><article class="use__branch" data-anim="rise" data-hl="card-hibrido"><h3 class="use__when">Sistema interno</h3><p class="use__go"><strong>híbrido</strong> code id token</p><p class="use__note">valida c_hash y session_state</p></article><article class="use__branch" data-anim="rise" data-hl="card-device"><h3 class="use__when">Sin pantalla ni push</h3><p class="use__go"><strong>device</strong> y <strong>CIBA</strong> simulados</p><p class="use__note">sondeo con slow_down</p></article></div></div><p class="note" data-anim="fade">Implicit (<code>id_token token</code>) se anuncia pero no se responde: devuelve <code>unsupported_response_type</code>.</p></section>
 
     <script>
       (function () {
-        var root = document.querySelector('[data-composition-id="scene-08-sesion"]');
+        var root = document.querySelector('[data-composition-id="scene-11-avanzados"]');
         if (!root || typeof gsap === 'undefined') { return; }
         var timeline = gsap.timeline({ paused: true });
 
@@ -30,7 +30,30 @@
           );
         }
 
-        var HIGHLIGHTS = {"card-op": [[2.603, 3.323]], "card-cliente": [[5.397, 6.265]], "card-sid": [[8.059, 8.544]], "card-logout": [[12.906, 13.847]], "card-prompt": [[18.862, 19.876]]};
+        var HIGHLIGHTS = {"card-par": [[1.454, 2.393], [10.536, 11.74]], "card-hibrido": [[2.855, 3.751]], "card-device": [[6.272, 7.869]]};
+        var RAILS = [];
+        var TOKENS = [];
+        var rails = root.querySelectorAll('.flow__rail');
+        for (var rail = 0; rail < rails.length; rail += 1) {
+          var span = RAILS[rail] || [0, 0.6];
+          timeline.fromTo(
+            rails[rail],
+            { scaleY: 0 },
+            { scaleY: 1, duration: Math.max(span[1] - span[0], 0.4), ease: 'power2.out' },
+            span[0]
+          );
+        }
+        var tokens = root.querySelectorAll('.flow__token');
+        for (var tok = 0; tok < tokens.length; tok += 1) {
+          var win = TOKENS[tok] || [0, 0];
+          timeline.fromTo(
+            tokens[tok],
+            { opacity: 0, scale: 0 },
+            { opacity: 1, scale: 1, duration: 0.35, ease: 'power3.out' },
+            Math.max(win[0] - 0.15, 0)
+          );
+          timeline.to(tokens[tok], { opacity: 0.25, duration: 0.5, ease: 'power1.out' }, win[1]);
+        }
         var targets = [];
         Object.keys(HIGHLIGHTS).forEach(function (key) {
           var el = root.querySelector('[data-hl="' + key + '"]');
@@ -61,8 +84,8 @@
         timeline.to(
           driver,
           {
-            t: 25.012,
-            duration: 25.012,
+            t: 16.564,
+            duration: 16.564,
             ease: 'none',
             onUpdate: function () {
               for (var i = 0; i < targets.length; i += 1) {
@@ -77,7 +100,7 @@
           0
         );
 
-        window.__timelines['scene-08-sesion'] = timeline;
+        window.__timelines['scene-11-avanzados'] = timeline;
       })();
     </script>
   </div>

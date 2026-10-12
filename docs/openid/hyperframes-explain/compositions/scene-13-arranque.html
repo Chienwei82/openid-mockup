@@ -1,16 +1,16 @@
 <template>
   <div
     class="scene-root"
-    data-composition-id="scene-06-grants"
+    data-composition-id="scene-13-arranque"
     data-width="1920"
     data-height="1080"
-    data-duration="23.02"
+    data-duration="19.972"
   >
-<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Grants</span><h2 class="headline" data-anim="rise">Token Endpoint y Grant Types</h2></header><p class="mono" data-anim="fade" data-hl="line-token">POST /connect/token</p><div class="statrow"><div class="stat" data-anim="pop" data-hl="stat-grants"><span class="stat__num">7</span><span class="stat__label">grant types anunciados</span></div><div class="stat" data-anim="pop"><span class="stat__num">6</span><span class="stat__label">endpoints de protocolo</span></div><div class="stat" data-anim="pop" data-hl="stat-handler"><span class="stat__num">1</span><span class="stat__label">handler por grant</span></div></div><div class="chiprow" data-anim="fade"><span class="chip" data-hl="chip-authorization-code">authorization_code</span><span class="chip" data-hl="chip-refresh-token">refresh_token</span><span class="chip" data-hl="chip-client-credentials">client_credentials</span><span class="chip" data-hl="chip-password">password</span><span class="chip" data-hl="chip-device-code">device_code</span><span class="chip" data-hl="chip-ciba">ciba</span><span class="chip" data-hl="chip-implicit">implicit</span></div></section>
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Práctico</span><h2 class="headline" data-anim="rise">Arrancar OidcMock</h2></header><div class="grid grid--2"><article class="card" data-anim="rise"><h3 class="card__title">Comandos</h3><pre class="code" data-hl="cmd-run"><code>dotnet run --project src/OidcMock.Host</code></pre><pre class="code" data-hl="cmd-issuer"><code>--OidcMock:Issuer=https://localhost:5443/personafisica/</code></pre><pre class="code"><code>--OidcMock:Serving:UseHttps=false --OidcMock:Serving:AllowHttp=true</code></pre></article><article class="card" data-anim="rise" data-hl="card-clientes"><h3 class="card__title">Clientes de ejemplo (config/)</h3><ul class="list"><li><span class="tok tok--code">público</span> web-app-spa — PKCE, sin secreto</li><li><span class="tok tok--access">confidencial</span> web-app-confidencial</li><li><span class="tok tok--refresh">servicio</span> backend-service — client_credentials</li></ul><p class="card__label">Opciones clave</p><div class="chiprow" data-anim="fade"><span class="chip">PathBase /personafisica</span><span class="chip">ConfigDirectory ./config</span><span class="chip">ReloadOnChange true</span></div></article></div></section>
 
     <script>
       (function () {
-        var root = document.querySelector('[data-composition-id="scene-06-grants"]');
+        var root = document.querySelector('[data-composition-id="scene-13-arranque"]');
         if (!root || typeof gsap === 'undefined') { return; }
         var timeline = gsap.timeline({ paused: true });
 
@@ -30,7 +30,30 @@
           );
         }
 
-        var HIGHLIGHTS = {"line-token": [[1.004, 2.181]], "stat-grants": [[7.406, 8.803]], "chip-authorization-code": [[9.053, 10.229]], "chip-refresh-token": [[10.509, 11.568]], "chip-client-credentials": [[11.862, 13.141]], "chip-password": [[13.465, 13.994]], "chip-device-code": [[14.259, 15.024]], "chip-ciba": [[15.385, 15.797]], "chip-implicit": [[15.885, 16.621]], "stat-handler": [[18.925, 20.087]]};
+        var HIGHLIGHTS = {"cmd-run": [[2.911, 3.597]], "cmd-issuer": [[6.026, 7.273]], "card-clientes": [[11.082, 12.23]]};
+        var RAILS = [];
+        var TOKENS = [];
+        var rails = root.querySelectorAll('.flow__rail');
+        for (var rail = 0; rail < rails.length; rail += 1) {
+          var span = RAILS[rail] || [0, 0.6];
+          timeline.fromTo(
+            rails[rail],
+            { scaleY: 0 },
+            { scaleY: 1, duration: Math.max(span[1] - span[0], 0.4), ease: 'power2.out' },
+            span[0]
+          );
+        }
+        var tokens = root.querySelectorAll('.flow__token');
+        for (var tok = 0; tok < tokens.length; tok += 1) {
+          var win = TOKENS[tok] || [0, 0];
+          timeline.fromTo(
+            tokens[tok],
+            { opacity: 0, scale: 0 },
+            { opacity: 1, scale: 1, duration: 0.35, ease: 'power3.out' },
+            Math.max(win[0] - 0.15, 0)
+          );
+          timeline.to(tokens[tok], { opacity: 0.25, duration: 0.5, ease: 'power1.out' }, win[1]);
+        }
         var targets = [];
         Object.keys(HIGHLIGHTS).forEach(function (key) {
           var el = root.querySelector('[data-hl="' + key + '"]');
@@ -61,8 +84,8 @@
         timeline.to(
           driver,
           {
-            t: 23.02,
-            duration: 23.02,
+            t: 19.972,
+            duration: 19.972,
             ease: 'none',
             onUpdate: function () {
               for (var i = 0; i < targets.length; i += 1) {
@@ -77,7 +100,7 @@
           0
         );
 
-        window.__timelines['scene-06-grants'] = timeline;
+        window.__timelines['scene-13-arranque'] = timeline;
       })();
     </script>
   </div>

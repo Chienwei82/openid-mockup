@@ -1,0 +1,107 @@
+<template>
+  <div
+    class="scene-root"
+    data-composition-id="scene-07-canje"
+    data-width="1920"
+    data-height="1080"
+    data-duration="27.508"
+  >
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Paso 4 del mapa</span><h2 class="headline" data-anim="rise">El Canje en el Token Endpoint</h2></header><p class="where" data-anim="fade"><span class="where__label">Estás aquí</span><span class="where__crumb"><span class="where__n">1</span>Discovery</span><span class="where__crumb"><span class="where__n">2-3</span>Authorize</span><span class="where__crumb where__crumb--on"><span class="where__n">4</span>Canje</span><span class="where__crumb"><span class="where__n">5-6</span>Uso</span></p><ol class="flow" data-anim="fade"><span class="flow__rail" aria-hidden="true"></span><li class="flow__stop" data-anim="pop" data-hl="canje-post"><span class="flow__n">1</span><span class="flow__label">El cliente envía <strong>code</strong> más <code>verifier</code></span><span class="flow__token" data-token="canje-post" aria-hidden="true"></span></li><li class="flow__stop" data-anim="pop" data-hl="canje-valida"><span class="flow__n">2</span><span class="flow__label">El servidor <strong>valida</strong> el challenge</span><span class="flow__token" data-token="canje-valida" aria-hidden="true"></span></li><li class="flow__stop" data-anim="pop" data-hl="canje-tokens"><span class="flow__n">3</span><span class="flow__label">Emite <strong>access</strong>, <strong>id</strong> y <strong>refresh</strong></span><span class="flow__token" data-token="canje-tokens" aria-hidden="true"></span></li><li class="flow__stop" data-anim="pop" data-hl="canje-un-solo-uso"><span class="flow__n">4</span><span class="flow__label">El code queda <strong>inutilizado</strong>: un solo uso</span><span class="flow__token" data-token="canje-un-solo-uso" aria-hidden="true"></span></li></ol><p class="note" data-anim="fade">El code expira en 5 minutos y es de un solo uso.</p></section>
+
+    <script>
+      (function () {
+        var root = document.querySelector('[data-composition-id="scene-07-canje"]');
+        if (!root || typeof gsap === 'undefined') { return; }
+        var timeline = gsap.timeline({ paused: true });
+
+        var FROM = {
+          rise: { opacity: 0, y: 36 },
+          pop: { opacity: 0, y: 22, scale: 0.92 },
+          slide: { opacity: 0, x: -40 },
+          fade: { opacity: 0 },
+        };
+        var items = root.querySelectorAll('[data-anim]');
+        for (var index = 0; index < items.length; index += 1) {
+          var from = FROM[items[index].getAttribute('data-anim')] || FROM.rise;
+          timeline.from(
+            items[index],
+            Object.assign({ duration: 0.65, ease: 'power3.out' }, from),
+            0.45 + index * 0.24
+          );
+        }
+
+        var HIGHLIGHTS = {"paso-envia": [[4.423, 5.39]], "paso-valida": [[11.026, 13.169]], "paso-comprueba": [[13.407, 15.494]], "paso-responde": [[15.606, 17.245]], "paso-repite": [[22.076, 22.847]]};
+        var RAILS = [[0.9, 1.5]];
+        var TOKENS = [[0.9, 1.5], [0.9, 1.5], [0.9, 1.5], [0.9, 1.5]];
+        var rails = root.querySelectorAll('.flow__rail');
+        for (var rail = 0; rail < rails.length; rail += 1) {
+          var span = RAILS[rail] || [0, 0.6];
+          timeline.fromTo(
+            rails[rail],
+            { scaleY: 0 },
+            { scaleY: 1, duration: Math.max(span[1] - span[0], 0.4), ease: 'power2.out' },
+            span[0]
+          );
+        }
+        var tokens = root.querySelectorAll('.flow__token');
+        for (var tok = 0; tok < tokens.length; tok += 1) {
+          var win = TOKENS[tok] || [0, 0];
+          timeline.fromTo(
+            tokens[tok],
+            { opacity: 0, scale: 0 },
+            { opacity: 1, scale: 1, duration: 0.35, ease: 'power3.out' },
+            Math.max(win[0] - 0.15, 0)
+          );
+          timeline.to(tokens[tok], { opacity: 0.25, duration: 0.5, ease: 'power1.out' }, win[1]);
+        }
+        var targets = [];
+        Object.keys(HIGHLIGHTS).forEach(function (key) {
+          var el = root.querySelector('[data-hl="' + key + '"]');
+          if (el) { targets.push({ el: el, windows: HIGHLIGHTS[key] }); }
+        });
+        var ATTACK = 0.22;
+        var RELEASE = 0.55;
+        function envelope(time, start, end) {
+          if (time < start) { return 0; }
+          if (time < end) { return Math.min((time - start) / ATTACK, 1); }
+          if (time < end + RELEASE) { return 1 - (time - end) / RELEASE; }
+          return 0;
+        }
+        function paint(target, env) {
+          var el = target.el;
+          if (env <= 0.001) {
+            el.style.borderColor = '';
+            el.style.boxShadow = '';
+            el.style.textShadow = '';
+            return;
+          }
+          el.style.borderColor =
+            'rgb(' + Math.round(58 + 19 * env) + ', ' + Math.round(63 + 145 * env) + ', ' + Math.round(71 + 154 * env) + ')';
+          el.style.boxShadow = '0 0 ' + (36 * env).toFixed(1) + 'px rgba(77, 208, 225, ' + (0.28 * env).toFixed(3) + ')';
+          el.style.textShadow = '0 0 ' + (16 * env).toFixed(1) + 'px rgba(77, 208, 225, ' + (0.4 * env).toFixed(3) + ')';
+        }
+        var driver = { t: 0 };
+        timeline.to(
+          driver,
+          {
+            t: 27.508,
+            duration: 27.508,
+            ease: 'none',
+            onUpdate: function () {
+              for (var i = 0; i < targets.length; i += 1) {
+                var env = 0;
+                for (var w = 0; w < targets[i].windows.length; w += 1) {
+                  env = Math.max(env, envelope(driver.t, targets[i].windows[w][0], targets[i].windows[w][1]));
+                }
+                paint(targets[i], env);
+              }
+            },
+          },
+          0
+        );
+
+        window.__timelines['scene-07-canje'] = timeline;
+      })();
+    </script>
+  </div>
+</template>

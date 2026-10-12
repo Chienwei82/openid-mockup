@@ -3,11 +3,21 @@
 Video explicativo de 16:9, en español, que recorre los 12 documentos de
 [`docs/openid/`](../) y muestra cómo OidcMock implementa cada pieza del protocolo.
 
+Su columna vertebral es un **mapa fijo del flujo** (escena 03: seis paradas,
+cuatro actores) que cada escena posterior amplía como **diagrama animado**
+guiado por la voz, con tira «estás aquí». Los diagramas usan tres recetas de
+`hyperframes-animation`: la voz enciende cada parada al mencionarla
+(`asr-keyword-glow`), el riel se traza con `scaleY` (`svg-path-draw`
+adaptada, sin medir el DOM) y un token viajero salta por parada
+(`spring-pop-entrance`); todo en el timeline único pausado, seek-safe
+(solo transforms + opacity).
+
 - **Formato:** 1920 × 1080 · 30 fps · H.264
-- **Duración:** 264,2 s (12 escenas)
+- **Duración:** 337,6 s (14 escenas)
 - **Voz:** TTS en español con [`@lobehub/tts`](https://www.npmjs.com/package/@lobehub/tts)
-  (voces neuronales de Microsoft Edge) — `es-ES-AlvaroNeural`, `rate: -0.15`
-  (≈14 caracteres/s, ritmo de presentador)
+  (voces neuronales de Microsoft Edge) — `es-US-PalomaNeural`, `rate: -0.15`,
+  `pitch: 0` (≈12 caracteres/s, ritmo de presentador, tono natural 182 Hz); elegida
+  entre 9 voces candidatas con `scripts/probe_voices.mjs`
 - **Salida:** `dist/oidc-explainer.mp4`
 
 ## Requisitos
@@ -40,14 +50,15 @@ Chrome gestionado que descarga la primera vez, y el doctor lo comprueba.
 ## Estructura
 
 ```
-index.html              orquestador: root, fondo/marca/progreso, 12 slots + 12 audios
+index.html              orquestador: root, fondo/marca/progreso, 14 slots + 14 audios
 compositions/           una sub-composición por escena (markup + timeline GSAP)
-scripts/narration.json  guion por escena: id, kicker, título, texto, pistas hl; voz y rate
-scripts/scene_content.py  markup de cada escena (helpers card/list/chips/steps + data-hl)
+scripts/narration.json  guion por escena: id, kicker, título, texto, pistas hl; voz, rate y pitch
+scripts/scene_content.py  markup de cada escena (helpers card/list/chips/steps/flow/usecase + data-hl/data-token)
 scripts/theme.css       tokens y clases compartidas (Material You oscuro)
 scripts/generate_audio.mjs    TTS + marcas de palabra → audio/segments + timings.json
 scripts/build_composition.py  timings + markup → index.html y compositions/*.html
 scripts/probe_voice.mjs       sonda de prosodia y puntuación para ajustar la voz
+scripts/probe_voices.mjs      sonda de voces: compara candidatas con la misma frase
 audio/segments/         un MP3 por escena (lo que suena en el video)
 audio/timings.json      ventana y clip de audio de cada escena (medidos)
 audio/narration.mp3     narración completa, solo para revisión
@@ -70,7 +81,7 @@ npm run render   # 4. Renderizar a dist/oidc-explainer.mp4
 El paso 2 es determinista: si no se toca `narration.json` ni `scene_content.py`,
 regenerar produce exactamente los mismos archivos.
 
-> El render tarda unos minutos (~7 min en software GPU para 264 s de video) y se
+> El render tarda unos minutos (~7 min en software GPU para 259 s de video) y se
 > cancela solo (`render_cancelled_parent_exited`) si muere cualquier proceso
 > ancestro. Para lanzarlo desde una terminal que se va a cerrar, repáralo a
 > `init`: `HYPERFRAMES_RENDER_DETACHED=1 setsid --fork nohup npx hyperframes render . -o dist/oidc-explainer.mp4`.
@@ -112,9 +123,22 @@ en segundo plano y se cierra con `npm run stop`.
 ## Motor de voz
 
 La narración se sintetiza con **`@lobehub/tts`** (`EdgeSpeechTTS.createRequest`),
-que habla el protocolo de las voces neuronales de Microsoft Edge. Tres detalles
-que costaron descubrir, medidos con `scripts/probe_voice.mjs` y documentados en
-el código:
+que habla el protocolo de las voces neuronales de Microsoft Edge.
+
+**Elección de la voz.** `scripts/probe_voices.mjs` narra la misma frase del guion
+con 9 voces en español que el servicio acepta (`es-ES`, `es-MX`, `es-US`, `es-AR`,
+`es-CO`, `es-PE`) —17 configuraciones, incluidas tres a `rate: 0` y cinco de tono
+(`pitch` de −1% a −30% sobre la voz actual)— y mide duración,
+ritmo, percentiles de F0 (entonación) y pausas, dejando un MP3 por voz en
+`audio/voice-samples/` (gitignored) y un `comparativa.mp3` que las encadena en el
+orden de la tabla. De ahí salió **`es-US-PalomaNeural`**:
+mayor rango de entonación de todas (p90−p10 = 180 Hz) y mejor pronuncia de los
+anglicismos del guion (`PKCE`, `code verifier`, `dotnet run`). Con `rate: -0.15`
+narra 14,3 chars/s en la frase de sonda y 12,4 chars/s de media sobre el guion, y
+con `pitch: -0.1` baja su tono de 270 Hz (cómo sonaba al principio) a 164 Hz.
+
+Cuatro detalles que costaron descubrir, medidos con `scripts/probe_voice.mjs` y
+documentados en el código:
 
 1. **Transporte.** `@lobehub/tts` asume un navegador: su `createEdgeSpeech` usa el
    `WebSocket` global y el servicio exige un `Origin` de extensión de Chrome. En
@@ -122,14 +146,25 @@ el código:
    handshake; sin el `Origin` correcto el upgrade se queda colgado.
 2. **`rate` es un cambio RELATIVO.** Se traduce a `prosody rate="<rate*100>%"`,
    pero el servicio lo aplica como ± porcentaje sobre el ritmo por defecto de la
-   voz (≈16,5 caracteres/s), no como fracción del mismo. Así, `rate: 0.3` narra
-   +30% más rápido (≈21 chars/s, ~210 palabras/min — demasiado para un
-   explicador), sin prosody narra a 16,5 chars/s y `rate: -0.15` a ≈14 chars/s
-   (~140 palabras/min): el ritmo natural de presentador que usa el guion.
-3. **Lo que el servicio ignora o rechaza.** `pitch` no tiene efecto audible, y el
-   SSML con `<break>` o `<mstts:express-as style>` se rechaza (el turno termina
-   sin audio). Las pausas se consiguen solo con la puntuación del guion: una coma
-   añade ≈ +0,5 s de respiro y un punto y aparte ≈ +1 s.
+   voz (16,5 chars/s con `es-ES-AlvaroNeural`, ≈14,6 con la actual), no como
+   fracción del mismo. Así, `rate: 0.3` narra +30% más rápido (≈21 chars/s,
+   ~210 palabras/min — demasiado para un explicador) y `rate: -0.15` narra ≈12,4
+   chars/s sobre el guion (~125 palabras/min): el ritmo de presentador que usa el
+   guion.
+3. **`pitch` solo funciona con signo — y el default estaba agudo.** Se traduce a
+   `prosody pitch="<pitch*100>%"` como `rate`, pero con porcentajes sin signo el
+   servicio se porta mal. El matiz caro: `genSSML` de `@lobehub/tts` emite
+   `pitch="100%"` aunque no declares `pitch` (su `pitch || 1`), y Edge lo
+   interpreta como ≈+50%: la primera narración sonaba a 270 Hz cuando la voz
+   natural de Paloma es 182 Hz. Fijando `pitch: -0.1` en `narration.json` baja a
+   164 Hz sin tocar la duración. Escala medida (`probe_voices.mjs`, misma frase y
+   rate): sin prosody de tono 270 Hz → −1% 179 → −10% 163 → −15% 155 → −20% 146 →
+   −30% 130. Para retocar el tono basta cambiar `pitch` y regenerar: los MP3 de
+   cada valor están en `audio/voice-samples/paloma-tono-*.mp3` y
+   `comparativa-tono.mp3` los encadena con el tono actual (en ese orden).
+4. **Lo que el servicio rechaza.** El SSML con `<break>` o `<mstts:express-as style>` se
+   rechaza (el turno termina sin audio). Las pausas se consiguen solo con la puntuación del
+   guion: una coma añade ≈ +0,5 s de respiro y un punto y aparte ≈ +1 s.
 
 ## Sincronía de audio
 
@@ -153,16 +188,18 @@ caracteres y se avisa por consola.
 | --- | --- |
 | 01 Título | introducción a la serie |
 | 02 Actores y tokens | [`01-actores-y-tokens`](../01-actores-y-tokens.md) |
-| 03 Discovery y JWKS | [`02-discovery-y-jwks`](../02-discovery-y-jwks.md) |
-| 04 Authorization Code + PKCE | [`03-authorization-code-y-pkce`](../03-authorization-code-y-pkce.md) |
-| 05 ID Token y claims | [`04-id-token-y-claims`](../04-id-token-y-claims.md) |
-| 06 Token endpoint y grants | [`05-token-endpoint-y-grants`](../05-token-endpoint-y-grants.md) |
-| 07 UserInfo, introspection y revocation | [`06-userinfo`](../06-userinfo.md) · [`07-introspection-y-revocation`](../07-introspection-y-revocation.md) |
-| 08 Sesión y logout | [`08-sesion-y-logout`](../08-sesion-y-logout.md) |
-| 09 Flujos avanzados | [`09-flujo-hibrido`](../09-flujo-hibrido.md) · [`10-par-device-ciba`](../10-par-device-ciba.md) |
-| 10 Matriz de paridad | [`11-matriz-de-paridad`](../11-matriz-de-paridad.md) |
-| 11 Arranque y uso | [`12-cheatsheet`](../12-cheatsheet.md) |
-| 12 Cierre | resumen y recordatorio de `localhost` |
+| 03 El mapa (diagrama fijo, 6 pasos) | síntesis de toda la serie |
+| 04 Discovery y JWKS (paso 1) | [`02-discovery-y-jwks`](../02-discovery-y-jwks.md) |
+| 05 Authorization Code + PKCE (pasos 2-3) | [`03-authorization-code-y-pkce`](../03-authorization-code-y-pkce.md) |
+| 06 ID Token y claims (paso 4) | [`04-id-token-y-claims`](../04-id-token-y-claims.md) |
+| 07 El canje (paso 4 por dentro) | [`05-token-endpoint-y-grants`](../05-token-endpoint-y-grants.md) |
+| 08 Otros grants | [`05-token-endpoint-y-grants`](../05-token-endpoint-y-grants.md) |
+| 09 UserInfo, API y revocación (pasos 5-6) | [`06-userinfo`](../06-userinfo.md) · [`07-introspection-y-revocation`](../07-introspection-y-revocation.md) |
+| 10 Sesión y logout | [`08-sesion-y-logout`](../08-sesion-y-logout.md) |
+| 11 Flujos avanzados | [`09-flujo-hibrido`](../09-flujo-hibrido.md) · [`10-par-device-ciba`](../10-par-device-ciba.md) |
+| 12 Matriz de paridad | [`11-matriz-de-paridad`](../11-matriz-de-paridad.md) |
+| 13 Arranque y uso | [`12-cheatsheet`](../12-cheatsheet.md) |
+| 14 Cierre | resumen y recordatorio de `localhost` |
 
 ## Criterios de calidad
 

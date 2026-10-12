@@ -14,8 +14,15 @@
  * de la voz (≈16,5 caracteres/s). Así, `rate: 0.3` → `rate="30%"` narra +30%
  * más rápido (≈21 chars/s, demasiado para un explicador) y `rate: -0.15` →
  * `rate="-15%"` narra ≈14 chars/s (≈140 palabras/min), ritmo de presentador.
- * `pitch` lo ignora el servicio, y `<break>`/`mstts:express-as` rechaza el
- * SSML: las pausas se consiguen solo con la puntuación del guion.
+ * `pitch` es relativo y solo funciona con signo: `pitch: -0.1` → `pitch="-10%"`
+ * baja la F0 mediana ≈10% (182 → 164 Hz) sin tocar la duración. `pitch: 0`
+ * deja el tono natural (≈182 Hz); `synthesize` lo emite como 0.001 para que
+ * el `pitch || 1` de genSSML no lo convierta en "100 %". Atención: si
+ * `narration.json` no declara `pitch`, `genSSML` emite igual `pitch="100%"` (su
+ * `pitch || 1`) y Edge lo interpreta como ≈+50%: así sonaba la narración vieja,
+ * a 270 Hz en vez de 182. Por eso la sonda anterior "medía" que `pitch` no
+ * servía: solo probó porcentajes sin signo. `<break>`/`mstts:express-as` siguen
+ * rechazando el SSML: las pausas se consiguen solo con la puntuación del guion.
  *
  * Además de la voz, este script captura las marcas `WordBoundary` que el
  * servicio emite (`metadataoptions.wordBoundaryEnabled`) y resuelve, para cada
@@ -40,6 +47,8 @@ const SEGMENTS_DIR = join(AUDIO_DIR, 'segments');
 const LEAD_IN_SECONDS = 0.9;
 const TAIL_SECONDS = 1.0;
 const SYNTHESES_TIMEOUT_MS = 60_000;
+// Ver `synthesize`: 0.001 sobrevive al `|| 1` de genSSML y llega como "0 %".
+const PITCH_OPTION_ZERO = 0.001;
 const TICKS_PER_SECOND = 10_000_000n;
 
 // @lobehub/tts habla el protocolo de Edge TTS, pero su transporte asume un
@@ -89,11 +98,19 @@ function probeDuration(file) {
   return Number.parseFloat(stdout.trim());
 }
 
-async function synthesize(text, voice, rate, target) {
+async function synthesize(text, prosody, target) {
   wordBoundaries.length = 0;
   const response = await Promise.race([
     EdgeSpeechTTS.createRequest({
-      payload: { input: text, options: { voice, rate } },
+      payload: {
+        input: text,
+        options: {
+          voice: prosody.voice,
+          // `pitch: 0` es falsy: genSSML hace `pitch || 1` y caería a "100 %" (agudo).
+          rate: prosody.rate,
+          ...(prosody.pitch !== undefined ? { pitch: prosody.pitch === 0 ? PITCH_OPTION_ZERO : prosody.pitch } : {}),
+        },
+      },
     }),
     new Promise((resolve) => setTimeout(() => resolve(null), SYNTHESES_TIMEOUT_MS)),
   ]);
@@ -207,7 +224,11 @@ async function main() {
   for (const [offset, scene] of script.scenes.entries()) {
     const index = offset + 1;
     const target = join(SEGMENTS_DIR, `seg-${String(index).padStart(2, '0')}.mp3`);
-    const words = await synthesize(scene.text, script.voice, script.rate, target);
+    const words = await synthesize(
+      scene.text,
+      { voice: script.voice, rate: script.rate, pitch: script.pitch },
+      target,
+    );
 
     const spoken = round(probeDuration(target));
     const start = round(cursor.value);

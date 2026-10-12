@@ -1399,7 +1399,8 @@ voz y se anadio resaltado de pantalla sincronizado con lo que se pronuncia.
   `rate: -0.15` y el video paso de 177 s a 264 s, que es lo que cuesta hablar
   con calma un guion denso de 12 escenas.
 - **Lo que el servicio no deja cambiar, medido antes de tocar nada.** `pitch` no
-  tiene efecto audible (audio identico con 50%/100%/150%) y el SSML con
+  tiene efecto audible (audio identico con 50%/100%/150%) — conclusion ERRONEA,
+  corregida el mismo dia en «Tono de la voz: `pitch` firmado» más abajo— y el SSML con
   `<break>` o `<mstts:express-as style>` se rechaza: el turno termina sin audio y
   la promesa se queda colgada (ahora `generate_audio.mjs` falla ruidosamente con
   timeout). Las pausas se consiguen solo con puntuacion: una coma +0,5 s y un
@@ -1482,3 +1483,117 @@ propietarios, con la intencion de neutralizar lo que quedara.
   explicita del propietario.
 - **Verificacion**: barrido final de `bccr|banco central|sinpe|\bVES\b|pruebas/ves` a cero en todo
   el arbol (versionado e ignorado), `dotnet build` sin avisos y `dotnet test` en verde.
+
+
+## Voz mas natural para el explicador (2026-10-11)
+
+El propietario pidio reemplazar la voz del video por una mas natural. La anterior
+(`es-ES-AlvaroNeural`) dejo paso a una seleccion hecha con datos y con los oidos del propietario.
+
+- **Sonda de voces nueva: `scripts/probe_voices.mjs`.** Narra la MISMA frase del guion con las
+  9 voces en español que el servicio Edge acepta en consumer (12 configuraciones, incluidas tres
+  a `rate: 0`) y mide duración, chars/s, percentiles de F0 —entonación— y pausas a partir de las
+  marcas `WordBoundary`. Deja un MP3 por voz en `audio/voice-samples/` y un `comparativa.mp3`
+  que las encadena en el orden de la tabla, para decidir escuchando y no a ojo.
+- **Eleccion: `es-US-PalomaNeural`** (antes `es-ES-AlvaroNeural`), con `rate: -0.15` intacto.
+  Es la de mayor rango de entonación de todas (p90−p10 = 180 Hz; la anterior daba 139 Hz), narra
+  12,4 chars/s de media sobre el guion y pronuncia los anglicismos del guion (`PKCE`,
+  `code verifier`, `dotnet run`) con soltura, que es lo que mas se nota en un explicador tecnico.
+- **El cambio es una linea:** `scripts/narration.json` → `"voice"`. Los tiempos se recalculan
+  solos (`npm run audio`): la narración pasa de 264,2 s a 259,4 s y los 57 resaltados resuelven
+  su ventana contra las marcas de palabra sin ningun aviso.
+- **`scripts/probe_voice.mjs` (sonda de prosodia) apunta ahora a la voz vigente**, para que su
+  baseline describa el video real y no el antiguo.
+- **`audio/voice-samples/` va en `.gitignore`:** se regenera con la sonda y no suena en el video;
+  los MP3 que si suenan (`audio/segments/`) siguen versionados.
+- **Un turno perdido se reintenta:** el servicio fluctua y en una pasada `es-PE-CamilaNeural`
+  no devolvio audio; la sonda reintenta una vez antes de reportar RECHAZADO.
+- **Verificacion:** `npm run audio` + `npm run build` + `npm run check` en verde (0 errores,
+  0 avisos; contraste 87/87 WCAG AA).
+
+
+## Tono de la voz: pitch firmado (2026-10-11)
+
+El usuario noto la narracion «demasiado aguda». No era cuestion de gusto: venia
+agudizada por un default de la libreria.
+
+- **La voz sonaba ~50% mas aguda de lo natural por `genSSML`.** `@lobehub/tts`
+  construye `<prosody pitch="${Math.floor((pitch || 1) * 100)}%">`, asi que si
+  `scripts/narration.json` no declara `pitch` emite igual `pitch="100%"`, y Edge
+  lo interpreta como ≈+50% en lugar de «sin cambios». Medido con
+  `scripts/probe_voices.mjs` (misma frase, `rate: -0.15`): con `pitch="100%"` la
+  F0 mediana era **270 Hz**; con la voz sin prosodia de tono, **182 Hz**
+  (`paloma-ritmo`, rate 0, daba 181,8 Hz). Ese 270 Hz es el audio que ya estaba
+  versionado en `audio/segments/`.
+- **`pitch` con signo sí funciona: la conclusion del 2026-10-10 era erronea.**
+  Solo se habian probado porcentajes sin signo (50/100/150). Escala medida
+  variando unicamente `pitch`: −1% → 179 Hz, −10% → 163, −15% → 155, −20% → 146,
+  −30% → 130; la duracion no se mueve (10,92 s en las cinco muestras), asi que
+  tiempos, `WordBoundary` y resaltados quedan intactos.
+- **Decision: `pitch: -0.1`.** La narracion regenerada mide 163-167 Hz de
+  mediana (vs 270 Hz antes), unos 7 semitones mas grave, manteniendo el tono de
+  voz natural de Paloma (182 Hz) sin caer en un tono demasiado grave. Es un punto
+  de partida escuchable: los extremos quedan en los MP3
+  `audio/voice-samples/paloma-tono-{01,10,15,20,30}.mp3`, y retocar el tono es un
+  cambio de `pitch` + `npm run audio` (+ build y render).
+- **La sonda queda con el pulso puesto.** `probe_voices.mjs` acepta `pitch` por
+  candidato (incluido el control −1% que desenmascara el default `100%`) y
+  `probe_voice.mjs` añade la variante `pitch-15`; `generate_audio.mjs` documenta
+  el efecto en su cabecera.
+- **Verificacion:** `npm run audio` (259,152 s, 57 resaltados, 0 avisos) +
+  `npm run build` + `npm run check` en verde (0 errores, 0 avisos; contraste
+  87/87 WCAG AA).
+
+
+## Claridad de la explicación: mapa fijo + sub-diagramas (2026-10-12)
+
+El usuario pidio que la rama refleje claridad de explicacion y que el video sea
+mas grafico: un diagrama de flujo muy generalizado y fijo, con sub-diagramas mas
+detallados despues, en un recorrido guiado.
+
+- **Rama `video/voz-natural` → `video/claridad-explicacion`.** Mantiene el prefijo
+  `video/` y describe la intencion, no la tecnica. El fix de tono quedo commiteado
+  debajo (`5451cf52`); la rama vieja no existia en remoto, asi que no hubo que borrarla.
+- **Opcion B: 12 → 14 escenas renumeradas.** Escena 03 nueva con el mapa fijo (4 actores,
+  6 paradas numeradas); el token endpoint se parte en dos (07 el canje paso a paso, 08 los
+  demas grants); userinfo se reenfoca como pasos 5-6 con carril API. Regeneracion completa
+  de audio: 337,6 s, 63 resaltados.
+- **Recorrido guiado con lo ya inventado.** Cada escena de flujo lleva tira «estás aquí»
+  (Discovery / Authorize / Canje / Uso) y los sub-diagramas son carriles por actor
+  (`lanes()` con `hop` numerados) o pasos (`steps()`); la voz enciende cada parada con el
+  driver de resaltado existente, sin cambiar `build_composition.py`.
+- **Sin Mermaid ni SVG dibujado a mano:** nodos HTML + CSS (`map`, `where`, `lanes`,
+  `minimap`), que sí animan por pasos y sí pasan `hyperframes check`. Contrato intacto:
+  sin `<br>` en cuerpo, sin `id`, todo animado con `data-anim`, todo mencionado con `data-hl`.
+- **TDD no aplicable:** no hay cambios en `src/` ni `tests/`; la verificacion es
+  `npm run audio` (0 avisos) + `npm run build` + `npm run check` + `dotnet build/test` en verde.
+
+
+## Pitch natural (0) + diagramas de flujo y casos de uso animados (2026-10-12)
+
+El usuario quiso probar `pitch: 0` y reestructurar la presentacion con graficos
+estilo diagrama de flujo animado, diagramas de casos de uso animados y cualquier
+otro diagrama que encajara.
+
+- **`pitch: 0` exige parchear el TTS.** `genSSML` de `@lobehub/tts` hace
+  `pitch || 1`: con `pitch: 0` (falsy) emitiria `pitch="100%"` (≈+50 %, agudo).
+  `generate_audio.mjs` lo traduce a `0.001`, que llega como `0 %` → tono natural
+  de Paloma (≈182 Hz). Commit `8c95e27b`.
+- **Sistema de diagramas con tres recetas de hyperframes-animation:**
+  `asr-keyword-glow` (la voz enciende cada parada, driver ya existente),
+  `svg-path-draw` adaptada a `scaleY` (el riel se traza sin medir el DOM: en
+  multi-escena `getTotalLength()`/`getBoundingClientRect()` en tween-time desincroniza),
+  y `spring-pop-entrance` para el token viajero que salta por parada al ritmo de
+  su ventana de habla. Todo en el timeline único pausado y solo transforms
+  (scale) + opacity: seek-safe en ambas direcciones.
+- **Dos formas de diagrama.** `flow()` —cadena de paradas numeradas con riel y
+  token— para los flujos secuenciales (03 mapa, 04 discovery, 05 PKCE, 07 canje,
+  09 uso). `usecase()` —pregunta + tres ramas— para decisiones (06 qué trae el
+  id token, 08 qué grant uso, 10 qué sesión se cierra, 11 qué flujo avanzado).
+  Escenas tabulares (01, 02, 12, 13, 14) conservan tarjetas/tablas: la forma
+  sigue al contenido.
+- **Anudado estricto:** las claves `hl` del guion se reescribieron para las
+  escenas convertidas (0 huérfanos) y `build_scene` sigue fallando en ruido si
+  aparece alguna.
+- **TDD no aplicable:** sin cambios en `src/` ni `tests/`; verificacion
+  `dotnet build` + 726 tests, `npm run check` y render de prueba.
