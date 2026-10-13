@@ -24,6 +24,7 @@ FIRST_ITEM_DELAY = 0.45
 STAGGER_MIN = 0.15
 STAGGER_MAX = 0.24
 STAGGER_SPREAD = 0.30
+MSG_SHARED_DELAY = 0.9
 VISUAL_TRACK = 1
 AUDIO_TRACK = 10
 
@@ -37,8 +38,12 @@ AUDIO_TRACK = 10
 # el riel (.flow__rail) se traza con scaleY 0→1 (receta svg-path-draw
 # adaptada: sin getTotalLength, sin dashoffset) y cada token viajero
 # (.flow__token) aparece con pop + glow justo en la ventana de habla de su
-# parada (receta spring-pop-entrance sobre el driver lineal). Solo
-# transforms (scale) + opacity: nada de top/left/width en los tweens.
+# parada (receta spring-pop-entrance sobre el driver lineal). Los diagramas
+# de secuencia trazan sus flechas (.seq__line) con scaleX 0→1 y asoman punta
+# y cargamento (.seq__tip, .seq__token) en la ventana de habla del mensaje;
+# las filas que comparten clave de voz se revelan escalonadas
+# (MSG_SHARED_DELAY). Solo transforms (scale) + opacity: nada de
+# top/left/width en los tweens.
 SCENE_TEMPLATE = """<template>
   <div
     class="scene-root"
@@ -95,10 +100,42 @@ __BODY__
           );
           timeline.to(tokens[tok], { opacity: 0.25, duration: 0.5, ease: 'power1.out' }, win[1]);
         }
+        var MSGS = __MSGS__;
+        var msgs = root.querySelectorAll('.seq__msg');
+        for (var msg = 0; msg < msgs.length; msg += 1) {
+          var span = MSGS[msg] || [0, 0.6];
+          timeline.fromTo(
+            msgs[msg].querySelector('.seq__line'),
+            { scaleX: 0 },
+            { scaleX: 1, duration: 0.55, ease: 'power2.inOut' },
+            span[0]
+          );
+          timeline.fromTo(
+            msgs[msg].querySelector('.seq__label'),
+            { opacity: 0 },
+            { opacity: 1, duration: 0.3, ease: 'power1.out' },
+            span[0] + 0.08
+          );
+          var tip = msgs[msg].querySelector('.seq__tip');
+          if (tip) {
+            timeline.fromTo(tip, { opacity: 0 }, { opacity: 1, duration: 0.18, ease: 'none' }, span[0] + 0.48);
+          }
+          var cargo = msgs[msg].querySelectorAll('.seq__token');
+          for (var cargoIndex = 0; cargoIndex < cargo.length; cargoIndex += 1) {
+            timeline.fromTo(
+              cargo[cargoIndex],
+              { opacity: 0, scale: 0 },
+              { opacity: 1, scale: 1, duration: 0.35, ease: 'back.out(1.7)' },
+              span[0] + 0.62 + cargoIndex * 0.14
+            );
+          }
+        }
         var targets = [];
         Object.keys(HIGHLIGHTS).forEach(function (key) {
-          var el = root.querySelector('[data-hl="' + key + '"]');
-          if (el) { targets.push({ el: el, windows: HIGHLIGHTS[key] }); }
+          var els = root.querySelectorAll('[data-hl="' + key + '"]');
+          for (var hl = 0; hl < els.length; hl += 1) {
+            targets.push({ el: els[hl], windows: HIGHLIGHTS[key] });
+          }
         });
         var ATTACK = 0.22;
         var RELEASE = 0.55;
@@ -243,6 +280,21 @@ def flow_motion(scene: dict[str, object], lead_in: float) -> tuple[list[list[flo
     )
 
 
+def seq_motion(scene: dict[str, object], lead_in: float) -> list[list[float]]:
+    windows = highlight_windows(scene, lead_in)
+    body = SCENE_BODY[str(scene["id"])]
+    keys = re.findall(r'class="seq__label"[^>]*data-hl="([^"]+)"', body)
+    fallback = [round(lead_in, 3), round(lead_in + 0.6, 3)]
+    spans: list[list[float]] = []
+    used: dict[str, int] = {}
+    for key in keys:
+        window = windows.get(key, [fallback])[0]
+        offset = used.get(key, 0) * MSG_SHARED_DELAY
+        used[key] = used.get(key, 0) + 1
+        spans.append([round(window[0] + offset, 3), round(window[1] + offset, 3)])
+    return spans
+
+
 def build_scene(scene: dict[str, object], lead_in: float) -> None:
     scene_id = str(scene["id"])
     body = SCENE_BODY[scene_id]
@@ -251,6 +303,7 @@ def build_scene(scene: dict[str, object], lead_in: float) -> None:
     if missing:
         print(f"aviso: {scene_id} resalta claves sin elemento data-hl: {missing}")
     rails, tokens = flow_motion(scene, lead_in)
+    messages = seq_motion(scene, lead_in)
     document = (
         SCENE_TEMPLATE.replace("__SCENE_ID__", scene_id)
         .replace("__WIDTH__", str(WIDTH))
@@ -262,6 +315,7 @@ def build_scene(scene: dict[str, object], lead_in: float) -> None:
         .replace("__HIGHLIGHTS__", json.dumps(windows))
         .replace("__RAILS__", json.dumps(rails))
         .replace("__TOKENS__", json.dumps(tokens))
+        .replace("__MSGS__", json.dumps(messages))
     )
     (COMPOSITIONS_DIR / f"{scene_id}.html").write_text(document, encoding="utf-8")
 

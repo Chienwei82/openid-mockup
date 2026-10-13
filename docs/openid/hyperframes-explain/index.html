@@ -32,6 +32,11 @@
   --r-lg: 20px;
   --r-full: 9999px;
   --pad: 84px;
+  --actor-owner: #FFD54F;
+  --actor-client: #4DD0E1;
+  --actor-nav: #80CBF4;
+  --actor-op: #80CBC4;
+  --actor-api: #81C784;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -314,6 +319,78 @@ code {
 .tok--access { background: rgba(128, 203, 196, .16); color: var(--secondary); }
 .tok--id { background: rgba(128, 203, 244, .16); color: var(--tertiary); }
 .tok--refresh { background: rgba(255, 213, 79, .16); color: var(--warn); }
+.tok--verifier { background: rgba(129, 199, 132, .16); color: var(--success); }
+
+/* Tarjetas de rol con identidad de actor: icono + color fijos por actor,
+   reutilizados en todos los diagramas de la explicación */
+.roles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; width: 100%; max-width: 1560px; margin: 0 0 26px; }
+.role {
+  display: flex; flex-direction: column; gap: 11px;
+  padding: 24px 26px; border-radius: var(--r-lg);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface-1));
+  border: 1px solid var(--outline);
+}
+.role__icon {
+  display: grid; place-items: center;
+  width: 56px; height: 56px; border-radius: var(--r-md);
+  background: var(--surface-3); color: var(--actor);
+}
+.role__icon .actor__icon { width: 32px; height: 32px; }
+.role__name { margin: 0; font-size: 23px; font-weight: 600; color: var(--on-surface); }
+.role__note { margin: 0; font-size: 18px; line-height: 1.4; color: var(--on-surface-dim); }
+
+/* Diagrama de secuencia: cuatro carriles de actor (icono + color) unidos por
+   líneas de vida punteadas y mensajes-flecha. El build traza cada flecha
+   (.seq__line, scaleX 0→1, receta svg-path-draw adaptada) y asoma su punta
+   (.seq__tip) y su cargamento de tokens (.seq__token) en la ventana de habla
+   del mensaje (receta spring-pop-entrance). Solo transforms + opacity. */
+.scene--seq { padding-top: 168px; padding-bottom: 150px; }
+.scene--seq .scene__head { margin-bottom: 30px; }
+.seq { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 1560px; }
+.seq__actors { display: grid; grid-template-columns: repeat(4, 1fr); }
+.seq__actor {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 12px 8px; border-radius: var(--r-md);
+}
+.seq__actor--off, .seq__life--off { opacity: .38; }
+.seq__name { margin: 0; font-size: 19px; color: var(--on-surface); }
+.seq__sub { margin: 0; font-size: 15px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--on-surface-dim); }
+.seq__stage { position: relative; }
+.seq__lives { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(4, 1fr); }
+.seq__life {
+  justify-self: center; width: 2px; height: 100%;
+  background: repeating-linear-gradient(180deg, currentColor 0 10px, transparent 10px 20px);
+  opacity: .32;
+}
+.seq__msg { position: relative; height: 52px; z-index: 1; }
+.seq__msg--tall { height: 88px; }
+.seq__label {
+  position: absolute; top: 0; margin: 0; max-width: 430px;
+  display: inline-flex; flex-direction: column; gap: 4px;
+  padding: 6px 16px; border-radius: var(--r-md);
+  background: var(--surface-2); border: 1px solid var(--outline);
+  font-size: 17px; color: var(--on-surface); white-space: nowrap;
+}
+.seq__cap { margin: 0; font-size: 15px; color: var(--on-surface-dim); white-space: normal; max-width: 380px; }
+.seq__line {
+  position: absolute; bottom: 10px; height: 3px; border-radius: var(--r-full);
+  background: currentColor; transform-origin: left center;
+}
+.seq__msg--rl .seq__line { transform-origin: right center; }
+.seq__tip {
+  position: absolute; bottom: 3px; width: 0; height: 0;
+  border-top: 8px solid transparent; border-bottom: 8px solid transparent;
+  border-left: 12px solid currentColor; transform: translateX(-50%);
+}
+.seq__msg--rl .seq__tip { border-left: 0; border-right: 12px solid currentColor; }
+.seq__chips {
+  position: absolute; bottom: 24px; display: flex; gap: 10px;
+  transform: translateX(-50%); z-index: 2;
+}
+.seq__token {
+  padding: 3px 12px; border: 1px solid currentColor; background: var(--surface-1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, .4);
+}
 
       [data-composition-src] { position: absolute; inset: 0; width: 100%; height: 100%; }
     </style>

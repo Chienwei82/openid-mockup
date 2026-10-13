@@ -54,10 +54,42 @@
           );
           timeline.to(tokens[tok], { opacity: 0.25, duration: 0.5, ease: 'power1.out' }, win[1]);
         }
+        var MSGS = [];
+        var msgs = root.querySelectorAll('.seq__msg');
+        for (var msg = 0; msg < msgs.length; msg += 1) {
+          var span = MSGS[msg] || [0, 0.6];
+          timeline.fromTo(
+            msgs[msg].querySelector('.seq__line'),
+            { scaleX: 0 },
+            { scaleX: 1, duration: 0.55, ease: 'power2.inOut' },
+            span[0]
+          );
+          timeline.fromTo(
+            msgs[msg].querySelector('.seq__label'),
+            { opacity: 0 },
+            { opacity: 1, duration: 0.3, ease: 'power1.out' },
+            span[0] + 0.08
+          );
+          var tip = msgs[msg].querySelector('.seq__tip');
+          if (tip) {
+            timeline.fromTo(tip, { opacity: 0 }, { opacity: 1, duration: 0.18, ease: 'none' }, span[0] + 0.48);
+          }
+          var cargo = msgs[msg].querySelectorAll('.seq__token');
+          for (var cargoIndex = 0; cargoIndex < cargo.length; cargoIndex += 1) {
+            timeline.fromTo(
+              cargo[cargoIndex],
+              { opacity: 0, scale: 0 },
+              { opacity: 1, scale: 1, duration: 0.35, ease: 'back.out(1.7)' },
+              span[0] + 0.62 + cargoIndex * 0.14
+            );
+          }
+        }
         var targets = [];
         Object.keys(HIGHLIGHTS).forEach(function (key) {
-          var el = root.querySelector('[data-hl="' + key + '"]');
-          if (el) { targets.push({ el: el, windows: HIGHLIGHTS[key] }); }
+          var els = root.querySelectorAll('[data-hl="' + key + '"]');
+          for (var hl = 0; hl < els.length; hl += 1) {
+            targets.push({ el: els[hl], windows: HIGHLIGHTS[key] });
+          }
         });
         var ATTACK = 0.22;
         var RELEASE = 0.55;

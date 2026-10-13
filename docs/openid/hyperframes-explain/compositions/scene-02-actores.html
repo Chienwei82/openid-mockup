@@ -6,7 +6,7 @@
     data-height="1080"
     data-duration="25.108"
   >
-<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Actores</span><h2 class="headline" data-anim="rise">Actores y Tokens</h2></header><div class="grid grid--2"><article class="card" data-anim="rise"><h3 class="card__title">Cuatro roles (OAuth 2.0)</h3><ul class="list"><li data-hl="role-owner"><strong>Resource Owner</strong> — el usuario</li><li data-hl="role-client"><strong>Client</strong> — la aplicación</li><li data-hl="role-as"><strong>Authorization Server</strong> — emite los tokens</li><li data-hl="role-rs"><strong>Resource Server</strong> — sirve la API protegida</li></ul></article><article class="card" data-anim="rise"><h3 class="card__title">Cuatro tokens</h3><ul class="list"><li data-hl="tok-code"><span class="tok tok--code">code</span> Authorization Code — opaco, un solo uso</li><li data-hl="tok-access"><span class="tok tok--access">access</span> Access Token — JWT para la API</li><li data-hl="tok-id"><span class="tok tok--id">id</span> ID Token — JWT de identidad</li><li data-hl="tok-refresh"><span class="tok tok--refresh">refresh</span> Refresh Token — vida larga</li></ul></article></div></section>
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Actores</span><h2 class="headline" data-anim="rise">Actores y Tokens</h2></header><div class="roles"><article class="role" data-anim="pop" style="--actor: var(--actor-owner)" data-hl="role-owner"><span class="role__icon"><svg class="actor__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 19.5c.6-3.4 3.3-5 6.5-5s5.9 1.6 6.5 5"/></svg></span><h3 class="role__name">Resource Owner</h3><p class="role__note">el usuario, dueño de sus datos</p></article><article class="role" data-anim="pop" style="--actor: var(--actor-client)" data-hl="role-client"><span class="role__icon"><svg class="actor__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="5.5" width="15" height="13" rx="2.2"/><path d="M4.5 9.5h15"/><circle cx="7.6" cy="7.5" r=".9"/></svg></span><h3 class="role__name">Client</h3><p class="role__note">la aplicación que pide acceso</p></article><article class="role" data-anim="pop" style="--actor: var(--actor-op)" data-hl="role-as"><span class="role__icon"><svg class="actor__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="12" r="3.2"/><path d="M12.2 12H20"/><path d="M17 12v3.2"/><path d="M14.4 12v2.2"/></svg></span><h3 class="role__name">Authorization Server</h3><p class="role__note">OidcMock emite los tokens</p></article><article class="role" data-anim="pop" style="--actor: var(--actor-api)" data-hl="role-rs"><span class="role__icon"><svg class="actor__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="5" width="15" height="5.6" rx="1.6"/><rect x="4.5" y="13.4" width="15" height="5.6" rx="1.6"/><path d="M8 7.8h.01M8 16.2h.01"/></svg></span><h3 class="role__name">Resource Server</h3><p class="role__note">la API protegida por tokens</p></article></div><div class="grid"><article class="card" data-anim="rise"><h3 class="card__title">Cuatro tokens</h3><ul class="list"><li data-hl="tok-code"><span class="tok tok--code">code</span> Authorization Code — opaco, un solo uso</li><li data-hl="tok-access"><span class="tok tok--access">access</span> Access Token — JWT para la API</li><li data-hl="tok-id"><span class="tok tok--id">id</span> ID Token — JWT de identidad</li><li data-hl="tok-refresh"><span class="tok tok--refresh">refresh</span> Refresh Token — vida larga</li></ul></article></div></section>
 
     <script>
       (function () {
@@ -54,10 +54,42 @@
           );
           timeline.to(tokens[tok], { opacity: 0.25, duration: 0.5, ease: 'power1.out' }, win[1]);
         }
+        var MSGS = [];
+        var msgs = root.querySelectorAll('.seq__msg');
+        for (var msg = 0; msg < msgs.length; msg += 1) {
+          var span = MSGS[msg] || [0, 0.6];
+          timeline.fromTo(
+            msgs[msg].querySelector('.seq__line'),
+            { scaleX: 0 },
+            { scaleX: 1, duration: 0.55, ease: 'power2.inOut' },
+            span[0]
+          );
+          timeline.fromTo(
+            msgs[msg].querySelector('.seq__label'),
+            { opacity: 0 },
+            { opacity: 1, duration: 0.3, ease: 'power1.out' },
+            span[0] + 0.08
+          );
+          var tip = msgs[msg].querySelector('.seq__tip');
+          if (tip) {
+            timeline.fromTo(tip, { opacity: 0 }, { opacity: 1, duration: 0.18, ease: 'none' }, span[0] + 0.48);
+          }
+          var cargo = msgs[msg].querySelectorAll('.seq__token');
+          for (var cargoIndex = 0; cargoIndex < cargo.length; cargoIndex += 1) {
+            timeline.fromTo(
+              cargo[cargoIndex],
+              { opacity: 0, scale: 0 },
+              { opacity: 1, scale: 1, duration: 0.35, ease: 'back.out(1.7)' },
+              span[0] + 0.62 + cargoIndex * 0.14
+            );
+          }
+        }
         var targets = [];
         Object.keys(HIGHLIGHTS).forEach(function (key) {
-          var el = root.querySelector('[data-hl="' + key + '"]');
-          if (el) { targets.push({ el: el, windows: HIGHLIGHTS[key] }); }
+          var els = root.querySelectorAll('[data-hl="' + key + '"]');
+          for (var hl = 0; hl < els.length; hl += 1) {
+            targets.push({ el: els[hl], windows: HIGHLIGHTS[key] });
+          }
         });
         var ATTACK = 0.22;
         var RELEASE = 0.55;

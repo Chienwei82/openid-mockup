@@ -12,6 +12,8 @@ Contrato HyperFrames respetado aquí:
 
 from __future__ import annotations
 
+from typing import NamedTuple
+
 TOKEN_LIFETIMES = (
     ("authorization_code", "5 min", "opaco, un solo uso", "row-code"),
     ("access_token", "30 min", "JWT RS256, aud = client_id", "row-access"),
@@ -123,8 +125,15 @@ def lanes(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Diagramas animados: flujo secuencial (flow) y casos de uso (usecase).
+# Diagramas animados: secuencia (sequence), flujo (flow) y casos de uso
+# (usecase).
 #
+# `sequence` dibuja el mapa como diagrama de secuencia: cuatro carriles de
+# actor con identidad propia (color + icono) y mensajes-flecha entre ellos.
+# La geometría (centros de carril, ancho de flecha) se precalcula en
+# porcentajes aquí, sin medir el DOM en runtime; el build traza cada flecha
+# con scaleX 0→1 (receta svg-path-draw adaptada) y asoma punta y cargamento
+# de tokens en la ventana de habla del mensaje (receta spring-pop-entrance).
 # `flow` dibuja una cadena de paradas unidas por un riel que el build traza
 # (receta svg-path-draw) y un token viajero por parada (receta
 # spring-pop-entrance + driver lineal seek-safe). Cada parada lleva `data-hl`
@@ -175,24 +184,135 @@ def usecase(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# El mapa fijo: el flujo completo en seis paradas, con sus seis claves de voz.
-FLOW_STOPS: tuple[tuple[str, str], ...] = (
-    ("flujo-discovery", "El cliente descubre los endpoints"),
-    ("flujo-authorize", "Redirige al navegador al authorize"),
-    ("flujo-aprueba", "El usuario aprueba y vuelve con el código"),
-    ("flujo-canje", "El cliente canjea el código por tokens"),
-    ("flujo-userinfo", "Lee la identidad en userinfo"),
-    ("flujo-api", "Llama a la API con el access token"),
+# Identidad de actores: color e icono fijos, reutilizados en tarjetas de rol,
+# carriles del diagrama de secuencia y futuros diagramas de cada escena.
+ACTOR_VARS: dict[str, str] = {
+    "owner": "--actor-owner",
+    "cliente": "--actor-client",
+    "navegador": "--actor-nav",
+    "op": "--actor-op",
+    "api": "--actor-api",
+}
+
+ACTOR_ICONS: dict[str, str] = {
+    "owner": '<circle cx="12" cy="8" r="3.4"/><path d="M5.5 19.5c.6-3.4 3.3-5 6.5-5s5.9 1.6 6.5 5"/>',
+    "cliente": '<rect x="4.5" y="5.5" width="15" height="13" rx="2.2"/><path d="M4.5 9.5h15"/><circle cx="7.6" cy="7.5" r=".9"/>',
+    "navegador": '<circle cx="12" cy="12" r="7.5"/><path d="M12 4.5c-4 4.6-4 10.4 0 15"/><path d="M4.9 9.5h14.2M4.9 14.5h14.2"/>',
+    "op": '<circle cx="9" cy="12" r="3.2"/><path d="M12.2 12H20"/><path d="M17 12v3.2"/><path d="M14.4 12v2.2"/>',
+    "api": '<rect x="4.5" y="5" width="15" height="5.6" rx="1.6"/><rect x="4.5" y="13.4" width="15" height="5.6" rx="1.6"/><path d="M8 7.8h.01M8 16.2h.01"/>',
+}
+
+SEQ_LANES: tuple[tuple[str, str, str], ...] = (
+    ("cliente", "Cliente", "la aplicación"),
+    ("navegador", "Navegador", "el usuario"),
+    ("op", "OP · OidcMock", "emisor de tokens"),
+    ("api", "API", "la API protegida"),
 )
 
-MAP_ACTORS: tuple[str, ...] = ("Cliente", "Navegador", "OP · OidcMock", "API")
+LANE_INDEX: dict[str, int] = {actor: index for index, (actor, _name, _note) in enumerate(SEQ_LANES)}
 
 
-def flow_map(active: int | None = None) -> str:
-    _ = active
-    return chips(tuple(MAP_ACTORS)) + flow(
-        tuple((str(number), label, key) for number, (key, label) in enumerate(FLOW_STOPS, start=1))
+def actor_icon(actor: str) -> str:
+    return (
+        '<svg class="actor__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+        'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+        f"{ACTOR_ICONS[actor]}</svg>"
     )
+
+
+def role_card(actor: str, hl: str, name: str, note: str) -> str:
+    return (
+        f'<article class="role" data-anim="pop" style="--actor: var({ACTOR_VARS[actor]})"{hl_attr(hl)}>'
+        f'<span class="role__icon">{actor_icon(actor)}</span>'
+        f'<h3 class="role__name">{name}</h3>'
+        f'<p class="role__note">{note}</p>'
+        "</article>"
+    )
+
+
+class SeqMsg(NamedTuple):
+    sender: str
+    receiver: str
+    label: str
+    hl: str
+    tokens: tuple[str, ...] = ()
+    caption: str = ""
+
+
+def lane_center(actor: str) -> float:
+    return 12.5 + 25 * LANE_INDEX[actor]
+
+
+def seq_actor(actor: str, name: str, note: str, off: bool) -> str:
+    return (
+        f'<div class="seq__actor{" seq__actor--off" if off else ""}" data-anim="pop"'
+        f' style="--actor: var({ACTOR_VARS[actor]})">'
+        f'<span class="role__icon">{actor_icon(actor)}</span>'
+        f'<p class="seq__name">{name}</p>'
+        f'<p class="seq__sub">{note}</p>'
+        "</div>"
+    )
+
+
+def seq_life(actor: str, off: bool) -> str:
+    return (
+        f'<span class="seq__life{" seq__life--off" if off else ""}"'
+        f' style="color: var({ACTOR_VARS[actor]})"></span>'
+    )
+
+
+def seq_cargo(msg: SeqMsg, tip_x: float) -> str:
+    if not msg.tokens:
+        return ""
+    cargo = "".join(f'<span class="tok tok--{kind} seq__token">{kind}</span>' for kind in msg.tokens)
+    return f'<span class="seq__chips" style="left:{tip_x}%">{cargo}</span>'
+
+
+def seq_message(msg: SeqMsg) -> str:
+    sender_x = lane_center(msg.sender)
+    receiver_x = lane_center(msg.receiver)
+    direction = "lr" if sender_x < receiver_x else "rl"
+    anchor = f"left:{sender_x}%" if direction == "lr" else f"right:{100 - sender_x}%"
+    caption = f'<span class="seq__cap">{msg.caption}</span>' if msg.caption else ""
+    tall = " seq__msg--tall" if msg.caption else ""
+    return (
+        f'<div class="seq__msg seq__msg--{direction}{tall}" style="color: var({ACTOR_VARS[msg.sender]})">'
+        f'<span class="seq__label" style="{anchor}"{hl_attr(msg.hl)}>'
+        f'<span class="seq__text">{msg.label}</span>{caption}</span>'
+        f'<span class="seq__line" style="left:{min(sender_x, receiver_x)}%;'
+        f'width:{abs(receiver_x - sender_x)}%" aria-hidden="true"></span>'
+        f'<span class="seq__tip" style="left:{receiver_x}%" aria-hidden="true"></span>'
+        + seq_cargo(msg, receiver_x)
+        + "</div>"
+    )
+
+
+def sequence(messages: tuple[SeqMsg, ...], dimmed: tuple[str, ...] = ()) -> str:
+    actors = "".join(
+        seq_actor(actor, name, note, actor in dimmed) for actor, name, note in SEQ_LANES
+    )
+    lives = "".join(seq_life(actor, actor in dimmed) for actor, _name, _note in SEQ_LANES)
+    return (
+        '<div class="seq" data-anim="fade">'
+        f'<div class="seq__actors">{actors}</div>'
+        '<div class="seq__stage">'
+        f'<div class="seq__lives" aria-hidden="true">{lives}</div>'
+        + "".join(seq_message(message) for message in messages)
+        + "</div></div>"
+    )
+
+
+# El mapa fijo: el flujo completo en ocho flechas, con sus seis claves de voz.
+MAP_MESSAGES: tuple[SeqMsg, ...] = (
+    SeqMsg("cliente", "op", "<code>GET</code> /.well-known/openid-configuration", "flujo-discovery"),
+    SeqMsg("cliente", "navegador", "<code>302</code> → /connect/authorize", "flujo-authorize"),
+    SeqMsg("navegador", "op", "login + consent", "flujo-aprueba"),
+    SeqMsg("op", "cliente", "<code>302</code> /callback", "flujo-aprueba", ("code",)),
+    SeqMsg("cliente", "op", "<code>POST</code> /connect/token", "flujo-canje", ("code", "verifier")),
+    SeqMsg("op", "cliente", "el servidor emite los tokens", "flujo-canje", ("access", "id", "refresh")),
+    SeqMsg("cliente", "op", "<code>GET</code> /connect/userinfo", "flujo-userinfo"),
+    SeqMsg("cliente", "api", "<code>GET</code> /api con Bearer", "flujo-api", ("access",)),
+)
 
 
 SCENE_BODY: dict[str, str] = {}
@@ -213,18 +333,13 @@ SCENE_BODY["scene-01-title"] = (
 SCENE_BODY["scene-02-actores"] = (
     '<section class="scene">'
     + head("Actores", "Actores y Tokens")
-    + '<div class="grid grid--2">'
-    + card(
-        "Cuatro roles (OAuth 2.0)",
-        bullet_list(
-            (
-                ("role-owner", "<strong>Resource Owner</strong> — el usuario"),
-                ("role-client", "<strong>Client</strong> — la aplicación"),
-                ("role-as", "<strong>Authorization Server</strong> — emite los tokens"),
-                ("role-rs", "<strong>Resource Server</strong> — sirve la API protegida"),
-            )
-        ),
-    )
+    + '<div class="roles">'
+    + role_card("owner", "role-owner", "Resource Owner", "el usuario, dueño de sus datos")
+    + role_card("cliente", "role-client", "Client", "la aplicación que pide acceso")
+    + role_card("op", "role-as", "Authorization Server", "OidcMock emite los tokens")
+    + role_card("api", "role-rs", "Resource Server", "la API protegida por tokens")
+    + "</div>"
+    + '<div class="grid">'
     + card(
         "Cuatro tokens",
         bullet_list(
@@ -240,25 +355,39 @@ SCENE_BODY["scene-02-actores"] = (
 )
 
 SCENE_BODY["scene-03-flujo"] = (
-    '<section class="scene">'
+    '<section class="scene scene--seq">'
     + head("El mapa", "El Flujo Completo, en Seis Pasos")
-    + flow_map()
+    + sequence(MAP_MESSAGES)
     + '<p class="note" data-anim="fade">Memoriza este mapa: cada escena siguiente amplía una de sus paradas.</p>'
     + "</section>"
 )
 
 SCENE_BODY["scene-04-discovery"] = (
-    '<section class="scene">'
+    '<section class="scene scene--seq">'
     + head("Paso 1 del mapa", "Discovery y JWKS")
     + where_you_are("Discovery")
-    + flow(
+    + sequence(
         (
-            ("1", "El cliente pide <code>/.well-known/openid-configuration</code>", "card-discovery"),
-            ("2", "Lee issuer, endpoints y capacidades soportadas", "card-discovery"),
-            ("3", "Descarga el <strong>JWKS</strong> con las claves públicas RS256", "card-jwks"),
-            ("4", "Ya sabe a dónde redirigir y con qué validar firmas", "card-jwks"),
-        )
+            SeqMsg(
+                "cliente",
+                "op",
+                "<code>GET</code> /.well-known/openid-configuration",
+                "card-discovery",
+                (),
+                "issuer, endpoints y capacidades soportadas",
+            ),
+            SeqMsg(
+                "cliente",
+                "op",
+                "<code>GET</code> /.well-known/openid-configuration/jwks",
+                "card-jwks",
+                (),
+                "claves públicas RS256 para validar firmas",
+            ),
+        ),
+        dimmed=("navegador", "api"),
     )
+    + '<p class="note" data-anim="fade">Ya sabe a dónde redirigir y con qué validar firmas.</p>'
     + "</section>"
 )
 
@@ -327,16 +456,45 @@ SCENE_BODY["scene-08-grants"] = (
 )
 
 SCENE_BODY["scene-09-uso"] = (
-    '<section class="scene">'
+    '<section class="scene scene--seq">'
     + head("Pasos 5 y 6 del mapa", "UserInfo, API y Ciclo de Vida")
     + where_you_are("Uso")
-    + flow(
+    + sequence(
         (
-            ("5", "<strong>UserInfo</strong> devuelve los claims del usuario", "uso-userinfo"),
-            ("6", "La <strong>API</strong> valida firma, issuer, aud y expiración", "uso-api"),
-            ("7", "<strong>Introspection</strong> responde siempre active sí o no", "uso-introspection"),
-            ("8", "<strong>Revocation</strong> registra el jti o revoca la familia", "uso-revocation"),
-        )
+            SeqMsg(
+                "cliente",
+                "op",
+                "<code>GET</code> /connect/userinfo",
+                "uso-userinfo",
+                (),
+                "devuelve los claims del usuario",
+            ),
+            SeqMsg(
+                "cliente",
+                "api",
+                "<code>GET</code> /api con Bearer",
+                "uso-api",
+                ("access",),
+                "valida firma, issuer, aud y expiración",
+            ),
+            SeqMsg(
+                "cliente",
+                "op",
+                "<code>POST</code> /connect/introspect",
+                "uso-introspection",
+                (),
+                "responde siempre active sí o no",
+            ),
+            SeqMsg(
+                "cliente",
+                "op",
+                "<code>POST</code> /connect/revocation",
+                "uso-revocation",
+                (),
+                "registra el jti o revoca la familia",
+            ),
+        ),
+        dimmed=("navegador",),
     )
     + "</section>"
 )

@@ -6,7 +6,7 @@
     data-height="1080"
     data-duration="31.492"
   >
-<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">El mapa</span><h2 class="headline" data-anim="rise">El Flujo Completo, en Seis Pasos</h2></header><div class="chiprow" data-anim="fade"><span class="chip">Cliente</span><span class="chip">Navegador</span><span class="chip">OP · OidcMock</span><span class="chip">API</span></div><ol class="flow" data-anim="fade"><span class="flow__rail" aria-hidden="true"></span><li class="flow__stop" data-anim="pop" data-hl="flujo-discovery"><span class="flow__n">1</span><span class="flow__label">El cliente descubre los endpoints</span><span class="flow__token" data-token="flujo-discovery" aria-hidden="true"></span></li><li class="flow__stop" data-anim="pop" data-hl="flujo-authorize"><span class="flow__n">2</span><span class="flow__label">Redirige al navegador al authorize</span><span class="flow__token" data-token="flujo-authorize" aria-hidden="true"></span></li><li class="flow__stop" data-anim="pop" data-hl="flujo-aprueba"><span class="flow__n">3</span><span class="flow__label">El usuario aprueba y vuelve con el código</span><span class="flow__token" data-token="flujo-aprueba" aria-hidden="true"></span></li><li class="flow__stop" data-anim="pop" data-hl="flujo-canje"><span class="flow__n">4</span><span class="flow__label">El cliente canjea el código por tokens</span><span class="flow__token" data-token="flujo-canje" aria-hidden="true"></span></li><li class="flow__stop" data-anim="pop" data-hl="flujo-userinfo"><span class="flow__n">5</span><span class="flow__label">Lee la identidad en userinfo</span><span class="flow__token" data-token="flujo-userinfo" aria-hidden="true"></span></li><li class="flow__stop" data-anim="pop" data-hl="flujo-api"><span class="flow__n">6</span><span class="flow__label">Llama a la API con el access token</span><span class="flow__token" data-token="flujo-api" aria-hidden="true"></span></li></ol><p class="note" data-anim="fade">Memoriza este mapa: cada escena siguiente amplía una de sus paradas.</p></section>
+<section class="scene scene--seq"><header class="scene__head"><span class="kicker" data-anim="pop">El mapa</span><h2 class="headline" data-anim="rise">El Flujo Completo, en Seis Pasos</h2></header><div class="seq" data-anim="fade"><div class="seq__actors"><div class="seq__actor" data-anim="pop" style="--actor: var(--actor-client)"><span class="role__icon"><svg class="actor__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="5.5" width="15" height="13" rx="2.2"/><path d="M4.5 9.5h15"/><circle cx="7.6" cy="7.5" r=".9"/></svg></span><p class="seq__name">Cliente</p><p class="seq__sub">la aplicación</p></div><div class="seq__actor" data-anim="pop" style="--actor: var(--actor-nav)"><span class="role__icon"><svg class="actor__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/><path d="M12 4.5c-4 4.6-4 10.4 0 15"/><path d="M4.9 9.5h14.2M4.9 14.5h14.2"/></svg></span><p class="seq__name">Navegador</p><p class="seq__sub">el usuario</p></div><div class="seq__actor" data-anim="pop" style="--actor: var(--actor-op)"><span class="role__icon"><svg class="actor__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="12" r="3.2"/><path d="M12.2 12H20"/><path d="M17 12v3.2"/><path d="M14.4 12v2.2"/></svg></span><p class="seq__name">OP · OidcMock</p><p class="seq__sub">emisor de tokens</p></div><div class="seq__actor" data-anim="pop" style="--actor: var(--actor-api)"><span class="role__icon"><svg class="actor__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="5" width="15" height="5.6" rx="1.6"/><rect x="4.5" y="13.4" width="15" height="5.6" rx="1.6"/><path d="M8 7.8h.01M8 16.2h.01"/></svg></span><p class="seq__name">API</p><p class="seq__sub">la API protegida</p></div></div><div class="seq__stage"><div class="seq__lives" aria-hidden="true"><span class="seq__life" style="color: var(--actor-client)"></span><span class="seq__life" style="color: var(--actor-nav)"></span><span class="seq__life" style="color: var(--actor-op)"></span><span class="seq__life" style="color: var(--actor-api)"></span></div><div class="seq__msg seq__msg--lr" style="color: var(--actor-client)"><span class="seq__label" style="left:12.5%" data-hl="flujo-discovery"><span class="seq__text"><code>GET</code> /.well-known/openid-configuration</span></span><span class="seq__line" style="left:12.5%;width:50.0%" aria-hidden="true"></span><span class="seq__tip" style="left:62.5%" aria-hidden="true"></span></div><div class="seq__msg seq__msg--lr" style="color: var(--actor-client)"><span class="seq__label" style="left:12.5%" data-hl="flujo-authorize"><span class="seq__text"><code>302</code> → /connect/authorize</span></span><span class="seq__line" style="left:12.5%;width:25.0%" aria-hidden="true"></span><span class="seq__tip" style="left:37.5%" aria-hidden="true"></span></div><div class="seq__msg seq__msg--lr" style="color: var(--actor-nav)"><span class="seq__label" style="left:37.5%" data-hl="flujo-aprueba"><span class="seq__text">login + consent</span></span><span class="seq__line" style="left:37.5%;width:25.0%" aria-hidden="true"></span><span class="seq__tip" style="left:62.5%" aria-hidden="true"></span></div><div class="seq__msg seq__msg--rl" style="color: var(--actor-op)"><span class="seq__label" style="right:37.5%" data-hl="flujo-aprueba"><span class="seq__text"><code>302</code> /callback</span></span><span class="seq__line" style="left:12.5%;width:50.0%" aria-hidden="true"></span><span class="seq__tip" style="left:12.5%" aria-hidden="true"></span><span class="seq__chips" style="left:12.5%"><span class="tok tok--code seq__token">code</span></span></div><div class="seq__msg seq__msg--lr" style="color: var(--actor-client)"><span class="seq__label" style="left:12.5%" data-hl="flujo-canje"><span class="seq__text"><code>POST</code> /connect/token</span></span><span class="seq__line" style="left:12.5%;width:50.0%" aria-hidden="true"></span><span class="seq__tip" style="left:62.5%" aria-hidden="true"></span><span class="seq__chips" style="left:62.5%"><span class="tok tok--code seq__token">code</span><span class="tok tok--verifier seq__token">verifier</span></span></div><div class="seq__msg seq__msg--rl" style="color: var(--actor-op)"><span class="seq__label" style="right:37.5%" data-hl="flujo-canje"><span class="seq__text">el servidor emite los tokens</span></span><span class="seq__line" style="left:12.5%;width:50.0%" aria-hidden="true"></span><span class="seq__tip" style="left:12.5%" aria-hidden="true"></span><span class="seq__chips" style="left:12.5%"><span class="tok tok--access seq__token">access</span><span class="tok tok--id seq__token">id</span><span class="tok tok--refresh seq__token">refresh</span></span></div><div class="seq__msg seq__msg--lr" style="color: var(--actor-client)"><span class="seq__label" style="left:12.5%" data-hl="flujo-userinfo"><span class="seq__text"><code>GET</code> /connect/userinfo</span></span><span class="seq__line" style="left:12.5%;width:50.0%" aria-hidden="true"></span><span class="seq__tip" style="left:62.5%" aria-hidden="true"></span></div><div class="seq__msg seq__msg--lr" style="color: var(--actor-client)"><span class="seq__label" style="left:12.5%" data-hl="flujo-api"><span class="seq__text"><code>GET</code> /api con Bearer</span></span><span class="seq__line" style="left:12.5%;width:75.0%" aria-hidden="true"></span><span class="seq__tip" style="left:87.5%" aria-hidden="true"></span><span class="seq__chips" style="left:87.5%"><span class="tok tok--access seq__token">access</span></span></div></div></div><p class="note" data-anim="fade">Memoriza este mapa: cada escena siguiente amplía una de sus paradas.</p></section>
 
     <script>
       (function () {
@@ -31,8 +31,8 @@
         }
 
         var HIGHLIGHTS = {"flujo-discovery": [[6.474, 8.071]], "flujo-authorize": [[10.032, 12.441]], "flujo-aprueba": [[14.345, 17.006]], "flujo-canje": [[19.443, 21.544]], "flujo-userinfo": [[23.295, 25.228]], "flujo-api": [[27.16, 29.513]]};
-        var RAILS = [[6.474, 29.513]];
-        var TOKENS = [[6.474, 8.071], [10.032, 12.441], [14.345, 17.006], [19.443, 21.544], [23.295, 25.228], [27.16, 29.513]];
+        var RAILS = [];
+        var TOKENS = [];
         var rails = root.querySelectorAll('.flow__rail');
         for (var rail = 0; rail < rails.length; rail += 1) {
           var span = RAILS[rail] || [0, 0.6];
@@ -54,10 +54,42 @@
           );
           timeline.to(tokens[tok], { opacity: 0.25, duration: 0.5, ease: 'power1.out' }, win[1]);
         }
+        var MSGS = [[6.474, 8.071], [10.032, 12.441], [14.345, 17.006], [15.245, 17.906], [19.443, 21.544], [20.343, 22.444], [23.295, 25.228], [27.16, 29.513]];
+        var msgs = root.querySelectorAll('.seq__msg');
+        for (var msg = 0; msg < msgs.length; msg += 1) {
+          var span = MSGS[msg] || [0, 0.6];
+          timeline.fromTo(
+            msgs[msg].querySelector('.seq__line'),
+            { scaleX: 0 },
+            { scaleX: 1, duration: 0.55, ease: 'power2.inOut' },
+            span[0]
+          );
+          timeline.fromTo(
+            msgs[msg].querySelector('.seq__label'),
+            { opacity: 0 },
+            { opacity: 1, duration: 0.3, ease: 'power1.out' },
+            span[0] + 0.08
+          );
+          var tip = msgs[msg].querySelector('.seq__tip');
+          if (tip) {
+            timeline.fromTo(tip, { opacity: 0 }, { opacity: 1, duration: 0.18, ease: 'none' }, span[0] + 0.48);
+          }
+          var cargo = msgs[msg].querySelectorAll('.seq__token');
+          for (var cargoIndex = 0; cargoIndex < cargo.length; cargoIndex += 1) {
+            timeline.fromTo(
+              cargo[cargoIndex],
+              { opacity: 0, scale: 0 },
+              { opacity: 1, scale: 1, duration: 0.35, ease: 'back.out(1.7)' },
+              span[0] + 0.62 + cargoIndex * 0.14
+            );
+          }
+        }
         var targets = [];
         Object.keys(HIGHLIGHTS).forEach(function (key) {
-          var el = root.querySelector('[data-hl="' + key + '"]');
-          if (el) { targets.push({ el: el, windows: HIGHLIGHTS[key] }); }
+          var els = root.querySelectorAll('[data-hl="' + key + '"]');
+          for (var hl = 0; hl < els.length; hl += 1) {
+            targets.push({ el: els[hl], windows: HIGHLIGHTS[key] });
+          }
         });
         var ATTACK = 0.22;
         var RELEASE = 0.55;

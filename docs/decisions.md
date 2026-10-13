@@ -1597,3 +1597,28 @@ otro diagrama que encajara.
   aparece alguna.
 - **TDD no aplicable:** sin cambios en `src/` ni `tests/`; verificacion
   `dotnet build` + 726 tests, `npm run check` y render de prueba.
+
+## Explicaciones y animaciones mas graficas — Fase 1: secuencia + actores (2026-10-13)
+
+El usuario pidio explicaciones y animaciones mas graficas en el explicador y le
+propusimos un plan de 3 fases. Ejecutada la Fase 1: el mapa cobra vida.
+
+- **Diagrama de secuencia como primitiva visual.** `sequence()`/`SeqMsg` dibuja
+  cuatro carriles de actor con identidad fija (color `--actor-*` + icono SVG)
+  unidos por flechas con cargamento de chips de token. El mapa (escena 03) pasa
+  de una lista vertical a 8 flechas entre actores; 04 y 09 usan el mismo helper
+  con zoom a su tramo y carriles no participantes atenuados (foco).
+- **Geometria precalculada, sin medir el DOM.** Centros de carril y anchos de
+  flecha salen como porcentajes del propio build (12.5 + 25 i); el runtime solo
+  anima transforms (scaleX para trazar la flecha) + opacity (punta y chips).
+  Seek-safe, igual que el resto del timeline.
+- **Claves de voz compartidas sin duplicar animacion.** Las filas que comparten
+  clave (`flujo-aprueba`, `flujo-canje`) se revelan escalonadas 0.9 s
+  (`MSG_SHARED_DELAY`) y el driver de glow paso a `querySelectorAll` para que
+  ambas se enciendan con la misma ventana de habla.
+- **Foco estatico, no dinamico.** Los carriles que no participan en una escena
+  se atenuan con CSS (`.seq__actor--off`); el foco de voz lo aporta el glow de la
+  etiqueta del mensaje (pildora `data-hl`), sin nuevos tweens por ventana.
+- **Escena 02 con identidad.** Las 4 tarjetas de rol llevan icono grande de
+  actor (mismos iconos y colores que los carriles); la lista de tokens se
+  conserva (Fase 3 le pondra barras de vida).
