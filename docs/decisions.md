@@ -1622,3 +1622,30 @@ propusimos un plan de 3 fases. Ejecutada la Fase 1: el mapa cobra vida.
 - **Escena 02 con identidad.** Las 4 tarjetas de rol llevan icono grande de
   actor (mismos iconos y colores que los carriles); la lista de tokens se
   conserva (Fase 3 le pondra barras de vida).
+
+## Explicaciones y animaciones mas graficas — Fase 2: objetos del protocolo (2026-10-13)
+
+Ejecutada la Fase 2 del plan: las escenas 05, 06, 07 y 10 pasan de listas a objetos
+del protocolo animados y sincronizados con la voz.
+
+- **Un objeto visual por escena.** 05: tuberia `pkce_pipe` (verifier → embudo SHA-256 →
+  challenge, con pie de «un solo sentido») mas `journey` de 4 pasos; 06: `jwt_exploded`
+  (segmentos header/payload/firma separados, chips de claims que aparecen al nombrarlos,
+  binding at_hash/c_hash, card de claims de scope); 07: `token_exchange` (envio «dos manos»
+  code + verifier, puertas «x1 un solo uso» y «hash(verifier)», abanico de access/id/refresh
+  y sello `invalid_grant`); 10: `session_ribbons` (3 cintas sobre eje de tiempo, corte
+  punteado de logout con badges, la cookie del cliente sobrevive al corte).
+- **Mecanica generica `data-motion`.** Cualquier pieza lleva `data-motion`
+  (fade|rise|pop|grow|bar|slide) y `object_motion()` la cronometra con la ventana de habla de
+  su `data-hl` (+0.9 s por clave repetida, 0.35 s de escalonado si la voz no la nombra).
+  Mismo contrato seek-safe que el resto: solo transforms + opacity, sin medir el DOM.
+  Es la primitiva que reutilizara la Fase 3 (barras de vida, terminal, matriz).
+- **Anudado de claves sin regenerar audio.** Los markup nuevos usan exactamente las claves de
+  `timings.json` (chip-iss…, paso-envia…, card-op…); la deuda de avisos baja de 5 escenas a
+  solo la 08, cuyo desajuste (claves antiguas card-client/password/device frente al guion
+  actual card-code/cc/refresh) se cierra al reescribir la 08 en Fase 3.
+- **Codigo muerto eliminado.** Al sustituir los ultimos diagramas `flow()` por objetos se
+  borraron `flow`/`flow_stop`/`lanes()`, el bloque RAILS/TOKENS del template y los CSS
+  `.map*`/`.flow*`/`.lanes*`/`.hop*`.
+- **TDD no aplicable:** sin cambios en `src/` ni `tests/`; verificacion `dotnet build` +
+  726 tests, `hyperframes check` (contraste 107/107 AA) y snapshots de las 4 escenas.

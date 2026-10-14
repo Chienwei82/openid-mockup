@@ -6,7 +6,7 @@
     data-height="1080"
     data-duration="27.508"
   >
-<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Paso 4 del mapa</span><h2 class="headline" data-anim="rise">El Canje en el Token Endpoint</h2></header><p class="where" data-anim="fade"><span class="where__label">Estás aquí</span><span class="where__crumb"><span class="where__n">1</span>Discovery</span><span class="where__crumb"><span class="where__n">2-3</span>Authorize</span><span class="where__crumb where__crumb--on"><span class="where__n">4</span>Canje</span><span class="where__crumb"><span class="where__n">5-6</span>Uso</span></p><ol class="flow" data-anim="fade"><span class="flow__rail" aria-hidden="true"></span><li class="flow__stop" data-anim="pop" data-hl="canje-post"><span class="flow__n">1</span><span class="flow__label">El cliente envía <strong>code</strong> más <code>verifier</code></span><span class="flow__token" data-token="canje-post" aria-hidden="true"></span></li><li class="flow__stop" data-anim="pop" data-hl="canje-valida"><span class="flow__n">2</span><span class="flow__label">El servidor <strong>valida</strong> el challenge</span><span class="flow__token" data-token="canje-valida" aria-hidden="true"></span></li><li class="flow__stop" data-anim="pop" data-hl="canje-tokens"><span class="flow__n">3</span><span class="flow__label">Emite <strong>access</strong>, <strong>id</strong> y <strong>refresh</strong></span><span class="flow__token" data-token="canje-tokens" aria-hidden="true"></span></li><li class="flow__stop" data-anim="pop" data-hl="canje-un-solo-uso"><span class="flow__n">4</span><span class="flow__label">El code queda <strong>inutilizado</strong>: un solo uso</span><span class="flow__token" data-token="canje-un-solo-uso" aria-hidden="true"></span></li></ol><p class="note" data-anim="fade">El code expira en 5 minutos y es de un solo uso.</p></section>
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Paso 4 del mapa</span><h2 class="headline" data-anim="rise">El Canje en el Token Endpoint</h2></header><p class="where" data-anim="fade"><span class="where__label">Estás aquí</span><span class="where__crumb"><span class="where__n">1</span>Discovery</span><span class="where__crumb"><span class="where__n">2-3</span>Authorize</span><span class="where__crumb where__crumb--on"><span class="where__n">4</span>Canje</span><span class="where__crumb"><span class="where__n">5-6</span>Uso</span></p><div class="exchange"><div class="exchange__out" data-motion="fade" data-hl="paso-envia"><p class="exchange__label">POST /connect/token</p><div class="chiprow"><span class="chip chip--accent">code</span><span class="chip">redirect_uri</span><span class="chip">code_verifier</span></div></div><div class="exchange__checks"><p class="check" data-motion="pop" data-hl="paso-valida"><span class="check__mark check__mark--warn">×1</span>un solo uso: el code se agota aquí</p><p class="check" data-motion="pop" data-hl="paso-comprueba"><span class="check__mark check__mark--ok">✓</span>comprueba hash(code_verifier) con code_challenge</p></div><div class="exchange__fan"><article class="token token--access" data-motion="pop" data-hl="paso-responde"><p class="token__name">access_token</p><p class="token__life">30 min</p><p class="token__note">aud = client_id</p></article><article class="token token--id" data-motion="pop" data-hl="paso-responde"><p class="token__name">id_token</p><p class="token__life">30 min</p><p class="token__note">solo con scope openid</p></article><article class="token token--refresh" data-motion="pop" data-hl="paso-responde"><p class="token__name">refresh_token</p><p class="token__life">8 h</p><p class="token__note">rota en cada uso</p></article></div><p class="exchange__fail" data-motion="fade" data-hl="paso-repite"><span class="chip">invalid_grant</span><span class="errow__http">400</span>repetir el code lo rechaza: ya está inutilizado</p></div></section>
 
     <script>
       (function () {
@@ -31,28 +31,25 @@
         }
 
         var HIGHLIGHTS = {"paso-envia": [[4.423, 5.39]], "paso-valida": [[11.026, 13.169]], "paso-comprueba": [[13.407, 15.494]], "paso-responde": [[15.606, 17.245]], "paso-repite": [[22.076, 22.847]]};
-        var RAILS = [[0.9, 1.5]];
-        var TOKENS = [[0.9, 1.5], [0.9, 1.5], [0.9, 1.5], [0.9, 1.5]];
-        var rails = root.querySelectorAll('.flow__rail');
-        for (var rail = 0; rail < rails.length; rail += 1) {
-          var span = RAILS[rail] || [0, 0.6];
+        var OBJECTS = [{"v": "fade", "t": 4.423, "d": 0.967}, {"v": "pop", "t": 11.026, "d": 2.143}, {"v": "pop", "t": 13.407, "d": 2.087}, {"v": "pop", "t": 15.606, "d": 1.639}, {"v": "pop", "t": 16.506, "d": 1.639}, {"v": "pop", "t": 17.406, "d": 1.639}, {"v": "fade", "t": 22.076, "d": 0.771}];
+        var MOTIONS = {
+          fade: { from: { opacity: 0 }, to: { opacity: 1 } },
+          rise: { from: { opacity: 0, y: 30 }, to: { opacity: 1, y: 0 } },
+          pop: { from: { opacity: 0, scale: 0.82 }, to: { opacity: 1, scale: 1, ease: 'back.out(1.6)' } },
+          grow: { from: { opacity: 0, scaleX: 0 }, to: { opacity: 1, scaleX: 1 } },
+          bar: { from: { scaleX: 0 }, to: { scaleX: 1, ease: 'power2.out' } },
+          slide: { from: { opacity: 0, x: -36 }, to: { opacity: 1, x: 0 } },
+        };
+        var objectEls = root.querySelectorAll('[data-motion]');
+        for (var ob = 0; ob < objectEls.length; ob += 1) {
+          var spec = OBJECTS[ob] || { v: 'fade', t: 0, d: 0.65 };
+          var move = MOTIONS[spec.v] || MOTIONS.fade;
           timeline.fromTo(
-            rails[rail],
-            { scaleY: 0 },
-            { scaleY: 1, duration: Math.max(span[1] - span[0], 0.4), ease: 'power2.out' },
-            span[0]
+            objectEls[ob],
+            Object.assign({}, move.from),
+            Object.assign({ duration: spec.d, ease: 'power3.out' }, move.to),
+            spec.t
           );
-        }
-        var tokens = root.querySelectorAll('.flow__token');
-        for (var tok = 0; tok < tokens.length; tok += 1) {
-          var win = TOKENS[tok] || [0, 0];
-          timeline.fromTo(
-            tokens[tok],
-            { opacity: 0, scale: 0 },
-            { opacity: 1, scale: 1, duration: 0.35, ease: 'power3.out' },
-            Math.max(win[0] - 0.15, 0)
-          );
-          timeline.to(tokens[tok], { opacity: 0.25, duration: 0.5, ease: 'power1.out' }, win[1]);
         }
         var MSGS = [];
         var msgs = root.querySelectorAll('.seq__msg');

@@ -4,7 +4,9 @@ Contrato HyperFrames respetado aquí:
   * sin `<br>` en texto de cuerpo,
   * sin atributos `id` (evita colisiones al ensamblar),
   * todo elemento animado lleva `data-anim` con su variante de entrada
-    (`rise`, `pop`, `slide` o `fade`),
+    (`rise`, `pop`, `slide` o `fade`); las piezas de los diagramas llevan
+    `data-motion` (`fade|rise|pop|grow|bar|slide`) y el build las cronometra
+    con la ventana de habla de su `data-hl`,
   * todo elemento que la narración menciona lleva `data-hl="<clave>"`; la
     clave se anuda con las pistas `hl` de scripts/narration.json para que el
     build lo resalte justo cuando se pronuncia su frase.
@@ -103,29 +105,9 @@ def where_you_are(active: str) -> str:
     )
 
 
-def lanes(
-    lanes: tuple[tuple[str, tuple[str | tuple[str, str], ...]], ...],
-    active_lane: int,
-) -> str:
-    return (
-        '<div class="lanes">'
-        + "".join(
-            f'<div class="lane{" lane--off" if index != active_lane else ""}" data-anim="rise">'
-            f'<p class="lane__name">{name}</p>'
-            + "".join(
-                f'<p class="hop{"" if index == active_lane else " hop--off"}"{hl_attr(key)}>'
-                f'<span class="hop__n">{number}</span>{text}</p>'
-                for number, (key, text) in enumerate(with_keys(hops), start=1)
-            )
-            + "</div>"
-            for index, (name, hops) in enumerate(lanes)
-        )
-        + "</div>"
-    )
-
-
 # ─────────────────────────────────────────────────────────────────────────────
-# Diagramas animados: secuencia (sequence), flujo (flow) y casos de uso
+# Diagramas animados: secuencia (sequence), objetos del protocolo (pkce_pipe,
+# journey, jwt_exploded, token_exchange, session_ribbons) y casos de uso
 # (usecase).
 #
 # `sequence` dibuja el mapa como diagrama de secuencia: cuatro carriles de
@@ -134,31 +116,12 @@ def lanes(
 # porcentajes aquí, sin medir el DOM en runtime; el build traza cada flecha
 # con scaleX 0→1 (receta svg-path-draw adaptada) y asoma punta y cargamento
 # de tokens en la ventana de habla del mensaje (receta spring-pop-entrance).
-# `flow` dibuja una cadena de paradas unidas por un riel que el build traza
-# (receta svg-path-draw) y un token viajero por parada (receta
-# spring-pop-entrance + driver lineal seek-safe). Cada parada lleva `data-hl`
-# para que la voz la encienda al mencionarla (receta asr-keyword-glow).
+# Los objetos del protocolo llevan `data-motion` y el build los cronometra
+# con la ventana de habla de su `data-hl` (receta spring-pop-entrance y
+# asr-keyword-glow para el destello de voz).
 # `usecase` dibuja una pregunta con ramas de decisión para las escenas de
-# casos de uso (grants, sesiones, flujos avanzados, contenido del id token).
+# casos de uso (grants y flujos avanzados).
 # ─────────────────────────────────────────────────────────────────────────────
-
-def flow_stop(number: str, label: str, hl: str | None = None) -> str:
-    return (
-        f'<li class="flow__stop" data-anim="pop"{hl_attr(hl)}>'
-        f'<span class="flow__n">{number}</span>'
-        f'<span class="flow__label">{label}</span>'
-        f'<span class="flow__token" data-token="{hl or number}" aria-hidden="true"></span>'
-        "</li>"
-    )
-
-
-def flow(stops: tuple[tuple[str, str, str | None], ...]) -> str:
-    return (
-        '<ol class="flow" data-anim="fade">'
-        '<span class="flow__rail" aria-hidden="true"></span>'
-        + "".join(flow_stop(number, label, key) for number, label, key in stops)
-        + "</ol>"
-    )
 
 
 def usecase(
@@ -315,6 +278,169 @@ MAP_MESSAGES: tuple[SeqMsg, ...] = (
 )
 
 
+def journey(items: tuple[tuple[str, str, str], ...]) -> str:
+    return (
+        '<ol class="journey">'
+        + "".join(
+            f'<li class="jstep" data-motion="rise"{hl_attr(key)}>'
+            f'<span class="jstep__n">{index}</span>'
+            f'<span class="jstep__body"><strong class="jstep__title">{title}</strong>'
+            f'<span class="jstep__note">{note}</span></span></li>'
+            for index, (key, title, note) in enumerate(items, start=1)
+        )
+        + "</ol>"
+    )
+
+
+def pkce_pipe() -> str:
+    return (
+        '<div class="pkce">'
+        '<div class="pkce__row">'
+        f'<div class="pkce__piece" data-motion="rise"{hl_attr("step-verifier")}>'
+        '<span class="tok tok--verifier">code_verifier</span>'
+        '<span class="pkce__note">secreto aleatorio del cliente</span></div>'
+        '<div class="pkce__arrow" data-motion="grow"></div>'
+        '<div class="pkce__funnel" data-motion="pop">SHA-256</div>'
+        '<div class="pkce__arrow" data-motion="grow"></div>'
+        f'<div class="pkce__piece" data-motion="rise"{hl_attr("step-verifier")}>'
+        '<span class="tok tok--code">code_challenge</span>'
+        '<span class="pkce__note">viaja en la URL de authorize</span></div>'
+        "</div>"
+        f'<p class="pkce__oneway" data-motion="fade"{hl_attr("step-verifier")}>'
+        "un solo sentido · el challenge sale del verifier, nunca al revés</p>"
+        "</div>"
+    )
+
+
+JWT_SEGMENTS = (
+    ("header", "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9", "alg RS256 · typ JWT"),
+    ("payload", "eyJzdWIiOiIxMjM0NTY3ODkwIiwibm9uY2UiOiJhODQifQ", "los claims, en claro"),
+    ("firma", "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c", "RS256 · clave pública de JWKS"),
+)
+
+JWT_CLAIMS = (
+    ("chip-iss", "iss · emisor"),
+    ("chip-sub", "sub · usuario"),
+    ("chip-aud", "aud · audiencia"),
+    ("chip-exp", "exp · caduca"),
+    ("chip-iat", "iat · emitido"),
+    ("chip-nonce", "nonce · anti-replay"),
+)
+
+
+def jwt_exploded() -> str:
+    segments = f'<span class="jwt__dot" data-motion="fade">·</span>'.join(
+        f'<div class="jwt__seg jwt__seg--{name}" data-motion="pop">'
+        f'<p class="jwt__segname">{name}</p>'
+        f'<p class="jwt__b64">{b64}</p>'
+        f'<p class="jwt__note">{note}</p></div>'
+        for name, b64, note in JWT_SEGMENTS
+    )
+    return (
+        '<div class="jwt">'
+        f'<div class="jwt__row">{segments}</div>'
+        '<div class="jwt__claims">'
+        + "".join(
+            f'<span class="chip" data-motion="pop"{hl_attr(key)}>{text}</span>'
+            for key, text in JWT_CLAIMS
+        )
+        + "</div>"
+        '<div class="jwt__bind" data-motion="slide" data-hl="chiprow-binding">'
+        '<span class="tok tok--access">at_hash</span> ↔ <span class="tok tok--access">access_token</span>'
+        '<span class="tok tok--code">c_hash</span> ↔ <span class="tok tok--code">authorization_code</span>'
+        "</div>"
+        '<article class="card" data-motion="rise" data-hl="card-scope">'
+        '<h3 class="card__title">Claims del usuario</h3>'
+        '<div class="chiprow">'
+        '<span class="chip">name</span><span class="chip">email</span>'
+        '<span class="chip">preferred_username</span><span class="chip">locale</span>'
+        "</div>"
+        '<p class="note">salen del scope concedido</p></article>'
+        "</div>"
+    )
+
+
+TOKEN_FAN = (
+    ("token--access", "access_token", "30 min", "aud = client_id"),
+    ("token--id", "id_token", "30 min", "solo con scope openid"),
+    ("token--refresh", "refresh_token", "8 h", "rota en cada uso"),
+)
+
+
+def token_exchange() -> str:
+    return (
+        '<div class="exchange">'
+        '<div class="exchange__out" data-motion="fade" data-hl="paso-envia">'
+        '<p class="exchange__label">POST /connect/token</p>'
+        '<div class="chiprow">'
+        '<span class="chip chip--accent">code</span>'
+        '<span class="chip">redirect_uri</span>'
+        '<span class="chip">code_verifier</span>'
+        "</div></div>"
+        '<div class="exchange__checks">'
+        '<p class="check" data-motion="pop" data-hl="paso-valida">'
+        '<span class="check__mark check__mark--warn">×1</span>'
+        "un solo uso: el code se agota aquí</p>"
+        '<p class="check" data-motion="pop" data-hl="paso-comprueba">'
+        '<span class="check__mark check__mark--ok">✓</span>'
+        "comprueba hash(code_verifier) con code_challenge</p>"
+        "</div>"
+        '<div class="exchange__fan">'
+        + "".join(
+            f'<article class="token {kind}" data-motion="pop" data-hl="paso-responde">'
+            f'<p class="token__name">{name}</p>'
+            f'<p class="token__life">{life}</p>'
+            f'<p class="token__note">{note}</p></article>'
+            for kind, name, life, note in TOKEN_FAN
+        )
+        + "</div>"
+        '<p class="exchange__fail" data-motion="fade" data-hl="paso-repite">'
+        '<span class="chip">invalid_grant</span><span class="errow__http">400</span>'
+        "repetir el code lo rechaza: ya está inutilizado</p>"
+        "</div>"
+    )
+
+
+SESSION_LANES = (
+    ("card-op", "Sesión del OP", "habilita el SSO", "op"),
+    ("card-cliente", "Sesión del cliente", "su propia cookie", "cliente"),
+    ("card-sid", "sid", "puente entre id_token y la sesión del OP", "sid"),
+)
+
+
+def session_ribbons() -> str:
+    rows = []
+    for key, name, note, kind in SESSION_LANES:
+        cut = ""
+        if kind != "cliente":
+            label = "end_session" if kind == "op" else "sid caduca"
+            cut = (
+                f'<div class="sess__cut" data-motion="pop"{hl_attr("card-logout")}>'
+                f'<span class="badge badge--warn">{label}</span></div>'
+            )
+        rows.append(
+            '<div class="sess__lane" data-motion="fade">'
+            f'<div class="sess__who"{hl_attr(key)}>'
+            f'<p class="sess__name">{name}</p><p class="sess__note">{note}</p></div>'
+            '<div class="sess__track">'
+            f'<div class="sess__bar sess__bar--{kind}" data-motion="bar"{hl_attr(key)}></div>'
+            f"{cut}</div></div>"
+        )
+    return (
+        '<div class="sess">'
+        + "".join(rows)
+        + '<p class="note" data-motion="fade" data-hl="card-logout">'
+        "logout: <code>connect/end_session</code> con <code>id_token_hint</code> y "
+        "<code>post_logout_redirect_uri</code></p>"
+        '<div class="chiprow sess__chips" data-motion="fade" data-hl="card-prompt">'
+        + "".join(
+            f'<span class="chip">{mode}</span>'
+            for mode in ("prompt=none", "prompt=login", "prompt=consent", "prompt=select_account")
+        )
+        + "</div></div>"
+    )
+
+
 SCENE_BODY: dict[str, str] = {}
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -395,31 +521,24 @@ SCENE_BODY["scene-05-pkce"] = (
     '<section class="scene">'
     + head("Pasos 2 y 3 del mapa", "Authorization Code + PKCE")
     + where_you_are("Authorize")
-    + flow(
+    + pkce_pipe()
+    + journey(
         (
-            ("1", "El cliente genera <code>verifier</code> y <code>challenge</code>", "step-verifier"),
-            ("2", "Redirige a <code>/connect/authorize</code> con challenge y <code>state</code>", "step-authorize"),
-            ("3", "El usuario <strong>aprueba</strong> y vuelve con el <code>code</code>", "step-aprueba"),
-            ("4", "Al canjear, el servidor <strong>compara</strong> el verifier en tiempo constante", "step-compara"),
-            ("5", "Métodos <code>plain</code> y <code>S256</code>: usa <strong>S256</strong>", "step-metodos"),
+            ("step-authorize", "authorize", "redirige con el code_challenge"),
+            ("step-aprueba", "login + consent", "el usuario aprueba en el OP"),
+            ("step-canje", "callback", "vuelve al cliente con el code"),
+            ("step-compara", "token endpoint", "compara el verifier en tiempo constante"),
         )
     )
+    + chips(("plain", "S256 recomendado"), hl="step-metodos")
     + "</section>"
 )
 
 SCENE_BODY["scene-06-idtoken"] = (
     '<section class="scene">'
-    + head("Paso 4b del mapa", "El ID Token")
+    + head("Paso 4b del mapa", "El ID Token, Despiezado")
     + where_you_are("Canje")
-    + usecase(
-        "¿Qué trae el id token?",
-        (
-            ("Identidad", "<code>sub</code>, <code>name</code>, <code>email</code>", "quién es el usuario", "card-claims"),
-            ("Validez", "<code>iss</code>, <code>aud</code>, <code>exp</code>, <code>iat</code>", "quién lo emite y hasta cuándo vale", "card-tiempos"),
-            ("Sesión", "<code>sid</code>, <code>auth_time</code>, <code>nonce</code>", "a qué login pertenece", "card-sesion"),
-        ),
-    )
-    + '<p class="note" data-anim="fade">Solo aparece cuando pides el scope <code>openid</code>.</p>'
+    + jwt_exploded()
     + "</section>"
 )
 
@@ -427,15 +546,7 @@ SCENE_BODY["scene-07-canje"] = (
     '<section class="scene">'
     + head("Paso 4 del mapa", "El Canje en el Token Endpoint")
     + where_you_are("Canje")
-    + flow(
-        (
-            ("1", "El cliente envía <strong>code</strong> más <code>verifier</code>", "canje-post"),
-            ("2", "El servidor <strong>valida</strong> el challenge", "canje-valida"),
-            ("3", "Emite <strong>access</strong>, <strong>id</strong> y <strong>refresh</strong>", "canje-tokens"),
-            ("4", "El code queda <strong>inutilizado</strong>: un solo uso", "canje-un-solo-uso"),
-        )
-    )
-    + '<p class="note" data-anim="fade">El code expira en 5 minutos y es de un solo uso.</p>'
+    + token_exchange()
     + "</section>"
 )
 
@@ -502,16 +613,7 @@ SCENE_BODY["scene-09-uso"] = (
 SCENE_BODY["scene-10-sesion"] = (
     '<section class="scene">'
     + head("Sesión", "Tres Sesiones y el Logout")
-    + usecase(
-        "¿Qué sesión se cierra con el logout?",
-        (
-            ("Sesión del OP", "habilita el <strong>SSO</strong> entre clientes", "cookie del servidor", "card-op"),
-            ("Sesión del cliente", "su propia <strong>cookie</strong> de app", "vive aunque el OP cierre", "card-cliente"),
-            ("El sid puente", "conecta el <strong>id token</strong> con el OP", "viaja en el logout", "card-sid"),
-        ),
-    )
-    + '<p class="note" data-anim="fade">El logout usa <code>connect/endsession</code> con id token hint; '
-    + 'el <code>prompt</code> admite <code>none</code>, <code>login</code>, <code>consent</code> o <code>select_account</code>.</p>'
+    + session_ribbons()
     + "</section>"
 )
 

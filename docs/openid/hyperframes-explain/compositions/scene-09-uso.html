@@ -31,28 +31,25 @@
         }
 
         var HIGHLIGHTS = {"uso-userinfo": [[4.718, 7.028]], "uso-api": [[9.738, 13.183]], "uso-introspection": [[15.522, 17.721]], "uso-revocation": [[22.455, 24.163]]};
-        var RAILS = [];
-        var TOKENS = [];
-        var rails = root.querySelectorAll('.flow__rail');
-        for (var rail = 0; rail < rails.length; rail += 1) {
-          var span = RAILS[rail] || [0, 0.6];
+        var OBJECTS = [];
+        var MOTIONS = {
+          fade: { from: { opacity: 0 }, to: { opacity: 1 } },
+          rise: { from: { opacity: 0, y: 30 }, to: { opacity: 1, y: 0 } },
+          pop: { from: { opacity: 0, scale: 0.82 }, to: { opacity: 1, scale: 1, ease: 'back.out(1.6)' } },
+          grow: { from: { opacity: 0, scaleX: 0 }, to: { opacity: 1, scaleX: 1 } },
+          bar: { from: { scaleX: 0 }, to: { scaleX: 1, ease: 'power2.out' } },
+          slide: { from: { opacity: 0, x: -36 }, to: { opacity: 1, x: 0 } },
+        };
+        var objectEls = root.querySelectorAll('[data-motion]');
+        for (var ob = 0; ob < objectEls.length; ob += 1) {
+          var spec = OBJECTS[ob] || { v: 'fade', t: 0, d: 0.65 };
+          var move = MOTIONS[spec.v] || MOTIONS.fade;
           timeline.fromTo(
-            rails[rail],
-            { scaleY: 0 },
-            { scaleY: 1, duration: Math.max(span[1] - span[0], 0.4), ease: 'power2.out' },
-            span[0]
+            objectEls[ob],
+            Object.assign({}, move.from),
+            Object.assign({ duration: spec.d, ease: 'power3.out' }, move.to),
+            spec.t
           );
-        }
-        var tokens = root.querySelectorAll('.flow__token');
-        for (var tok = 0; tok < tokens.length; tok += 1) {
-          var win = TOKENS[tok] || [0, 0];
-          timeline.fromTo(
-            tokens[tok],
-            { opacity: 0, scale: 0 },
-            { opacity: 1, scale: 1, duration: 0.35, ease: 'power3.out' },
-            Math.max(win[0] - 0.15, 0)
-          );
-          timeline.to(tokens[tok], { opacity: 0.25, duration: 0.5, ease: 'power1.out' }, win[1]);
         }
         var MSGS = [[4.718, 7.028], [9.738, 13.183], [15.522, 17.721], [22.455, 24.163]];
         var msgs = root.querySelectorAll('.seq__msg');

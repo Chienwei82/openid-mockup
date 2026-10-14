@@ -6,7 +6,7 @@
     data-height="1080"
     data-duration="28.132"
   >
-<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Paso 4b del mapa</span><h2 class="headline" data-anim="rise">El ID Token</h2></header><p class="where" data-anim="fade"><span class="where__label">Estás aquí</span><span class="where__crumb"><span class="where__n">1</span>Discovery</span><span class="where__crumb"><span class="where__n">2-3</span>Authorize</span><span class="where__crumb where__crumb--on"><span class="where__n">4</span>Canje</span><span class="where__crumb"><span class="where__n">5-6</span>Uso</span></p><div class="use"><p class="use__q" data-anim="pop">¿Qué trae el id token?</p><div class="use__branches"><article class="use__branch" data-anim="rise" data-hl="card-claims"><h3 class="use__when">Identidad</h3><p class="use__go"><code>sub</code>, <code>name</code>, <code>email</code></p><p class="use__note">quién es el usuario</p></article><article class="use__branch" data-anim="rise" data-hl="card-tiempos"><h3 class="use__when">Validez</h3><p class="use__go"><code>iss</code>, <code>aud</code>, <code>exp</code>, <code>iat</code></p><p class="use__note">quién lo emite y hasta cuándo vale</p></article><article class="use__branch" data-anim="rise" data-hl="card-sesion"><h3 class="use__when">Sesión</h3><p class="use__go"><code>sid</code>, <code>auth_time</code>, <code>nonce</code></p><p class="use__note">a qué login pertenece</p></article></div></div><p class="note" data-anim="fade">Solo aparece cuando pides el scope <code>openid</code>.</p></section>
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Paso 4b del mapa</span><h2 class="headline" data-anim="rise">El ID Token, Despiezado</h2></header><p class="where" data-anim="fade"><span class="where__label">Estás aquí</span><span class="where__crumb"><span class="where__n">1</span>Discovery</span><span class="where__crumb"><span class="where__n">2-3</span>Authorize</span><span class="where__crumb where__crumb--on"><span class="where__n">4</span>Canje</span><span class="where__crumb"><span class="where__n">5-6</span>Uso</span></p><div class="jwt"><div class="jwt__row"><div class="jwt__seg jwt__seg--header" data-motion="pop"><p class="jwt__segname">header</p><p class="jwt__b64">eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9</p><p class="jwt__note">alg RS256 · typ JWT</p></div><span class="jwt__dot" data-motion="fade">·</span><div class="jwt__seg jwt__seg--payload" data-motion="pop"><p class="jwt__segname">payload</p><p class="jwt__b64">eyJzdWIiOiIxMjM0NTY3ODkwIiwibm9uY2UiOiJhODQifQ</p><p class="jwt__note">los claims, en claro</p></div><span class="jwt__dot" data-motion="fade">·</span><div class="jwt__seg jwt__seg--firma" data-motion="pop"><p class="jwt__segname">firma</p><p class="jwt__b64">SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c</p><p class="jwt__note">RS256 · clave pública de JWKS</p></div></div><div class="jwt__claims"><span class="chip" data-motion="pop" data-hl="chip-iss">iss · emisor</span><span class="chip" data-motion="pop" data-hl="chip-sub">sub · usuario</span><span class="chip" data-motion="pop" data-hl="chip-aud">aud · audiencia</span><span class="chip" data-motion="pop" data-hl="chip-exp">exp · caduca</span><span class="chip" data-motion="pop" data-hl="chip-iat">iat · emitido</span><span class="chip" data-motion="pop" data-hl="chip-nonce">nonce · anti-replay</span></div><div class="jwt__bind" data-motion="slide" data-hl="chiprow-binding"><span class="tok tok--access">at_hash</span> ↔ <span class="tok tok--access">access_token</span><span class="tok tok--code">c_hash</span> ↔ <span class="tok tok--code">authorization_code</span></div><article class="card" data-motion="rise" data-hl="card-scope"><h3 class="card__title">Claims del usuario</h3><div class="chiprow"><span class="chip">name</span><span class="chip">email</span><span class="chip">preferred_username</span><span class="chip">locale</span></div><p class="note">salen del scope concedido</p></article></div></section>
 
     <script>
       (function () {
@@ -31,28 +31,25 @@
         }
 
         var HIGHLIGHTS = {"chip-iss": [[11.488, 12.273]], "chip-sub": [[12.651, 12.959]], "chip-aud": [[13.267, 13.533]], "chip-exp": [[13.841, 14.163]], "chip-iat": [[14.485, 14.794]], "chip-nonce": [[14.892, 15.368]], "chiprow-binding": [[16.348, 17.581]], "card-scope": [[25.06, 26.166]]};
-        var RAILS = [];
-        var TOKENS = [];
-        var rails = root.querySelectorAll('.flow__rail');
-        for (var rail = 0; rail < rails.length; rail += 1) {
-          var span = RAILS[rail] || [0, 0.6];
+        var OBJECTS = [{"v": "pop", "t": 1.1, "d": 0.45}, {"v": "fade", "t": 1.45, "d": 0.45}, {"v": "pop", "t": 1.8, "d": 0.45}, {"v": "fade", "t": 2.15, "d": 0.45}, {"v": "pop", "t": 2.5, "d": 0.45}, {"v": "pop", "t": 11.488, "d": 0.785}, {"v": "pop", "t": 12.651, "d": 0.45}, {"v": "pop", "t": 13.267, "d": 0.45}, {"v": "pop", "t": 13.841, "d": 0.45}, {"v": "pop", "t": 14.485, "d": 0.45}, {"v": "pop", "t": 14.892, "d": 0.476}, {"v": "slide", "t": 16.348, "d": 1.233}, {"v": "rise", "t": 25.06, "d": 1.106}];
+        var MOTIONS = {
+          fade: { from: { opacity: 0 }, to: { opacity: 1 } },
+          rise: { from: { opacity: 0, y: 30 }, to: { opacity: 1, y: 0 } },
+          pop: { from: { opacity: 0, scale: 0.82 }, to: { opacity: 1, scale: 1, ease: 'back.out(1.6)' } },
+          grow: { from: { opacity: 0, scaleX: 0 }, to: { opacity: 1, scaleX: 1 } },
+          bar: { from: { scaleX: 0 }, to: { scaleX: 1, ease: 'power2.out' } },
+          slide: { from: { opacity: 0, x: -36 }, to: { opacity: 1, x: 0 } },
+        };
+        var objectEls = root.querySelectorAll('[data-motion]');
+        for (var ob = 0; ob < objectEls.length; ob += 1) {
+          var spec = OBJECTS[ob] || { v: 'fade', t: 0, d: 0.65 };
+          var move = MOTIONS[spec.v] || MOTIONS.fade;
           timeline.fromTo(
-            rails[rail],
-            { scaleY: 0 },
-            { scaleY: 1, duration: Math.max(span[1] - span[0], 0.4), ease: 'power2.out' },
-            span[0]
+            objectEls[ob],
+            Object.assign({}, move.from),
+            Object.assign({ duration: spec.d, ease: 'power3.out' }, move.to),
+            spec.t
           );
-        }
-        var tokens = root.querySelectorAll('.flow__token');
-        for (var tok = 0; tok < tokens.length; tok += 1) {
-          var win = TOKENS[tok] || [0, 0];
-          timeline.fromTo(
-            tokens[tok],
-            { opacity: 0, scale: 0 },
-            { opacity: 1, scale: 1, duration: 0.35, ease: 'power3.out' },
-            Math.max(win[0] - 0.15, 0)
-          );
-          timeline.to(tokens[tok], { opacity: 0.25, duration: 0.5, ease: 'power1.out' }, win[1]);
         }
         var MSGS = [];
         var msgs = root.querySelectorAll('.seq__msg');

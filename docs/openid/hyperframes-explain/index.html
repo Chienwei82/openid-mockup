@@ -219,52 +219,12 @@ code {
 
 .note { margin: 26px 0 0; font-size: 22px; color: var(--on-surface-dim); max-width: 1500px; }
 
-/* Mapa fijo del flujo: actores arriba, seis paradas numeradas debajo */
-.map { display: flex; flex-direction: column; gap: 28px; max-width: 1560px; }
-.map__actors { display: flex; gap: 14px; margin: 0; flex-wrap: wrap; }
-.map__actor {
-  padding: 10px 24px; border-radius: var(--r-full);
-  background: var(--surface-3); border: 1px solid var(--outline);
-  font-size: 21px; color: var(--on-surface);
-}
-.map__stops { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 0; padding: 0; list-style: none; }
-.map__stop {
-  display: flex; align-items: center; gap: 18px;
-  padding: 15px 22px; border-radius: var(--r-md);
-  background: linear-gradient(90deg, var(--surface-2), var(--surface-1));
-  border: 1px solid var(--outline);
-  font-size: 23px; color: var(--on-surface-dim);
-}
-.map__n, .minimap__n, .hop__n, .where__n {
+/* Números circulares de la tira «estás aquí» */
+.where__n {
   flex: 0 0 auto; display: grid; place-items: center;
   width: 46px; height: 46px; border-radius: 50%;
   background: rgba(77, 208, 225, .14); color: var(--primary);
   font-size: 22px; font-weight: 600;
-}
-
-/* Diagrama de flujo animado: riel vertical + paradas con token viajero.
-   El riel (.flow__rail) lo traza el build (receta svg-path-draw adaptada a
-   scaleY, seek-safe); el token (.flow__token) viaja por parada (receta
-   spring-pop-entrance + driver lineal). Solo transforms + opacity. */
-.flow { position: relative; display: flex; flex-direction: column; gap: 14px; margin: 0; padding: 0 0 0 34px; list-style: none; max-width: 1560px; }
-.flow__rail { position: absolute; left: 56px; top: 24px; bottom: 24px; width: 4px; border-radius: var(--r-full); background: rgba(77, 208, 225, .18); transform-origin: top center; }
-.flow__stop {
-  position: relative; display: flex; align-items: center; gap: 18px;
-  padding: 15px 22px; border-radius: var(--r-md);
-  background: linear-gradient(90deg, var(--surface-2), var(--surface-1));
-  border: 1px solid var(--outline);
-  font-size: 23px; color: var(--on-surface-dim);
-}
-.flow__n {
-  flex: 0 0 auto; display: grid; place-items: center;
-  width: 46px; height: 46px; border-radius: 50%;
-  background: rgba(77, 208, 225, .14); color: var(--primary);
-  font-size: 22px; font-weight: 600;
-}
-.flow__token {
-  position: absolute; left: -34px; top: 50%; width: 18px; height: 18px; border-radius: 50%;
-  background: var(--primary); opacity: 0;
-  box-shadow: 0 0 18px rgba(77, 208, 225, .8);
 }
 
 /* Diagrama de casos de uso: pregunta + ramas de decisión */
@@ -294,23 +254,7 @@ code {
 .where__crumb--on { opacity: 1; border-color: rgba(77, 208, 225, .5); color: var(--on-surface); }
 .where__n { width: 34px; height: 34px; font-size: 17px; }
 
-/* Carriles por actor: cada salto es un paso del sub-diagrama */
-.lanes { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; max-width: 1560px; }
-.lane {
-  display: flex; flex-direction: column; gap: 14px; margin: 0;
-  padding: 24px; border-radius: var(--r-lg);
-  background: var(--surface-1); border: 1px solid rgba(77, 208, 225, .4);
-}
-.lane--off { border-color: var(--outline); opacity: .75; }
-.lane__name { margin: 0; font-size: 19px; letter-spacing: 2px; text-transform: uppercase; color: var(--primary); }
-.hop {
-  display: flex; align-items: center; gap: 18px; margin: 0;
-  padding: 16px 20px; border-radius: var(--r-md);
-  background: var(--surface-2); border: 1px solid var(--outline);
-  font-size: 24px; color: var(--on-surface-dim);
-}
-.hop--off { opacity: .75; }
-
+/* Chips de token por tipo: code, access, id, refresh, verifier */
 .tok {
   display: inline-block; padding: 2px 12px; border-radius: var(--r-full);
   font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 17px; margin-right: 6px;
@@ -391,6 +335,172 @@ code {
   padding: 3px 12px; border: 1px solid currentColor; background: var(--surface-1);
   box-shadow: 0 2px 12px rgba(0, 0, 0, .4);
 }
+
+/* ── Objetos del protocolo (fase 2) ────────────────────────────────── */
+
+/* Tubería PKCE: verifier → embudo SHA-256 → challenge (un solo sentido) */
+.pkce { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 1560px; margin: 0 0 26px; }
+.pkce__row { display: flex; align-items: center; gap: 22px; }
+.pkce__piece {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 18px 26px; border-radius: var(--r-md);
+  background: var(--surface-2); border: 1px solid var(--outline);
+}
+.pkce__note { margin: 0; font-size: 17px; color: var(--on-surface-dim); }
+.pkce__funnel {
+  display: grid; place-items: center; flex: 0 0 auto;
+  width: 108px; height: 108px; border-radius: 50%;
+  background: rgba(77, 208, 225, .13); border: 1px solid rgba(77, 208, 225, .42);
+  color: var(--primary); font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 18px; font-weight: 600;
+}
+.pkce__arrow {
+  flex: 1; height: 3px; border-radius: var(--r-full);
+  background: var(--primary); transform-origin: left center; position: relative;
+}
+.pkce__arrow::after {
+  content: ""; position: absolute; right: -1px; top: 50%;
+  border-top: 8px solid transparent; border-bottom: 8px solid transparent;
+  border-left: 12px solid var(--primary); transform: translateY(-50%);
+}
+.pkce__oneway { margin: 0; font-size: 16px; letter-spacing: 1.8px; text-transform: uppercase; color: var(--on-surface-dim); }
+
+/* Recorrido en 4 pasos: cada parada del sub-flujo con su flecha */
+.journey { display: grid; grid-template-columns: repeat(4, 1fr); gap: 38px; margin: 0 0 26px; padding: 0; list-style: none; width: 100%; max-width: 1560px; }
+.jstep {
+  position: relative; display: flex; align-items: center; gap: 16px;
+  padding: 18px 20px; border-radius: var(--r-md);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface-1));
+  border: 1px solid var(--outline);
+}
+.jstep:not(:last-child)::after {
+  content: "→"; position: absolute; right: -32px; top: 50%; transform: translateY(-50%);
+  color: var(--primary); font-size: 24px;
+}
+.jstep__n {
+  flex: 0 0 auto; display: grid; place-items: center;
+  width: 42px; height: 42px; border-radius: 50%;
+  background: rgba(77, 208, 225, .14); color: var(--primary);
+  font-size: 20px; font-weight: 600;
+}
+.jstep__title { display: block; font-size: 21px; color: var(--on-surface); }
+.jstep__note { display: block; font-size: 16px; color: var(--on-surface-dim); }
+
+/* Puerta de validación: marca circular + frase corta */
+.check {
+  display: flex; align-items: center; gap: 18px; margin: 0;
+  padding: 18px 26px; border-radius: var(--r-md);
+  background: var(--surface-2); border: 1px solid var(--outline);
+  font-size: 22px; color: var(--on-surface);
+}
+.check__mark {
+  flex: 0 0 auto; display: grid; place-items: center;
+  width: 48px; height: 48px; border-radius: 50%;
+  font-size: 21px; font-weight: 600;
+}
+.check__mark--ok { background: rgba(129, 199, 132, .16); color: var(--success); }
+.check__mark--warn { background: rgba(255, 213, 79, .16); color: var(--warn); }
+.check__mark--err { background: rgba(255, 180, 171, .16); color: var(--error); }
+
+/* Canje «dos manos»: envío → validaciones → abanico de tokens → fallo */
+.exchange { display: flex; flex-direction: column; gap: 20px; width: 100%; max-width: 1560px; }
+.exchange__out {
+  display: flex; align-items: center; gap: 22px;
+  padding: 20px 26px; border-radius: var(--r-lg);
+  background: var(--surface-1); border: 1px solid rgba(77, 208, 225, .4);
+}
+.exchange__label {
+  margin: 0; white-space: nowrap; color: var(--primary);
+  font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 20px;
+}
+.exchange__out .chiprow { margin: 0; }
+.exchange__checks { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.exchange__fan { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.exchange__fail { display: flex; align-items: center; gap: 14px; margin: 0; font-size: 21px; color: var(--on-surface-dim); }
+
+/* Ficha de token: nombre, vida y nota */
+.token {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 22px 26px; border-radius: var(--r-lg);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface-1));
+  border: 1px solid var(--outline);
+}
+.token__name {
+  margin: 0; color: var(--tok, var(--primary));
+  font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 23px;
+}
+.token__life { margin: 0; font-size: 16px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--on-surface-dim); }
+.token__note { margin: 0; font-size: 18px; color: var(--on-surface-dim); }
+.token--access { --tok: var(--secondary); }
+.token--id { --tok: var(--tertiary); }
+.token--refresh { --tok: var(--warn); }
+.token--code { --tok: var(--primary); }
+
+/* JWT despiezado: tres segmentos + claims + binding */
+.jwt { display: flex; flex-direction: column; gap: 20px; width: 100%; max-width: 1560px; }
+.jwt__row { display: flex; align-items: stretch; gap: 14px; }
+.jwt__seg {
+  flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0;
+  padding: 18px 22px; border-radius: var(--r-md);
+  background: var(--surface-2); border: 1px solid var(--outline);
+}
+.jwt__seg--header { border-color: rgba(77, 208, 225, .42); }
+.jwt__seg--payload { border-color: rgba(128, 203, 244, .42); }
+.jwt__seg--firma { border-color: rgba(128, 203, 196, .42); }
+.jwt__segname { margin: 0; font-size: 16px; letter-spacing: 2px; text-transform: uppercase; }
+.jwt__seg--header .jwt__segname { color: var(--primary); }
+.jwt__seg--payload .jwt__segname { color: var(--tertiary); }
+.jwt__seg--firma .jwt__segname { color: var(--secondary); }
+.jwt__b64 {
+  margin: 0; color: var(--on-surface); overflow-wrap: anywhere;
+  font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 18px;
+}
+.jwt__note { margin: 0; font-size: 16px; color: var(--on-surface-dim); }
+.jwt__dot { align-self: center; font-size: 34px; color: var(--on-surface-dim); }
+.jwt__claims { display: flex; flex-wrap: wrap; gap: 12px; }
+.jwt__bind {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 16px 24px; border-radius: var(--r-md);
+  background: var(--surface-1); border: 1px dashed var(--outline);
+  font-size: 20px; color: var(--on-surface-dim);
+}
+
+/* Cintas de sesión sobre un eje de tiempo: el logout corta OP y sid */
+.sess { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 1560px; }
+.sess__lane { display: grid; grid-template-columns: 320px 1fr; gap: 24px; align-items: center; }
+.sess__who {
+  padding: 14px 20px; border-radius: var(--r-md);
+  background: var(--surface-1); border: 1px solid var(--outline);
+}
+.sess__name { margin: 0 0 4px; font-size: 21px; color: var(--on-surface); }
+.sess__note { margin: 0; font-size: 16px; color: var(--on-surface-dim); }
+.sess__track {
+  position: relative; height: 58px; border-radius: var(--r-md);
+  background: rgba(226, 232, 238, .05);
+}
+.sess__bar { height: 100%; border-radius: var(--r-md); transform-origin: left center; }
+.sess__bar--op {
+  width: 62%; border: 1px solid rgba(77, 208, 225, .42);
+  background: linear-gradient(90deg, rgba(77, 208, 225, .34), rgba(77, 208, 225, .12));
+}
+.sess__bar--cliente {
+  width: 100%; border: 1px solid rgba(129, 199, 132, .42);
+  background: linear-gradient(90deg, rgba(129, 199, 132, .3), rgba(129, 199, 132, .1));
+}
+.sess__bar--sid {
+  width: 62%; border: 1px solid rgba(128, 203, 244, .42);
+  background: linear-gradient(90deg, rgba(128, 203, 244, .3), rgba(128, 203, 244, .1));
+}
+.sess__cut {
+  position: absolute; left: 62%; top: -10px; bottom: -10px;
+  display: flex; align-items: center; padding-left: 14px;
+}
+.sess__cut::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0;
+  border-left: 2px dashed var(--warn);
+}
+.sess__cut .badge { white-space: nowrap; }
+.sess__chips { margin: 6px 0 0; }
 
       [data-composition-src] { position: absolute; inset: 0; width: 100%; height: 100%; }
     </style>
