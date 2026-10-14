@@ -6,7 +6,7 @@
     data-height="1080"
     data-duration="27.604"
   >
-<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Paso 4, otros caminos</span><h2 class="headline" data-anim="rise">Otros Grant Types</h2></header><p class="where" data-anim="fade"><span class="where__label">Estás aquí</span><span class="where__crumb"><span class="where__n">1</span>Discovery</span><span class="where__crumb"><span class="where__n">2-3</span>Authorize</span><span class="where__crumb where__crumb--on"><span class="where__n">4</span>Canje</span><span class="where__crumb"><span class="where__n">5-6</span>Uso</span></p><div class="use"><p class="use__q" data-anim="pop">¿Qué grant uso en cada caso?</p><div class="use__branches"><article class="use__branch" data-anim="rise" data-hl="card-code"><h3 class="use__when">Hay usuario y navegador</h3><p class="use__go"><strong>authorization_code</strong> con PKCE</p><p class="use__note">el camino feliz ya visto</p></article><article class="use__branch" data-anim="rise" data-hl="card-cc"><h3 class="use__when">Solo máquina a máquina</h3><p class="use__go"><strong>client_credentials</strong></p><p class="use__note">sin usuario, con secreto</p></article><article class="use__branch" data-anim="rise" data-hl="card-refresh"><h3 class="use__when">La sesión sigue viva</h3><p class="use__go"><strong>refresh_token</strong></p><p class="use__note">rota el refresh en cada uso</p></article></div></div><p class="note" data-anim="fade">OidcMock también anuncia password, device_code y CIBA.</p></section>
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Paso 4, otros caminos</span><h2 class="headline" data-anim="rise">Otros Grant Types</h2></header><p class="where" data-anim="fade"><span class="where__label">Estás aquí</span><span class="where__crumb"><span class="where__n">1</span>Discovery</span><span class="where__crumb"><span class="where__n">2-3</span>Authorize</span><span class="where__crumb where__crumb--on"><span class="where__n">4</span>Canje</span><span class="where__crumb"><span class="where__n">5-6</span>Uso</span></p><p class="use__q" data-anim="pop">El mismo token endpoint atiende otros caminos</p><div class="grid grid--grants"><article class="card" data-motion="pop" data-hl="card-refresh"><h3 class="card__title"><span class="tok tok--refresh">refresh_token</span></h3><p class="grant__say">pide tokens nuevos sin login</p><p class="grant__note">rota en cada uso</p></article><article class="card" data-motion="pop" data-hl="card-client"><h3 class="card__title"><span class="tok tok--access">client_credentials</span></h3><p class="grant__say">emite tokens de servicio</p><p class="grant__note">sin usuario, con secreto</p></article><article class="card" data-motion="pop" data-hl="card-password"><h3 class="card__title"><span class="tok tok--code">password</span></h3><p class="grant__say">valida usuario y contraseña</p><p class="grant__note">directamente, en un solo paso</p></article><article class="card" data-motion="pop" data-hl="card-device"><h3 class="card__title"><span class="tok tok--id">device_code · CIBA</span></h3><p class="grant__say">grants simulados</p><p class="grant__note">completan el discovery</p></article></div><p class="note" data-anim="fade">El camino feliz sigue siendo <code>authorization_code</code> + PKCE.</p></section>
 
     <script>
       (function () {
@@ -31,7 +31,7 @@
         }
 
         var HIGHLIGHTS = {"card-refresh": [[5.13, 7.497]], "card-client": [[10.816, 13.897]], "card-password": [[16.152, 19.051]], "card-device": [[22.945, 23.939]]};
-        var OBJECTS = [];
+        var OBJECTS = [{"v": "pop", "t": 5.13, "d": 2.367}, {"v": "pop", "t": 10.816, "d": 3.081}, {"v": "pop", "t": 16.152, "d": 2.899}, {"v": "pop", "t": 22.945, "d": 0.994}];
         var MOTIONS = {
           fade: { from: { opacity: 0 }, to: { opacity: 1 } },
           rise: { from: { opacity: 0, y: 30 }, to: { opacity: 1, y: 0 } },
@@ -39,6 +39,7 @@
           grow: { from: { opacity: 0, scaleX: 0 }, to: { opacity: 1, scaleX: 1 } },
           bar: { from: { scaleX: 0 }, to: { scaleX: 1, ease: 'power2.out' } },
           slide: { from: { opacity: 0, x: -36 }, to: { opacity: 1, x: 0 } },
+          type: { from: { clipPath: 'inset(0% 100% 0% 0%)' }, to: { clipPath: 'inset(0% 0% 0% 0%)', ease: 'none' } },
         };
         var objectEls = root.querySelectorAll('[data-motion]');
         for (var ob = 0; ob < objectEls.length; ob += 1) {

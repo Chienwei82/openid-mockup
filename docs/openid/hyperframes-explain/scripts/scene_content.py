@@ -5,7 +5,7 @@ Contrato HyperFrames respetado aquí:
   * sin atributos `id` (evita colisiones al ensamblar),
   * todo elemento animado lleva `data-anim` con su variante de entrada
     (`rise`, `pop`, `slide` o `fade`); las piezas de los diagramas llevan
-    `data-motion` (`fade|rise|pop|grow|bar|slide`) y el build las cronometra
+    `data-motion` (`fade|rise|pop|grow|bar|slide|type`) y el build las cronometra
     con la ventana de habla de su `data-hl`,
   * todo elemento que la narración menciona lleva `data-hl="<clave>"`; la
     clave se anuda con las pistas `hl` de scripts/narration.json para que el
@@ -14,14 +14,32 @@ Contrato HyperFrames respetado aquí:
 
 from __future__ import annotations
 
-from typing import NamedTuple
+import math
+from typing import Callable, NamedTuple
 
-TOKEN_LIFETIMES = (
-    ("authorization_code", "5 min", "opaco, un solo uso", "row-code"),
-    ("access_token", "30 min", "JWT RS256, aud = client_id", "row-access"),
-    ("id_token", "30 min", "solo con scope openid", "row-id"),
-    ("refresh_token", "8 h", "rota, requiere offline_access", "row-refresh"),
+class TokenRow(NamedTuple):
+    chip: str
+    variant: str
+    name: str
+    minutes: int
+    note: str
+    hl_intro: str
+    hl_life: str
+
+
+TOKENS: tuple[TokenRow, ...] = (
+    TokenRow("code", "code", "authorization_code", 5, "opaco, un solo uso", "tok-code", "row-code"),
+    TokenRow("access", "access", "access_token", 30, "JWT RS256, aud = client_id", "tok-access", "row-access"),
+    TokenRow("id", "id", "id_token", 30, "solo con scope openid", "tok-id", "row-id"),
+    TokenRow("refresh", "refresh", "refresh_token", 480, "rota, requiere offline_access", "tok-refresh", "row-refresh"),
 )
+
+TOKEN_VARS: dict[str, str] = {
+    "code": "--primary",
+    "access": "--secondary",
+    "id": "--tertiary",
+    "refresh": "--warn",
+}
 
 ERROR_CODES = (
     ("invalid_request", "400", "falta o estorba un parámetro"),
@@ -50,9 +68,10 @@ def head(kicker: str, title: str) -> str:
     )
 
 
-def card(title: str, body: str, hl: str | None = None) -> str:
+def card(title: str, body: str, hl: str | None = None, motion: str | None = None) -> str:
+    anim = f'data-motion="{motion}"' if motion else 'data-anim="rise"'
     return (
-        f'<article class="card" data-anim="rise"{hl_attr(hl)}>'
+        f'<article class="card" {anim}{hl_attr(hl)}>'
         f'<h3 class="card__title">{title}</h3>{body}</article>'
     )
 
@@ -441,6 +460,89 @@ def session_ribbons() -> str:
     )
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Barras de vida de los tokens, cadena de paridad y terminal de arranque.
+#
+# `life_bars` dibuja cada token como fila: chip + nombre, pista con barra
+# proporcional a su vida (escala logarítmica, `life_width`) y metadatos. El
+# relleno crece con `data-motion="bar"` en la ventana de habla de su fila.
+# `parity_strip` encadena teoría ≡ servidor de referencia ≡ OidcMock.
+# `terminal` es una ventana de shell cuyas líneas se «mecanografían» con
+# `data-motion="type"` (reveal por clip-path) en la ventana de su comando.
+# ─────────────────────────────────────────────────────────────────────────────
+
+LIFE_PEAK_MINUTES = 480  # refresh_token: la vida más larga escala al 100%
+
+
+def life_width(minutes: int) -> str:
+    peak = math.log(LIFE_PEAK_MINUTES + 1)
+    return f"{round(100 * math.log(minutes + 1) / peak)}%"
+
+
+def life_label(minutes: int) -> str:
+    return f"{minutes // 60} h" if minutes >= 60 else f"{minutes} min"
+
+
+def life_rows(rows: tuple[TokenRow, ...], hl_of: Callable[[TokenRow], str]) -> str:
+    def one(item: TokenRow) -> str:
+        key = hl_of(item)
+        return (
+            f'<div class="life" data-hl="{key}">'
+            f'<p class="life__id"><span class="tok tok--{item.variant}">{item.chip}</span>'
+            f'<span class="mono life__name">{item.name}</span></p>'
+            f'<div class="life__track"><div class="life__fill" data-motion="bar" data-hl="{key}"'
+            f' style="--tok: var({TOKEN_VARS[item.variant]}); width: {life_width(item.minutes)}"></div></div>'
+            f'<p class="life__meta"><span class="life__time">{life_label(item.minutes)}</span>'
+            f'<span class="life__note">{item.note}</span></p>'
+            "</div>"
+        )
+
+    return "".join(one(item) for item in rows)
+
+
+PARITY_NODES = ("Teoría", "Servidor de referencia", "OidcMock")
+
+
+def parity_strip() -> str:
+    nodes = "".join(
+        f'<span class="parity__node{" parity__node--mock" if name == "OidcMock" else ""}"'
+        f' data-motion="pop">{name}</span>'
+        + ('<span class="parity__eq" data-motion="fade">≡</span>' if index < len(PARITY_NODES) - 1 else "")
+        for index, name in enumerate(PARITY_NODES)
+    )
+    return (
+        '<div class="parity">'
+        + nodes
+        + '<span class="badge badge--ok" data-motion="fade">paridad verificada</span>'
+        "</div>"
+    )
+
+
+def terminal() -> str:
+    def line(text: str, hl: str | None, arg: bool = False) -> str:
+        cls = "term__line term__line--arg" if arg else "term__line"
+        return (
+            f'<p class="{cls}" data-motion="type"{hl_attr(hl)}>'
+            f'<span class="term__prompt">{">" if arg else "$"}</span>{text}'
+            '<span class="term__caret"></span></p>'
+        )
+
+    return (
+        '<div class="term" data-motion="rise">'
+        '<div class="term__bar">'
+        '<span class="term__dot term__dot--r"></span>'
+        '<span class="term__dot term__dot--y"></span>'
+        '<span class="term__dot term__dot--g"></span>'
+        '<span class="term__title">bash — oidcmock</span>'
+        "</div>"
+        '<div class="term__body">'
+        + line("dotnet run --project src/OidcMock.Host", "cmd-run")
+        + line("--OidcMock:Issuer=https://localhost:5443/personafisica/", "cmd-issuer", arg=True)
+        + line("--OidcMock:Serving:UseHttps=false --OidcMock:Serving:AllowHttp=true", "cmd-issuer", arg=True)
+        + "</div></div>"
+    )
+
+
 SCENE_BODY: dict[str, str] = {}
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -466,17 +568,7 @@ SCENE_BODY["scene-02-actores"] = (
     + role_card("api", "role-rs", "Resource Server", "la API protegida por tokens")
     + "</div>"
     + '<div class="grid">'
-    + card(
-        "Cuatro tokens",
-        bullet_list(
-            (
-                ('tok-code', '<span class="tok tok--code">code</span> Authorization Code — opaco, un solo uso'),
-                ('tok-access', '<span class="tok tok--access">access</span> Access Token — JWT para la API'),
-                ('tok-id', '<span class="tok tok--id">id</span> ID Token — JWT de identidad'),
-                ('tok-refresh', '<span class="tok tok--refresh">refresh</span> Refresh Token — vida larga'),
-            )
-        ),
-    )
+    + card("Cuatro tokens", '<div class="lifebox">' + life_rows(TOKENS, lambda row: row.hl_intro) + "</div>")
     + "</div></section>"
 )
 
@@ -554,15 +646,38 @@ SCENE_BODY["scene-08-grants"] = (
     '<section class="scene">'
     + head("Paso 4, otros caminos", "Otros Grant Types")
     + where_you_are("Canje")
-    + usecase(
-        "¿Qué grant uso en cada caso?",
-        (
-            ("Hay usuario y navegador", "<strong>authorization_code</strong> con PKCE", "el camino feliz ya visto", "card-code"),
-            ("Solo máquina a máquina", "<strong>client_credentials</strong>", "sin usuario, con secreto", "card-cc"),
-            ("La sesión sigue viva", "<strong>refresh_token</strong>", "rota el refresh en cada uso", "card-refresh"),
-        ),
+    + '<p class="use__q" data-anim="pop">El mismo token endpoint atiende otros caminos</p>'
+    + '<div class="grid grid--grants">'
+    + card(
+        '<span class="tok tok--refresh">refresh_token</span>',
+        '<p class="grant__say">pide tokens nuevos sin login</p>'
+        '<p class="grant__note">rota en cada uso</p>',
+        hl="card-refresh",
+        motion="pop",
     )
-    + '<p class="note" data-anim="fade">OidcMock también anuncia password, device_code y CIBA.</p>'
+    + card(
+        '<span class="tok tok--access">client_credentials</span>',
+        '<p class="grant__say">emite tokens de servicio</p>'
+        '<p class="grant__note">sin usuario, con secreto</p>',
+        hl="card-client",
+        motion="pop",
+    )
+    + card(
+        '<span class="tok tok--code">password</span>',
+        '<p class="grant__say">valida usuario y contraseña</p>'
+        '<p class="grant__note">directamente, en un solo paso</p>',
+        hl="card-password",
+        motion="pop",
+    )
+    + card(
+        '<span class="tok tok--id">device_code · CIBA</span>',
+        '<p class="grant__say">grants simulados</p>'
+        '<p class="grant__note">completan el discovery</p>',
+        hl="card-device",
+        motion="pop",
+    )
+    + "</div>"
+    + '<p class="note" data-anim="fade">El camino feliz sigue siendo <code>authorization_code</code> + PKCE.</p>'
     + "</section>"
 )
 
@@ -635,13 +750,12 @@ SCENE_BODY["scene-11-avanzados"] = (
 SCENE_BODY["scene-12-matriz"] = (
     '<section class="scene">'
     + head("Resumen", "Matriz de Paridad")
+    + parity_strip()
     + '<div class="grid grid--matrix">'
-    + '<table class="table" data-anim="rise"><thead><tr><th>Token</th><th>Vida</th><th>Notas</th></tr></thead><tbody>'
-    + "".join(
-        f'<tr{hl_attr(hl)}><td class="mono">{name}</td><td>{life}</td><td>{note}</td></tr>'
-        for name, life, note, hl in TOKEN_LIFETIMES
-    )
-    + "</tbody></table>"
+    + '<div class="lifebox">'
+    + '<p class="card__label">Vidas de los tokens</p>'
+    + life_rows(TOKENS, lambda row: row.hl_life)
+    + "</div>"
     + card(
         "Errores de protocolo",
         "".join(
@@ -659,13 +773,11 @@ SCENE_BODY["scene-12-matriz"] = (
 SCENE_BODY["scene-13-arranque"] = (
     '<section class="scene">'
     + head("Práctico", "Arrancar OidcMock")
-    + '<div class="grid grid--2">'
-    + card(
-        "Comandos",
-        f'<pre class="code"{hl_attr("cmd-run")}><code>dotnet run --project src/OidcMock.Host</code></pre>'
-        f'<pre class="code"{hl_attr("cmd-issuer")}><code>--OidcMock:Issuer=https://localhost:5443/personafisica/</code></pre>'
-        '<pre class="code"><code>--OidcMock:Serving:UseHttps=false --OidcMock:Serving:AllowHttp=true</code></pre>',
-    )
+    + '<div class="grid grid--matrix">'
+    + '<div class="lifebox">'
+    + '<p class="card__label">Comandos</p>'
+    + terminal()
+    + "</div>"
     + card(
         "Clientes de ejemplo (config/)",
         bullet_list(
@@ -676,7 +788,8 @@ SCENE_BODY["scene-13-arranque"] = (
             )
         )
         + '<p class="card__label">Opciones clave</p>'
-        + chips(("PathBase /personafisica", "ConfigDirectory ./config", "ReloadOnChange true")),
+        + chips(("PathBase /personafisica", "ConfigDirectory ./config", "ReloadOnChange true"))
+        + '<p class="grant__note">Todo el estado vive en memoria, sin base de datos.</p>',
         hl="card-clientes",
     )
     + "</div></section>"

@@ -6,7 +6,7 @@
     data-height="1080"
     data-duration="19.972"
   >
-<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Práctico</span><h2 class="headline" data-anim="rise">Arrancar OidcMock</h2></header><div class="grid grid--2"><article class="card" data-anim="rise"><h3 class="card__title">Comandos</h3><pre class="code" data-hl="cmd-run"><code>dotnet run --project src/OidcMock.Host</code></pre><pre class="code" data-hl="cmd-issuer"><code>--OidcMock:Issuer=https://localhost:5443/personafisica/</code></pre><pre class="code"><code>--OidcMock:Serving:UseHttps=false --OidcMock:Serving:AllowHttp=true</code></pre></article><article class="card" data-anim="rise" data-hl="card-clientes"><h3 class="card__title">Clientes de ejemplo (config/)</h3><ul class="list"><li><span class="tok tok--code">público</span> web-app-spa — PKCE, sin secreto</li><li><span class="tok tok--access">confidencial</span> web-app-confidencial</li><li><span class="tok tok--refresh">servicio</span> backend-service — client_credentials</li></ul><p class="card__label">Opciones clave</p><div class="chiprow" data-anim="fade"><span class="chip">PathBase /personafisica</span><span class="chip">ConfigDirectory ./config</span><span class="chip">ReloadOnChange true</span></div></article></div></section>
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Práctico</span><h2 class="headline" data-anim="rise">Arrancar OidcMock</h2></header><div class="grid grid--matrix"><div class="lifebox"><p class="card__label">Comandos</p><div class="term" data-motion="rise"><div class="term__bar"><span class="term__dot term__dot--r"></span><span class="term__dot term__dot--y"></span><span class="term__dot term__dot--g"></span><span class="term__title">bash — oidcmock</span></div><div class="term__body"><p class="term__line" data-motion="type" data-hl="cmd-run"><span class="term__prompt">$</span>dotnet run --project src/OidcMock.Host<span class="term__caret"></span></p><p class="term__line term__line--arg" data-motion="type" data-hl="cmd-issuer"><span class="term__prompt">></span>--OidcMock:Issuer=https://localhost:5443/personafisica/<span class="term__caret"></span></p><p class="term__line term__line--arg" data-motion="type" data-hl="cmd-issuer"><span class="term__prompt">></span>--OidcMock:Serving:UseHttps=false --OidcMock:Serving:AllowHttp=true<span class="term__caret"></span></p></div></div></div><article class="card" data-anim="rise" data-hl="card-clientes"><h3 class="card__title">Clientes de ejemplo (config/)</h3><ul class="list"><li><span class="tok tok--code">público</span> web-app-spa — PKCE, sin secreto</li><li><span class="tok tok--access">confidencial</span> web-app-confidencial</li><li><span class="tok tok--refresh">servicio</span> backend-service — client_credentials</li></ul><p class="card__label">Opciones clave</p><div class="chiprow" data-anim="fade"><span class="chip">PathBase /personafisica</span><span class="chip">ConfigDirectory ./config</span><span class="chip">ReloadOnChange true</span></div><p class="grant__note">Todo el estado vive en memoria, sin base de datos.</p></article></div></section>
 
     <script>
       (function () {
@@ -31,7 +31,7 @@
         }
 
         var HIGHLIGHTS = {"cmd-run": [[2.911, 3.597]], "cmd-issuer": [[6.026, 7.273]], "card-clientes": [[11.082, 12.23]]};
-        var OBJECTS = [];
+        var OBJECTS = [{"v": "rise", "t": 1.1, "d": 0.45}, {"v": "type", "t": 2.911, "d": 0.686}, {"v": "type", "t": 6.026, "d": 1.247}, {"v": "type", "t": 6.926, "d": 1.247}];
         var MOTIONS = {
           fade: { from: { opacity: 0 }, to: { opacity: 1 } },
           rise: { from: { opacity: 0, y: 30 }, to: { opacity: 1, y: 0 } },
@@ -39,6 +39,7 @@
           grow: { from: { opacity: 0, scaleX: 0 }, to: { opacity: 1, scaleX: 1 } },
           bar: { from: { scaleX: 0 }, to: { scaleX: 1, ease: 'power2.out' } },
           slide: { from: { opacity: 0, x: -36 }, to: { opacity: 1, x: 0 } },
+          type: { from: { clipPath: 'inset(0% 100% 0% 0%)' }, to: { clipPath: 'inset(0% 0% 0% 0%)', ease: 'none' } },
         };
         var objectEls = root.querySelectorAll('[data-motion]');
         for (var ob = 0; ob < objectEls.length; ob += 1) {

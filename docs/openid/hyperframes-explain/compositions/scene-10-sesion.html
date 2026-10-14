@@ -31,7 +31,7 @@
         }
 
         var HIGHLIGHTS = {"card-op": [[2.491, 3.233]], "card-cliente": [[5.614, 6.426]], "card-sid": [[8.345, 8.849]], "card-logout": [[12.959, 13.799]], "card-prompt": [[18.883, 19.808]]};
-        var OBJECTS = [{"v": "fade", "t": 1.1, "d": 0.45}, {"v": "bar", "t": 2.491, "d": 0.742}, {"v": "pop", "t": 12.959, "d": 0.84}, {"v": "fade", "t": 1.45, "d": 0.45}, {"v": "bar", "t": 5.614, "d": 0.812}, {"v": "fade", "t": 1.8, "d": 0.45}, {"v": "bar", "t": 8.345, "d": 0.504}, {"v": "pop", "t": 13.859, "d": 0.84}, {"v": "fade", "t": 14.759, "d": 0.84}, {"v": "fade", "t": 18.883, "d": 0.925}];
+        var OBJECTS = [{"v": "fade", "t": 1.1, "d": 0.45}, {"v": "bar", "t": 2.491, "d": 0.742}, {"v": "pop", "t": 12.959, "d": 0.84}, {"v": "fade", "t": 14.149, "d": 0.45}, {"v": "bar", "t": 5.614, "d": 0.812}, {"v": "fade", "t": 14.499, "d": 0.45}, {"v": "bar", "t": 8.345, "d": 0.504}, {"v": "pop", "t": 13.859, "d": 0.84}, {"v": "fade", "t": 14.759, "d": 0.84}, {"v": "fade", "t": 18.883, "d": 0.925}];
         var MOTIONS = {
           fade: { from: { opacity: 0 }, to: { opacity: 1 } },
           rise: { from: { opacity: 0, y: 30 }, to: { opacity: 1, y: 0 } },
@@ -39,6 +39,7 @@
           grow: { from: { opacity: 0, scaleX: 0 }, to: { opacity: 1, scaleX: 1 } },
           bar: { from: { scaleX: 0 }, to: { scaleX: 1, ease: 'power2.out' } },
           slide: { from: { opacity: 0, x: -36 }, to: { opacity: 1, x: 0 } },
+          type: { from: { clipPath: 'inset(0% 100% 0% 0%)' }, to: { clipPath: 'inset(0% 0% 0% 0%)', ease: 'none' } },
         };
         var objectEls = root.querySelectorAll('[data-motion]');
         for (var ob = 0; ob < objectEls.length; ob += 1) {

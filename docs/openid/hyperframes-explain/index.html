@@ -502,6 +502,50 @@ code {
 .sess__cut .badge { white-space: nowrap; }
 .sess__chips { margin: 6px 0 0; }
 
+/* Grants en tarjetas: la voz nombra cada grant y su tarjeta entra al hablarlo */
+.grid--grants { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.grant__say { margin: 14px 0 0; font-size: 21px; line-height: 1.45; color: var(--on-surface); }
+.grant__note { margin: 10px 0 0; font-size: 17px; color: var(--on-surface-dim); }
+
+/* Barras de vida de los tokens: escala logarítmica sobre la vida más larga */
+.lifebox { display: flex; flex-direction: column; gap: 15px; width: 100%; }
+.life { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr) minmax(0, 250px); gap: 22px; align-items: center; }
+.life__id { margin: 0; display: flex; align-items: center; gap: 14px; min-width: 0; }
+.life__name { font-size: 18px; color: var(--on-surface); overflow-wrap: anywhere; }
+.life__track { height: 28px; border-radius: var(--r-full); background: rgba(226, 232, 238, .07); overflow: hidden; }
+.life__fill {
+  height: 100%; border-radius: var(--r-full); transform-origin: left center;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--tok) 78%, transparent), color-mix(in srgb, var(--tok) 34%, transparent));
+}
+.life__meta { margin: 0; display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+.life__time { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 21px; color: var(--on-surface); white-space: nowrap; }
+.life__note { margin: 0; font-size: 16px; color: var(--on-surface-dim); }
+
+/* Cadena de paridad: teoría ≡ servidor de referencia ≡ OidcMock */
+.parity { display: flex; align-items: center; gap: 18px; margin: 0 0 26px; }
+.parity__node {
+  padding: 12px 24px; border-radius: var(--r-md);
+  background: var(--surface-2); border: 1px solid var(--outline);
+  font-size: 20px; font-weight: 600; color: var(--on-surface);
+}
+.parity__node--mock { border-color: rgba(77, 208, 225, .42); color: var(--primary); }
+.parity__eq { font-size: 26px; color: var(--on-surface-dim); }
+.parity .badge { margin-left: auto; }
+
+/* Terminal de arranque: líneas «mecanografiadas» con cursor */
+.term { width: 100%; border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--outline); overflow: hidden; }
+.term__bar { display: flex; align-items: center; gap: 10px; padding: 13px 20px; background: var(--surface-3); }
+.term__dot { width: 12px; height: 12px; border-radius: 50%; }
+.term__dot--r { background: var(--error); }
+.term__dot--y { background: var(--warn); }
+.term__dot--g { background: var(--success); }
+.term__title { margin-left: 10px; font-size: 15px; letter-spacing: 1.8px; text-transform: uppercase; color: var(--on-surface-dim); }
+.term__body { display: flex; flex-direction: column; gap: 16px; padding: 24px 26px; }
+.term__line { margin: 0; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 20px; color: var(--on-surface); white-space: nowrap; }
+.term__prompt { margin-right: 12px; color: var(--primary); }
+.term__line--arg { padding-left: 26px; color: var(--on-surface-dim); }
+.term__caret { display: inline-block; width: 11px; height: 1em; margin-left: 8px; background: var(--primary); vertical-align: -0.12em; }
+
       [data-composition-src] { position: absolute; inset: 0; width: 100%; height: 100%; }
     </style>
   </head>

@@ -1649,3 +1649,26 @@ del protocolo animados y sincronizados con la voz.
   `.map*`/`.flow*`/`.lanes*`/`.hop*`.
 - **TDD no aplicable:** sin cambios en `src/` ni `tests/`; verificacion `dotnet build` +
   726 tests, `hyperframes check` (contraste 107/107 AA) y snapshots de las 4 escenas.
+
+## Explicaciones y animaciones mas graficas — Fase 3: barras, paridad y terminal (2026-10-13)
+
+Tercera fase del plan «mas grafico»: las escenas 08, 12 y 13 ganan piezas propias y la
+deuda de claves de voz queda cerrada.
+
+- **08 = 4 tarjetas de grant** (`refresh_token`/`client_credentials`/`password`/`device`)
+  que entran `pop` en la ventana de habla de su clave; la voz enumera los cuatro caminos y
+  las tarjetas aparecen en ese orden.
+- **12 = resumen visual:** cadena de paridad (Teoría ≡ Servidor de referencia ≡ OidcMock +
+  badge «paridad verificada»), barras de vida de los tokens (escala logaritmica sobre
+  480 min, relleno `data-motion="bar"`, metadatos por token) y card de errores de protocolo
+  con su codigo HTTP.
+- **13 = arranque practico:** terminal de shell cuyas lineas se «mecanografian»
+  (`data-motion="type"`, reveal por clip-path) + card de clientes de ejemplo y opciones clave.
+- **Piezas reutilizables:** `TokenRow`/`TOKENS`, `life_rows`/`life_width`/`life_label`,
+  `parity_strip`, `terminal`; `card()` acepta `motion` para entrar en ventana de habla.
+- **`object_motion` con orden de lectura:** las piezas sin clave de voz entran despues de la
+  ventana de la pieza anterior (OBJECT_STAGGER), no escalonadas desde el arranque de escena.
+- **Deuda de claves `hl` cerrada:** el markup usa las claves exactas de `timings.json`
+  (0 avisos de build); solo la voz regenerada con otro guion quedaba fuera y ya no.
+- **TDD no aplicable:** sin cambios en `src/` ni `tests/`; verificacion `dotnet build` +
+  726 tests, `hyperframes check` (contraste 116/116 AA) y snapshots de 02/08/12/13.

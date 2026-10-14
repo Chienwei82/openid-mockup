@@ -39,10 +39,11 @@ AUDIO_TRACK = 10
 # asoman punta y cargamento (.seq__tip, .seq__token) en la ventana de habla
 # del mensaje; las filas que comparten clave de voz se revelan escalonadas
 # (MSG_SHARED_DELAY). Las piezas de los objetos del protocolo llevan
-# data-motion (fade|rise|pop|grow|bar|slide) y entran en la ventana de habla
-# de su data-hl (object_motion; escalonado OBJECT_STAGGER si la voz no las
-# nombra). Solo transforms (scale) + opacity: nada de top/left/width en los
-# tweens.
+# data-motion (fade|rise|pop|grow|bar|slide|type) y entran en la ventana de
+# habla de su data-hl (object_motion; escalonado OBJECT_STAGGER si la voz no
+# las nombra, siempre después de la pieza anterior en orden de lectura). Solo
+# transforms (scale) + opacity + clip-path de reveal: nada de top/left/width
+# en los tweens.
 SCENE_TEMPLATE = """<template>
   <div
     class="scene-root"
@@ -84,6 +85,7 @@ __BODY__
           grow: { from: { opacity: 0, scaleX: 0 }, to: { opacity: 1, scaleX: 1 } },
           bar: { from: { scaleX: 0 }, to: { scaleX: 1, ease: 'power2.out' } },
           slide: { from: { opacity: 0, x: -36 }, to: { opacity: 1, x: 0 } },
+          type: { from: { clipPath: 'inset(0% 100% 0% 0%)' }, to: { clipPath: 'inset(0% 0% 0% 0%)', ease: 'none' } },
         };
         var objectEls = root.querySelectorAll('[data-motion]');
         for (var ob = 0; ob < objectEls.length; ob += 1) {
@@ -269,6 +271,7 @@ def object_motion(scene: dict[str, object], lead_in: float) -> list[dict[str, ob
     fallback = round(lead_in + 0.2, 3)
     specs: list[dict[str, object]] = []
     used: dict[str | None, int] = {}
+    previous_end = 0.0
     for tag in re.findall(r"<[^>]+>", body):
         if "data-motion=" not in tag:
             continue
@@ -282,8 +285,9 @@ def object_motion(scene: dict[str, object], lead_in: float) -> list[dict[str, ob
             start = round(window[0] + count * MSG_SHARED_DELAY, 3)
             end = round(window[1] + count * MSG_SHARED_DELAY, 3)
         else:
-            start = round(fallback + count * OBJECT_STAGGER, 3)
+            start = round(max(fallback + count * OBJECT_STAGGER, previous_end + OBJECT_STAGGER), 3)
             end = start
+        previous_end = max(previous_end, end)
         specs.append({"v": variant, "t": start, "d": round(max(end - start, 0.45), 3)})
     return specs
 
