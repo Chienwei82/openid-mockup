@@ -6,7 +6,7 @@
     data-height="1080"
     data-duration="23.068"
   >
-<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Paso 1 del mapa</span><h2 class="headline" data-anim="rise">Discovery y JWKS</h2></header><p class="where" data-anim="fade"><span class="where__label">Estás aquí</span><span class="where__crumb where__crumb--on"><span class="where__n">1</span>Discovery</span><span class="where__crumb"><span class="where__n">2-3</span>Authorize</span><span class="where__crumb"><span class="where__n">4</span>Canje</span><span class="where__crumb"><span class="where__n">5-6</span>Uso</span></p><ol class="flow" data-anim="fade"><span class="flow__rail" aria-hidden="true"></span><li class="flow__stop" data-anim="pop" data-hl="card-discovery"><span class="flow__n">1</span><span class="flow__label">El cliente pide <code>/.well-known/openid-configuration</code></span><span class="flow__token" data-token="card-discovery" aria-hidden="true"></span></li><li class="flow__stop" data-anim="pop" data-hl="card-discovery"><span class="flow__n">2</span><span class="flow__label">Lee issuer, endpoints y capacidades soportadas</span><span class="flow__token" data-token="card-discovery" aria-hidden="true"></span></li><li class="flow__stop" data-anim="pop" data-hl="card-jwks"><span class="flow__n">3</span><span class="flow__label">Descarga el <strong>JWKS</strong> con las claves públicas RS256</span><span class="flow__token" data-token="card-jwks" aria-hidden="true"></span></li><li class="flow__stop" data-anim="pop" data-hl="card-jwks"><span class="flow__n">4</span><span class="flow__label">Ya sabe a dónde redirigir y con qué validar firmas</span><span class="flow__token" data-token="card-jwks" aria-hidden="true"></span></li></ol></section>
+<section class="scene scene--seq"><header class="scene__head"><span class="kicker" data-anim="pop">Paso 1 del mapa</span><h2 class="headline" data-anim="rise">Discovery y JWKS</h2></header><p class="where" data-anim="fade"><span class="where__label">Estás aquí</span><span class="where__crumb where__crumb--on"><span class="where__n">1</span>Discovery</span><span class="where__crumb"><span class="where__n">2-3</span>Authorize</span><span class="where__crumb"><span class="where__n">4</span>Canje</span><span class="where__crumb"><span class="where__n">5-6</span>Uso</span></p><div class="seq" data-anim="fade"><div class="seq__actors"><div class="seq__actor" data-anim="pop" style="--actor: var(--actor-client)"><span class="role__icon"><svg class="actor__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="5.5" width="15" height="13" rx="2.2"/><path d="M4.5 9.5h15"/><circle cx="7.6" cy="7.5" r=".9"/></svg></span><p class="seq__name">Cliente</p><p class="seq__sub">la aplicación</p></div><div class="seq__actor seq__actor--off" data-anim="pop" style="--actor: var(--actor-nav)"><span class="role__icon"><svg class="actor__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/><path d="M12 4.5c-4 4.6-4 10.4 0 15"/><path d="M4.9 9.5h14.2M4.9 14.5h14.2"/></svg></span><p class="seq__name">Navegador</p><p class="seq__sub">el usuario</p></div><div class="seq__actor" data-anim="pop" style="--actor: var(--actor-op)"><span class="role__icon"><svg class="actor__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="12" r="3.2"/><path d="M12.2 12H20"/><path d="M17 12v3.2"/><path d="M14.4 12v2.2"/></svg></span><p class="seq__name">OP · OidcMock</p><p class="seq__sub">emisor de tokens</p></div><div class="seq__actor seq__actor--off" data-anim="pop" style="--actor: var(--actor-api)"><span class="role__icon"><svg class="actor__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="5" width="15" height="5.6" rx="1.6"/><rect x="4.5" y="13.4" width="15" height="5.6" rx="1.6"/><path d="M8 7.8h.01M8 16.2h.01"/></svg></span><p class="seq__name">API</p><p class="seq__sub">la API protegida</p></div></div><div class="seq__stage"><div class="seq__lives" aria-hidden="true"><span class="seq__life" style="color: var(--actor-client)"></span><span class="seq__life seq__life--off" style="color: var(--actor-nav)"></span><span class="seq__life" style="color: var(--actor-op)"></span><span class="seq__life seq__life--off" style="color: var(--actor-api)"></span></div><div class="seq__msg seq__msg--lr seq__msg--tall" style="color: var(--actor-client)"><span class="seq__label" style="left:12.5%" data-hl="card-discovery"><span class="seq__text"><code>GET</code> /.well-known/openid-configuration</span><span class="seq__cap">issuer, endpoints y capacidades soportadas</span></span><span class="seq__line" style="left:12.5%;width:50.0%" aria-hidden="true"></span><span class="seq__tip" style="left:62.5%" aria-hidden="true"></span></div><div class="seq__msg seq__msg--lr seq__msg--tall" style="color: var(--actor-client)"><span class="seq__label" style="left:12.5%" data-hl="card-jwks"><span class="seq__text"><code>GET</code> /.well-known/openid-configuration/jwks</span><span class="seq__cap">claves públicas RS256 para validar firmas</span></span><span class="seq__line" style="left:12.5%;width:50.0%" aria-hidden="true"></span><span class="seq__tip" style="left:62.5%" aria-hidden="true"></span></div></div></div><p class="note" data-anim="fade">Ya sabe a dónde redirigir y con qué validar firmas.</p></section>
 
     <script>
       (function () {
@@ -20,44 +20,80 @@
           slide: { opacity: 0, x: -40 },
           fade: { opacity: 0 },
         };
+        var EASE = {
+          rise: 'power3.out',
+          pop: 'back.out(1.5)',
+          slide: 'power2.inOut',
+          fade: 'power1.out',
+        };
         var items = root.querySelectorAll('[data-anim]');
         for (var index = 0; index < items.length; index += 1) {
-          var from = FROM[items[index].getAttribute('data-anim')] || FROM.rise;
+          var variant = items[index].getAttribute('data-anim');
           timeline.from(
             items[index],
-            Object.assign({ duration: 0.65, ease: 'power3.out' }, from),
+            Object.assign({ duration: 0.65, ease: EASE[variant] || EASE.rise }, FROM[variant] || FROM.rise),
             0.45 + index * 0.24
           );
         }
 
         var HIGHLIGHTS = {"card-discovery": [[3.849, 5.208]], "card-jwks": [[15.522, 17.146]]};
-        var RAILS = [[3.849, 17.146]];
-        var TOKENS = [[3.849, 5.208], [3.849, 5.208], [15.522, 17.146], [15.522, 17.146]];
-        var rails = root.querySelectorAll('.flow__rail');
-        for (var rail = 0; rail < rails.length; rail += 1) {
-          var span = RAILS[rail] || [0, 0.6];
+        var OBJECTS = [];
+        var MOTIONS = {
+          fade: { from: { opacity: 0 }, to: { opacity: 1, ease: 'power1.out' } },
+          rise: { from: { opacity: 0, y: 30 }, to: { opacity: 1, y: 0, ease: 'power3.out' } },
+          pop: { from: { opacity: 0, scale: 0.82 }, to: { opacity: 1, scale: 1, ease: 'back.out(1.7)' } },
+          grow: { from: { opacity: 0, scaleX: 0 }, to: { opacity: 1, scaleX: 1, ease: 'power2.inOut' } },
+          bar: { from: { scaleX: 0 }, to: { scaleX: 1, ease: 'expo.out' } },
+          slide: { from: { opacity: 0, x: -36 }, to: { opacity: 1, x: 0, ease: 'power2.inOut' } },
+          type: { from: { clipPath: 'inset(0% 100% 0% 0%)' }, to: { clipPath: 'inset(0% 0% 0% 0%)', ease: 'none' } },
+        };
+        var objectEls = root.querySelectorAll('[data-motion]');
+        for (var ob = 0; ob < objectEls.length; ob += 1) {
+          var spec = OBJECTS[ob] || { v: 'fade', t: 0, d: 0.65 };
+          var move = MOTIONS[spec.v] || MOTIONS.fade;
           timeline.fromTo(
-            rails[rail],
-            { scaleY: 0 },
-            { scaleY: 1, duration: Math.max(span[1] - span[0], 0.4), ease: 'power2.out' },
-            span[0]
+            objectEls[ob],
+            Object.assign({}, move.from),
+            Object.assign({ duration: spec.d, ease: 'power3.out' }, move.to),
+            spec.t
           );
         }
-        var tokens = root.querySelectorAll('.flow__token');
-        for (var tok = 0; tok < tokens.length; tok += 1) {
-          var win = TOKENS[tok] || [0, 0];
+        var MSGS = [[3.849, 5.208], [15.522, 17.146]];
+        var msgs = root.querySelectorAll('.seq__msg');
+        for (var msg = 0; msg < msgs.length; msg += 1) {
+          var span = MSGS[msg] || [0, 0.6];
           timeline.fromTo(
-            tokens[tok],
-            { opacity: 0, scale: 0 },
-            { opacity: 1, scale: 1, duration: 0.35, ease: 'power3.out' },
-            Math.max(win[0] - 0.15, 0)
+            msgs[msg].querySelector('.seq__line'),
+            { scaleX: 0 },
+            { scaleX: 1, duration: 0.55, ease: 'power2.inOut' },
+            span[0]
           );
-          timeline.to(tokens[tok], { opacity: 0.25, duration: 0.5, ease: 'power1.out' }, win[1]);
+          timeline.fromTo(
+            msgs[msg].querySelector('.seq__label'),
+            { opacity: 0 },
+            { opacity: 1, duration: 0.3, ease: 'power1.out' },
+            span[0] + 0.08
+          );
+          var tip = msgs[msg].querySelector('.seq__tip');
+          if (tip) {
+            timeline.fromTo(tip, { opacity: 0 }, { opacity: 1, duration: 0.18, ease: 'none' }, span[0] + 0.48);
+          }
+          var cargo = msgs[msg].querySelectorAll('.seq__token');
+          for (var cargoIndex = 0; cargoIndex < cargo.length; cargoIndex += 1) {
+            timeline.fromTo(
+              cargo[cargoIndex],
+              { opacity: 0, scale: 0 },
+              { opacity: 1, scale: 1, duration: 0.35, ease: 'back.out(1.7)' },
+              span[0] + 0.62 + cargoIndex * 0.14
+            );
+          }
         }
         var targets = [];
         Object.keys(HIGHLIGHTS).forEach(function (key) {
-          var el = root.querySelector('[data-hl="' + key + '"]');
-          if (el) { targets.push({ el: el, windows: HIGHLIGHTS[key] }); }
+          var els = root.querySelectorAll('[data-hl="' + key + '"]');
+          for (var hl = 0; hl < els.length; hl += 1) {
+            targets.push({ el: els[hl], windows: HIGHLIGHTS[key] });
+          }
         });
         var ATTACK = 0.22;
         var RELEASE = 0.55;

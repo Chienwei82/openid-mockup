@@ -1597,3 +1597,94 @@ otro diagrama que encajara.
   aparece alguna.
 - **TDD no aplicable:** sin cambios en `src/` ni `tests/`; verificacion
   `dotnet build` + 726 tests, `npm run check` y render de prueba.
+
+## Explicaciones y animaciones mas graficas — Fase 1: secuencia + actores (2026-10-13)
+
+El usuario pidio explicaciones y animaciones mas graficas en el explicador y le
+propusimos un plan de 3 fases. Ejecutada la Fase 1: el mapa cobra vida.
+
+- **Diagrama de secuencia como primitiva visual.** `sequence()`/`SeqMsg` dibuja
+  cuatro carriles de actor con identidad fija (color `--actor-*` + icono SVG)
+  unidos por flechas con cargamento de chips de token. El mapa (escena 03) pasa
+  de una lista vertical a 8 flechas entre actores; 04 y 09 usan el mismo helper
+  con zoom a su tramo y carriles no participantes atenuados (foco).
+- **Geometria precalculada, sin medir el DOM.** Centros de carril y anchos de
+  flecha salen como porcentajes del propio build (12.5 + 25 i); el runtime solo
+  anima transforms (scaleX para trazar la flecha) + opacity (punta y chips).
+  Seek-safe, igual que el resto del timeline.
+- **Claves de voz compartidas sin duplicar animacion.** Las filas que comparten
+  clave (`flujo-aprueba`, `flujo-canje`) se revelan escalonadas 0.9 s
+  (`MSG_SHARED_DELAY`) y el driver de glow paso a `querySelectorAll` para que
+  ambas se enciendan con la misma ventana de habla.
+- **Foco estatico, no dinamico.** Los carriles que no participan en una escena
+  se atenuan con CSS (`.seq__actor--off`); el foco de voz lo aporta el glow de la
+  etiqueta del mensaje (pildora `data-hl`), sin nuevos tweens por ventana.
+- **Escena 02 con identidad.** Las 4 tarjetas de rol llevan icono grande de
+  actor (mismos iconos y colores que los carriles); la lista de tokens se
+  conserva (Fase 3 le pondra barras de vida).
+
+## Explicaciones y animaciones mas graficas — Fase 2: objetos del protocolo (2026-10-13)
+
+Ejecutada la Fase 2 del plan: las escenas 05, 06, 07 y 10 pasan de listas a objetos
+del protocolo animados y sincronizados con la voz.
+
+- **Un objeto visual por escena.** 05: tuberia `pkce_pipe` (verifier → embudo SHA-256 →
+  challenge, con pie de «un solo sentido») mas `journey` de 4 pasos; 06: `jwt_exploded`
+  (segmentos header/payload/firma separados, chips de claims que aparecen al nombrarlos,
+  binding at_hash/c_hash, card de claims de scope); 07: `token_exchange` (envio «dos manos»
+  code + verifier, puertas «x1 un solo uso» y «hash(verifier)», abanico de access/id/refresh
+  y sello `invalid_grant`); 10: `session_ribbons` (3 cintas sobre eje de tiempo, corte
+  punteado de logout con badges, la cookie del cliente sobrevive al corte).
+- **Mecanica generica `data-motion`.** Cualquier pieza lleva `data-motion`
+  (fade|rise|pop|grow|bar|slide) y `object_motion()` la cronometra con la ventana de habla de
+  su `data-hl` (+0.9 s por clave repetida, 0.35 s de escalonado si la voz no la nombra).
+  Mismo contrato seek-safe que el resto: solo transforms + opacity, sin medir el DOM.
+  Es la primitiva que reutilizara la Fase 3 (barras de vida, terminal, matriz).
+- **Anudado de claves sin regenerar audio.** Los markup nuevos usan exactamente las claves de
+  `timings.json` (chip-iss…, paso-envia…, card-op…); la deuda de avisos baja de 5 escenas a
+  solo la 08, cuyo desajuste (claves antiguas card-client/password/device frente al guion
+  actual card-code/cc/refresh) se cierra al reescribir la 08 en Fase 3.
+- **Codigo muerto eliminado.** Al sustituir los ultimos diagramas `flow()` por objetos se
+  borraron `flow`/`flow_stop`/`lanes()`, el bloque RAILS/TOKENS del template y los CSS
+  `.map*`/`.flow*`/`.lanes*`/`.hop*`.
+- **TDD no aplicable:** sin cambios en `src/` ni `tests/`; verificacion `dotnet build` +
+  726 tests, `hyperframes check` (contraste 107/107 AA) y snapshots de las 4 escenas.
+
+## Explicaciones y animaciones mas graficas — Fase 3: barras, paridad y terminal (2026-10-13)
+
+Tercera fase del plan «mas grafico»: las escenas 08, 12 y 13 ganan piezas propias y la
+deuda de claves de voz queda cerrada.
+
+- **08 = 4 tarjetas de grant** (`refresh_token`/`client_credentials`/`password`/`device`)
+  que entran `pop` en la ventana de habla de su clave; la voz enumera los cuatro caminos y
+  las tarjetas aparecen en ese orden.
+- **12 = resumen visual:** cadena de paridad (Teoría ≡ Servidor de referencia ≡ OidcMock +
+  badge «paridad verificada»), barras de vida de los tokens (escala logaritmica sobre
+  480 min, relleno `data-motion="bar"`, metadatos por token) y card de errores de protocolo
+  con su codigo HTTP.
+- **13 = arranque practico:** terminal de shell cuyas lineas se «mecanografian»
+  (`data-motion="type"`, reveal por clip-path) + card de clientes de ejemplo y opciones clave.
+- **Piezas reutilizables:** `TokenRow`/`TOKENS`, `life_rows`/`life_width`/`life_label`,
+  `parity_strip`, `terminal`; `card()` acepta `motion` para entrar en ventana de habla.
+- **`object_motion` con orden de lectura:** las piezas sin clave de voz entran despues de la
+  ventana de la pieza anterior (OBJECT_STAGGER), no escalonadas desde el arranque de escena.
+- **Deuda de claves `hl` cerrada:** el markup usa las claves exactas de `timings.json`
+  (0 avisos de build); solo la voz regenerada con otro guion quedaba fuera y ya no.
+- **TDD no aplicable:** sin cambios en `src/` ni `tests/`; verificacion `dotnet build` +
+  726 tests, `hyperframes check` (contraste 116/116 AA) y snapshots de 02/08/12/13.
+
+## Explicaciones y animaciones mas graficas — Fase 4: chrome global y easing (2026-10-13)
+
+Cuarta y ultima fase del plan «mas grafico»: la tira de navegacion pasa a chrome del build
+y cada movimiento gana su propio easing.
+
+- **Tira «estás aqui» como chrome de escena.** `SCENE_NAV` (scene_content) + `with_journey_strip`
+  (build) inyectan la tira tras la cabecera de cada escena del recorrido (04-10) con el paso
+  activo de su parada del mapa; los cuerpos dejan de llevarla y la 10 (logout) completa el paso
+  «5-6 Uso». Unica fuente de verdad: cambiar el mapa es cambiar un dict.
+- **Easing por variante.** Cada `data-anim` (rise `power3.out`, pop `back.out(1.5)`, slide
+  `power2.inOut`, fade `power1.out`) y cada `data-motion` (pop `back.out(1.7)`, grow
+  `power2.inOut`, bar `expo.out`, type lineal...) define su caracter; el contrato seek-safe
+  no cambia: solo transforms, opacity y clip-path con curvas fijas.
+- **TDD no aplicable:** sin cambios en `src/` ni `tests/`; verificacion `dotnet build` +
+  726 tests, `hyperframes check` (contraste 125/125 AA, motion 0/0) y snapshots de 05/10.
