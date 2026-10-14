@@ -1672,3 +1672,19 @@ deuda de claves de voz queda cerrada.
   (0 avisos de build); solo la voz regenerada con otro guion quedaba fuera y ya no.
 - **TDD no aplicable:** sin cambios en `src/` ni `tests/`; verificacion `dotnet build` +
   726 tests, `hyperframes check` (contraste 116/116 AA) y snapshots de 02/08/12/13.
+
+## Explicaciones y animaciones mas graficas — Fase 4: chrome global y easing (2026-10-13)
+
+Cuarta y ultima fase del plan «mas grafico»: la tira de navegacion pasa a chrome del build
+y cada movimiento gana su propio easing.
+
+- **Tira «estás aqui» como chrome de escena.** `SCENE_NAV` (scene_content) + `with_journey_strip`
+  (build) inyectan la tira tras la cabecera de cada escena del recorrido (04-10) con el paso
+  activo de su parada del mapa; los cuerpos dejan de llevarla y la 10 (logout) completa el paso
+  «5-6 Uso». Unica fuente de verdad: cambiar el mapa es cambiar un dict.
+- **Easing por variante.** Cada `data-anim` (rise `power3.out`, pop `back.out(1.5)`, slide
+  `power2.inOut`, fade `power1.out`) y cada `data-motion` (pop `back.out(1.7)`, grow
+  `power2.inOut`, bar `expo.out`, type lineal...) define su caracter; el contrato seek-safe
+  no cambia: solo transforms, opacity y clip-path con curvas fijas.
+- **TDD no aplicable:** sin cambios en `src/` ni `tests/`; verificacion `dotnet build` +
+  726 tests, `hyperframes check` (contraste 125/125 AA, motion 0/0) y snapshots de 05/10.

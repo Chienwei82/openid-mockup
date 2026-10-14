@@ -13,7 +13,7 @@ import json
 import re
 from pathlib import Path
 
-from scene_content import SCENE_BODY
+from scene_content import SCENE_BODY, SCENE_NAV, where_you_are
 
 ROOT = Path(__file__).resolve().parent.parent
 COMPOSITIONS_DIR = ROOT / "compositions"
@@ -43,7 +43,9 @@ AUDIO_TRACK = 10
 # habla de su data-hl (object_motion; escalonado OBJECT_STAGGER si la voz no
 # las nombra, siempre después de la pieza anterior en orden de lectura). Solo
 # transforms (scale) + opacity + clip-path de reveal: nada de top/left/width
-# en los tweens.
+# en los tweens. Cada variante de entrada lleva su propio easing (overshoot en
+# pop, lineal en type, suave en fade). La tira «estás aquí» es chrome: el build
+# la inyecta tras la cabecera de las escenas del recorrido (with_journey_strip).
 SCENE_TEMPLATE = """<template>
   <div
     class="scene-root"
@@ -66,12 +68,18 @@ __BODY__
           slide: { opacity: 0, x: -40 },
           fade: { opacity: 0 },
         };
+        var EASE = {
+          rise: 'power3.out',
+          pop: 'back.out(1.5)',
+          slide: 'power2.inOut',
+          fade: 'power1.out',
+        };
         var items = root.querySelectorAll('[data-anim]');
         for (var index = 0; index < items.length; index += 1) {
-          var from = FROM[items[index].getAttribute('data-anim')] || FROM.rise;
+          var variant = items[index].getAttribute('data-anim');
           timeline.from(
             items[index],
-            Object.assign({ duration: 0.65, ease: 'power3.out' }, from),
+            Object.assign({ duration: 0.65, ease: EASE[variant] || EASE.rise }, FROM[variant] || FROM.rise),
             __FIRST_DELAY__ + index * __STAGGER__
           );
         }
@@ -79,12 +87,12 @@ __BODY__
         var HIGHLIGHTS = __HIGHLIGHTS__;
         var OBJECTS = __OBJECTS__;
         var MOTIONS = {
-          fade: { from: { opacity: 0 }, to: { opacity: 1 } },
-          rise: { from: { opacity: 0, y: 30 }, to: { opacity: 1, y: 0 } },
-          pop: { from: { opacity: 0, scale: 0.82 }, to: { opacity: 1, scale: 1, ease: 'back.out(1.6)' } },
-          grow: { from: { opacity: 0, scaleX: 0 }, to: { opacity: 1, scaleX: 1 } },
-          bar: { from: { scaleX: 0 }, to: { scaleX: 1, ease: 'power2.out' } },
-          slide: { from: { opacity: 0, x: -36 }, to: { opacity: 1, x: 0 } },
+          fade: { from: { opacity: 0 }, to: { opacity: 1, ease: 'power1.out' } },
+          rise: { from: { opacity: 0, y: 30 }, to: { opacity: 1, y: 0, ease: 'power3.out' } },
+          pop: { from: { opacity: 0, scale: 0.82 }, to: { opacity: 1, scale: 1, ease: 'back.out(1.7)' } },
+          grow: { from: { opacity: 0, scaleX: 0 }, to: { opacity: 1, scaleX: 1, ease: 'power2.inOut' } },
+          bar: { from: { scaleX: 0 }, to: { scaleX: 1, ease: 'expo.out' } },
+          slide: { from: { opacity: 0, x: -36 }, to: { opacity: 1, x: 0, ease: 'power2.inOut' } },
           type: { from: { clipPath: 'inset(0% 100% 0% 0%)' }, to: { clipPath: 'inset(0% 0% 0% 0%)', ease: 'none' } },
         };
         var objectEls = root.querySelectorAll('[data-motion]');
@@ -265,6 +273,13 @@ def highlight_windows(scene: dict[str, object], lead_in: float) -> dict[str, lis
     return grouped
 
 
+def with_journey_strip(scene_id: str, body: str) -> str:
+    active = SCENE_NAV.get(scene_id)
+    if active is None:
+        return body
+    return body.replace("</header>", "</header>" + where_you_are(active), 1)
+
+
 def object_motion(scene: dict[str, object], lead_in: float) -> list[dict[str, object]]:
     windows = highlight_windows(scene, lead_in)
     body = SCENE_BODY[str(scene["id"])]
@@ -309,7 +324,7 @@ def seq_motion(scene: dict[str, object], lead_in: float) -> list[list[float]]:
 
 def build_scene(scene: dict[str, object], lead_in: float) -> None:
     scene_id = str(scene["id"])
-    body = SCENE_BODY[scene_id]
+    body = with_journey_strip(scene_id, SCENE_BODY[scene_id])
     windows = highlight_windows(scene, lead_in)
     missing = [key for key in windows if f'data-hl="{key}"' not in body]
     if missing:

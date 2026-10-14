@@ -124,6 +124,20 @@ def where_you_are(active: str) -> str:
     )
 
 
+# La tira «estás aquí» es chrome de escena, no contenido: el build la inyecta
+# tras la cabecera de cada escena del recorrido con el paso activo de su parada
+# del mapa (with_journey_strip en build_composition).
+SCENE_NAV: dict[str, str] = {
+    "scene-04-discovery": "Discovery",
+    "scene-05-pkce": "Authorize",
+    "scene-06-idtoken": "Canje",
+    "scene-07-canje": "Canje",
+    "scene-08-grants": "Canje",
+    "scene-09-uso": "Uso",
+    "scene-10-sesion": "Uso",
+}
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Diagramas animados: secuencia (sequence), objetos del protocolo (pkce_pipe,
 # journey, jwt_exploded, token_exchange, session_ribbons) y casos de uso
@@ -583,7 +597,6 @@ SCENE_BODY["scene-03-flujo"] = (
 SCENE_BODY["scene-04-discovery"] = (
     '<section class="scene scene--seq">'
     + head("Paso 1 del mapa", "Discovery y JWKS")
-    + where_you_are("Discovery")
     + sequence(
         (
             SeqMsg(
@@ -612,7 +625,6 @@ SCENE_BODY["scene-04-discovery"] = (
 SCENE_BODY["scene-05-pkce"] = (
     '<section class="scene">'
     + head("Pasos 2 y 3 del mapa", "Authorization Code + PKCE")
-    + where_you_are("Authorize")
     + pkce_pipe()
     + journey(
         (
@@ -629,7 +641,6 @@ SCENE_BODY["scene-05-pkce"] = (
 SCENE_BODY["scene-06-idtoken"] = (
     '<section class="scene">'
     + head("Paso 4b del mapa", "El ID Token, Despiezado")
-    + where_you_are("Canje")
     + jwt_exploded()
     + "</section>"
 )
@@ -637,7 +648,6 @@ SCENE_BODY["scene-06-idtoken"] = (
 SCENE_BODY["scene-07-canje"] = (
     '<section class="scene">'
     + head("Paso 4 del mapa", "El Canje en el Token Endpoint")
-    + where_you_are("Canje")
     + token_exchange()
     + "</section>"
 )
@@ -645,7 +655,6 @@ SCENE_BODY["scene-07-canje"] = (
 SCENE_BODY["scene-08-grants"] = (
     '<section class="scene">'
     + head("Paso 4, otros caminos", "Otros Grant Types")
-    + where_you_are("Canje")
     + '<p class="use__q" data-anim="pop">El mismo token endpoint atiende otros caminos</p>'
     + '<div class="grid grid--grants">'
     + card(
@@ -684,7 +693,6 @@ SCENE_BODY["scene-08-grants"] = (
 SCENE_BODY["scene-09-uso"] = (
     '<section class="scene scene--seq">'
     + head("Pasos 5 y 6 del mapa", "UserInfo, API y Ciclo de Vida")
-    + where_you_are("Uso")
     + sequence(
         (
             SeqMsg(

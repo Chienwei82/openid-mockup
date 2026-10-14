@@ -6,7 +6,7 @@
     data-height="1080"
     data-duration="24.748"
   >
-<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Sesión</span><h2 class="headline" data-anim="rise">Tres Sesiones y el Logout</h2></header><div class="sess"><div class="sess__lane" data-motion="fade"><div class="sess__who" data-hl="card-op"><p class="sess__name">Sesión del OP</p><p class="sess__note">habilita el SSO</p></div><div class="sess__track"><div class="sess__bar sess__bar--op" data-motion="bar" data-hl="card-op"></div><div class="sess__cut" data-motion="pop" data-hl="card-logout"><span class="badge badge--warn">end_session</span></div></div></div><div class="sess__lane" data-motion="fade"><div class="sess__who" data-hl="card-cliente"><p class="sess__name">Sesión del cliente</p><p class="sess__note">su propia cookie</p></div><div class="sess__track"><div class="sess__bar sess__bar--cliente" data-motion="bar" data-hl="card-cliente"></div></div></div><div class="sess__lane" data-motion="fade"><div class="sess__who" data-hl="card-sid"><p class="sess__name">sid</p><p class="sess__note">puente entre id_token y la sesión del OP</p></div><div class="sess__track"><div class="sess__bar sess__bar--sid" data-motion="bar" data-hl="card-sid"></div><div class="sess__cut" data-motion="pop" data-hl="card-logout"><span class="badge badge--warn">sid caduca</span></div></div></div><p class="note" data-motion="fade" data-hl="card-logout">logout: <code>connect/end_session</code> con <code>id_token_hint</code> y <code>post_logout_redirect_uri</code></p><div class="chiprow sess__chips" data-motion="fade" data-hl="card-prompt"><span class="chip">prompt=none</span><span class="chip">prompt=login</span><span class="chip">prompt=consent</span><span class="chip">prompt=select_account</span></div></div></section>
+<section class="scene"><header class="scene__head"><span class="kicker" data-anim="pop">Sesión</span><h2 class="headline" data-anim="rise">Tres Sesiones y el Logout</h2></header><p class="where" data-anim="fade"><span class="where__label">Estás aquí</span><span class="where__crumb"><span class="where__n">1</span>Discovery</span><span class="where__crumb"><span class="where__n">2-3</span>Authorize</span><span class="where__crumb"><span class="where__n">4</span>Canje</span><span class="where__crumb where__crumb--on"><span class="where__n">5-6</span>Uso</span></p><div class="sess"><div class="sess__lane" data-motion="fade"><div class="sess__who" data-hl="card-op"><p class="sess__name">Sesión del OP</p><p class="sess__note">habilita el SSO</p></div><div class="sess__track"><div class="sess__bar sess__bar--op" data-motion="bar" data-hl="card-op"></div><div class="sess__cut" data-motion="pop" data-hl="card-logout"><span class="badge badge--warn">end_session</span></div></div></div><div class="sess__lane" data-motion="fade"><div class="sess__who" data-hl="card-cliente"><p class="sess__name">Sesión del cliente</p><p class="sess__note">su propia cookie</p></div><div class="sess__track"><div class="sess__bar sess__bar--cliente" data-motion="bar" data-hl="card-cliente"></div></div></div><div class="sess__lane" data-motion="fade"><div class="sess__who" data-hl="card-sid"><p class="sess__name">sid</p><p class="sess__note">puente entre id_token y la sesión del OP</p></div><div class="sess__track"><div class="sess__bar sess__bar--sid" data-motion="bar" data-hl="card-sid"></div><div class="sess__cut" data-motion="pop" data-hl="card-logout"><span class="badge badge--warn">sid caduca</span></div></div></div><p class="note" data-motion="fade" data-hl="card-logout">logout: <code>connect/end_session</code> con <code>id_token_hint</code> y <code>post_logout_redirect_uri</code></p><div class="chiprow sess__chips" data-motion="fade" data-hl="card-prompt"><span class="chip">prompt=none</span><span class="chip">prompt=login</span><span class="chip">prompt=consent</span><span class="chip">prompt=select_account</span></div></div></section>
 
     <script>
       (function () {
@@ -20,12 +20,18 @@
           slide: { opacity: 0, x: -40 },
           fade: { opacity: 0 },
         };
+        var EASE = {
+          rise: 'power3.out',
+          pop: 'back.out(1.5)',
+          slide: 'power2.inOut',
+          fade: 'power1.out',
+        };
         var items = root.querySelectorAll('[data-anim]');
         for (var index = 0; index < items.length; index += 1) {
-          var from = FROM[items[index].getAttribute('data-anim')] || FROM.rise;
+          var variant = items[index].getAttribute('data-anim');
           timeline.from(
             items[index],
-            Object.assign({ duration: 0.65, ease: 'power3.out' }, from),
+            Object.assign({ duration: 0.65, ease: EASE[variant] || EASE.rise }, FROM[variant] || FROM.rise),
             0.45 + index * 0.24
           );
         }
@@ -33,12 +39,12 @@
         var HIGHLIGHTS = {"card-op": [[2.491, 3.233]], "card-cliente": [[5.614, 6.426]], "card-sid": [[8.345, 8.849]], "card-logout": [[12.959, 13.799]], "card-prompt": [[18.883, 19.808]]};
         var OBJECTS = [{"v": "fade", "t": 1.1, "d": 0.45}, {"v": "bar", "t": 2.491, "d": 0.742}, {"v": "pop", "t": 12.959, "d": 0.84}, {"v": "fade", "t": 14.149, "d": 0.45}, {"v": "bar", "t": 5.614, "d": 0.812}, {"v": "fade", "t": 14.499, "d": 0.45}, {"v": "bar", "t": 8.345, "d": 0.504}, {"v": "pop", "t": 13.859, "d": 0.84}, {"v": "fade", "t": 14.759, "d": 0.84}, {"v": "fade", "t": 18.883, "d": 0.925}];
         var MOTIONS = {
-          fade: { from: { opacity: 0 }, to: { opacity: 1 } },
-          rise: { from: { opacity: 0, y: 30 }, to: { opacity: 1, y: 0 } },
-          pop: { from: { opacity: 0, scale: 0.82 }, to: { opacity: 1, scale: 1, ease: 'back.out(1.6)' } },
-          grow: { from: { opacity: 0, scaleX: 0 }, to: { opacity: 1, scaleX: 1 } },
-          bar: { from: { scaleX: 0 }, to: { scaleX: 1, ease: 'power2.out' } },
-          slide: { from: { opacity: 0, x: -36 }, to: { opacity: 1, x: 0 } },
+          fade: { from: { opacity: 0 }, to: { opacity: 1, ease: 'power1.out' } },
+          rise: { from: { opacity: 0, y: 30 }, to: { opacity: 1, y: 0, ease: 'power3.out' } },
+          pop: { from: { opacity: 0, scale: 0.82 }, to: { opacity: 1, scale: 1, ease: 'back.out(1.7)' } },
+          grow: { from: { opacity: 0, scaleX: 0 }, to: { opacity: 1, scaleX: 1, ease: 'power2.inOut' } },
+          bar: { from: { scaleX: 0 }, to: { scaleX: 1, ease: 'expo.out' } },
+          slide: { from: { opacity: 0, x: -36 }, to: { opacity: 1, x: 0, ease: 'power2.inOut' } },
           type: { from: { clipPath: 'inset(0% 100% 0% 0%)' }, to: { clipPath: 'inset(0% 0% 0% 0%)', ease: 'none' } },
         };
         var objectEls = root.querySelectorAll('[data-motion]');
