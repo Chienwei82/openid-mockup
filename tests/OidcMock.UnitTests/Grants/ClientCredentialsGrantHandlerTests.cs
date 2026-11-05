@@ -1,6 +1,9 @@
+using System.Net;
 using OidcMock.Core.Clients;
+using OidcMock.Core.Configuration;
 using OidcMock.Core.Errors;
 using OidcMock.Core.Grants;
+using OidcMock.Core.Network;
 using OidcMock.UnitTests.Fixtures;
 using OidcMock.UnitTests.Tokens;
 
@@ -8,16 +11,19 @@ namespace OidcMock.UnitTests.Grants;
 
 /// <summary>
 /// Grant client_credentials (RFC 6749 4.4): solo para clientes confidenciales, sin usuario detras,
-/// con sub igual al client_id y sin id_token ni refresh token.
+/// con sub igual al client_id y sin id_token ni refresh token. Cuando la politica es IpAddress,
+/// el sub es la direccion IP del llamante.
 /// </summary>
 public sealed class ClientCredentialsGrantHandlerTests : GrantHandlerTestBase
 {
     private readonly ClientCredentialsGrantHandler _handler;
+    private readonly TestIpResolver _ipResolver = new("10.0.0.42");
 
-    public ClientCredentialsGrantHandlerTests() => _handler = new(Tokens);
+    public ClientCredentialsGrantHandlerTests() =>
+        _handler = new(Tokens, _ipResolver, SubjectPolicy.ClientId);
 
     [Fact]
-    public async Task EmiteAccessTokenParaElPropioCliente()
+    public async Task EmiteAccessTokenConSubIgualAlClientIdPorDefecto()
     {
         var response = await HandleAsync();
 
@@ -25,6 +31,34 @@ public sealed class ClientCredentialsGrantHandlerTests : GrantHandlerTestBase
         Assert.Equal(
             ClientStoreFixture.ServiceClientId,
             TokenTestValidator.ReadClaim(response.Value!.AccessToken, "sub").GetString());
+    }
+
+    [Fact]
+    public async Task CuandoLaPoliticaEsIpAddressElSubEsLaIpDelLlamante()
+    {
+        var handler = new ClientCredentialsGrantHandler(Tokens, _ipResolver, SubjectPolicy.IpAddress);
+
+        var response = await handler.HandleAsync(TokenRequest.ForClient(
+            ClientStoreFixture.Service(),
+            Issuer,
+            ["openid"]));
+
+        Assert.True(response.Succeeded, response.Error?.ToString());
+        Assert.Equal("10.0.0.42", TokenTestValidator.ReadClaim(response.Value!.AccessToken, "sub").GetString());
+    }
+
+    [Fact]
+    public async Task CuandoLaPoliticaEsIpAddressYNoHayIpElSubEsVacio()
+    {
+        var handler = new ClientCredentialsGrantHandler(Tokens, new TestIpResolver(null), SubjectPolicy.IpAddress);
+
+        var response = await handler.HandleAsync(TokenRequest.ForClient(
+            ClientStoreFixture.Service(),
+            Issuer,
+            ["openid"]));
+
+        Assert.True(response.Succeeded, response.Error?.ToString());
+        Assert.Equal(string.Empty, TokenTestValidator.ReadClaim(response.Value!.AccessToken, "sub").GetString());
     }
 
     [Fact]
@@ -104,4 +138,9 @@ public sealed class ClientCredentialsGrantHandlerTests : GrantHandlerTestBase
             client ?? ClientStoreFixture.Service(),
             Issuer,
             scopes ?? ["openid"]));
+
+    private sealed class TestIpResolver(string? ip) : IIpResolver
+    {
+        public string? Resolve() => ip;
+    }
 }

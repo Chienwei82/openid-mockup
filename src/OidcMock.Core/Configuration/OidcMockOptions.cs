@@ -72,4 +72,11 @@ public sealed class OidcMockOptions
 
     /// <summary>Puertos y TLS con los que escucha el mock.</summary>
     public ServingOptions Serving { get; init; } = new();
+
+    /// <summary>
+    /// Politica para decidir el <c>sub</c> por defecto cuando no hay un usuario autenticado
+    /// detras del token (por ejemplo en <c>client_credentials</c>). Por defecto es <c>ClientId</c>,
+    /// que mantiene el comportamiento historico del mock.
+    /// </summary>
+    public SubjectPolicy DefaultSubjectPolicy { get; init; } = SubjectPolicy.ClientId;
 }

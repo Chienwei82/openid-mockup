@@ -1,6 +1,8 @@
 using OidcMock.Core.Clients;
+using OidcMock.Core.Configuration;
 using OidcMock.Core.Errors;
 using OidcMock.Core.Grants;
+using OidcMock.Core.Network;
 using OidcMock.UnitTests.Fixtures;
 using OidcMock.UnitTests.Grants;
 
@@ -15,13 +17,19 @@ public sealed class TokenEndpointServiceTests : GrantHandlerTestBase
 
     public TokenEndpointServiceTests()
     {
+        var ipResolver = new TestIpResolver("10.0.0.42");
         var registry = new GrantHandlerRegistry(
         [
-            new ClientCredentialsGrantHandler(Tokens),
+            new ClientCredentialsGrantHandler(Tokens, ipResolver, SubjectPolicy.ClientId),
             new PasswordGrantHandler(UserStore, RefreshTokens, Tokens, Clock)
         ]);
 
         _service = ServiceOver(ClientStoreFixture.Create(), registry);
+    }
+
+    private sealed class TestIpResolver(string ip) : IIpResolver
+    {
+        public string? Resolve() => ip;
     }
 
     private static TokenEndpointService ServiceOver(
