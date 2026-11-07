@@ -4,6 +4,7 @@ using OidcMock.Core.Configuration;
 using OidcMock.Core.Discovery;
 using OidcMock.Host;
 using OidcMock.Host.Cors;
+using OidcMock.Host.Configuration;
 using OidcMock.Host.Endpoints;
 using OidcMock.Host.Errors;
 using OidcMock.Host.Logging;
@@ -16,6 +17,10 @@ builder.Services.AddOidcMockProtocol();
 builder.Services.AddOidcMockCors();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<UnexpectedErrorHandler>();
+
+// Registro de los stores en memoria para el endpoint de administracion (antes que los JSON del disco)
+builder.Services.AddAdminStores(ResolveStoreOptions(builder));
+builder.Services.AddAdminApiKey(builder.Configuration);
 
 ConfigureListening(builder);
 
@@ -35,6 +40,31 @@ if (pathBase != "/")
 }
 
 app.UseExceptionHandler();
+
+// El endpoint /admin expone la configuracion dinamica del mock; exige una clave de
+// administracion en el header X-Admin-Key. Se aplica antes de mapear los endpoints,
+// asi que cubre en cualquier momento la ruta. Solo /admin/config es publico (lectura
+// de la configuracion actual) porque un administrador del navegador puede revisar
+// los clientes registrados sin riesgo de modificar el mock.
+var adminKey = app.Services.GetRequiredService<AdminApiKeyOptions>().Key;
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/admin", StringComparison.OrdinalIgnoreCase))
+    {
+        if (!context.Request.Path.StartsWithSegments("/admin/config", StringComparison.OrdinalIgnoreCase))
+        {
+            var provided = context.Request.Headers["X-Admin-Key"].FirstOrDefault();
+            if (!string.Equals(provided, adminKey, StringComparison.Ordinal))
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                return;
+            }
+        }
+    }
+
+    await next();
+});
+
 app.UseCors();
 
 app.MapDiscoveryEndpoints();
@@ -46,6 +76,7 @@ app.MapTokenEndpoints();
 app.MapEndSessionEndpoints();
 app.MapPushedRequestEndpoints();
 app.MapPollEndpoints();
+app.MapAdminEndpoints(app.Services.GetRequiredService<AdminOptions>());
 
 app.Run();
 

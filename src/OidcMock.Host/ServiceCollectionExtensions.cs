@@ -156,6 +156,53 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>
+    /// Registra el almacenamiento en memoria para el endpoint de administracion del mock.
+    /// Combina la carga inicial desde el JSON de configuracion y las escrituras dinamicas haciendo
+    /// mas rapida la lectura que la de disco.
+    /// </summary>
+    public static IServiceCollection AddAdminStores(this IServiceCollection services, JsonStoreOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        services.AddSingleton<IMutableClientStore>(provider =>
+            new AdminInMemoryClientStore(options.ConfigDirectory, options.ReloadOnChange));
+        services.AddSingleton<IMutableUserStore>(provider =>
+            new AdminInMemoryUserStore(options.ConfigDirectory, options.ReloadOnChange));
+        services.AddSingleton<IMutableScopeStore>(provider =>
+            new AdminInMemoryScopeStore(options.ConfigDirectory, options.ReloadOnChange));
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registra el API key de administracion: si no se ha configurado, se genera uno aleatorio al
+    /// arrancar y se imprime en el log, para que solo los que pueden leer la consola lo puedan
+    /// cambiar. Si se ha configurado, se usa tal cual.
+    /// </summary>
+    public static IServiceCollection AddAdminApiKey(this IServiceCollection services, IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        var key = configuration[nameof(AdminApiKeyOptions.Key)];
+
+        if (string.IsNullOrEmpty(key))
+        {
+            key = Guid.NewGuid().ToString("N");
+            var logger = services.BuildServiceProvider().GetRequiredService<ILogger<Program>>();
+#pragma warning disable CA1873
+#pragma warning disable CA1848
+            logger.LogInformation("OidcMock:AdminApiKey no configurado; uno generado al azar. No volver a arrancar si no se guarda. Key= {AdminApiKey}", key);
+#pragma warning restore CA1848
+#pragma warning restore CA1873
+        }
+
+        services.AddSingleton<AdminApiKeyOptions>(new AdminApiKeyOptions { Key = key });
+        services.AddSingleton<AdminOptions>(new AdminOptions { ApiKey = new AdminApiKeyOptions { Key = key } });
+
+        return services;
+    }
+
     private static void ApplyDefaultCorsOrigins(OidcMockOptions options)
     {
         if (options.AllowedCorsOrigins.Count == 0)
